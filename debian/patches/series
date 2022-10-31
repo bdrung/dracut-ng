@@ -3,3 +3,4 @@ udevsettle
 nm-path
 fido-libz
 vconsole
+debian-initramfs-post-update.patch
