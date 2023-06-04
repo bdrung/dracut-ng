@@ -4,6 +4,8 @@ export DH_VERBOSE=1
 DPKG_EXPORT_BUILDTOOLS=1
 -include /usr/share/dpkg/buildtools.mk
 
+DEB_HOST_ARCH ?= $(shell dpkg-architecture -qDEB_HOST_ARCH)
+
 %:
 	dh $@
 
@@ -20,6 +22,15 @@ override_dh_fixperms-indep:
 	find debian/ -name "*.sh" | grep modules.d | xargs chmod 755
 	rm -f debian/*/usr/lib/dracut/modules.d/98dracut-systemd/*.asc
 	rm -f debian/*/usr/lib/dracut/modules.d/98dracut-systemd/*.8
+ifneq ($(DEB_HOST_ARCH), s390x)
+	for m in 80cms 81cio_ignore 91zipl 95dasd 95dasd_mod \
+		95dasd_rules 95dcssblk 95qeth_rules 95zfcp \
+		95zfcp_rules 95znet; do \
+		rm -rf debian/*/usr/lib/dracut/modules.d/$$m ; \
+	done
+else
+	rm -rf debian/*/usr/lib/dracut/modules.d/00warpclock
+endif
 
 override_dh_auto_test:
 
