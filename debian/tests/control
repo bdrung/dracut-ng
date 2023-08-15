@@ -1,3 +1,4 @@
+# Note: These tests need root on Ubuntu, because the kernel is only readable by root. See https://launchpad.net/bugs/759725
 # Skip following test cases:
 # * TEST-20-NFS: https://github.com/dracutdevs/dracut/issues/1901
 # * TEST-30-ISCSI: https://github.com/dracutdevs/dracut/issues/2497
@@ -27,7 +28,7 @@ Depends: btrfs-progs,
          systemd-repart,
          systemd-sysv,
          util-linux
-Restrictions: allow-stderr
+Restrictions: allow-stderr, needs-root
 Features: test-name=upstream-dracut-core
 
 Architecture: amd64
@@ -45,7 +46,7 @@ Depends: btrfs-progs,
          squashfs-tools,
          systemd-sysv,
          util-linux
-Restrictions: allow-stderr
+Restrictions: allow-stderr, needs-root
 Features: test-name=upstream-dracut-live
 
 Architecture: amd64
@@ -68,5 +69,5 @@ Depends: cryptsetup,
          systemd-sysv,
          util-linux,
          vim
-Restrictions: allow-stderr
+Restrictions: allow-stderr, needs-root
 Features: test-name=upstream-dracut-network
