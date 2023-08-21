@@ -1,2 +1,4 @@
 # one single directory for modules is needed, see https://github.com/dracutdevs/dracut/issues/2485
 dracut-core: executable-in-usr-lib [usr/lib/dracut/*]
+# False positive: these systemd units are only needed when using systemd inside the initramfs
+dracut-core: package-supports-alternative-init-but-no-init.d-script
