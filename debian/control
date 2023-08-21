@@ -12,7 +12,7 @@ Package: dracut
 Architecture: all
 Multi-Arch: foreign
 Suggests: dracut-network
-Depends: dracut-core (>= ${binary:Version}), dracut-core (<< ${binary:Version}+b+~)
+Depends: dracut-core (>= ${binary:Version}), dracut-core (<< ${binary:Version}+b+~), ${misc:Depends}
 Provides: linux-initramfs-tool
 Conflicts: initramfs-tools, live-tools
 Description: Initramfs generator using udev
@@ -72,14 +72,14 @@ Description: dracut is an event driven initramfs infrastructure (live image modu
 
 Package: dracut-config-generic
 Architecture: all
-Depends: dracut-core
+Depends: dracut-core, ${misc:Depends}
 Multi-Arch: foreign
 Description: dracut is an event driven initramfs infrastructure
  This is the dracut configuration to turn off hostonly image generation
 
 Package: dracut-config-rescue
 Architecture: all
-Depends: dracut-core
+Depends: dracut-core, ${misc:Depends}
 Multi-Arch: foreign
 Description: dracut is an event driven initramfs infrastructure
  This is the dracut configuration to turn on rescue image generation
