@@ -1,1 +1,1 @@
-modules.d/99squash usr/lib/dracut/modules.d
+usr/lib/dracut/modules.d/99squash

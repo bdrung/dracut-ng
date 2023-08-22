@@ -1,8 +1,6 @@
-man/dracut.8
-man/dracut.conf.5
-man/dracut.modules.7
-man/dracut.bootup.7
-man/dracut.cmdline.7
-man/dracut-catimages.8
-man/lsinitrd.1
+usr/share/man/man5/dracut.conf.5
+usr/share/man/man7/dracut.modules.7
+usr/share/man/man7/dracut.bootup.7
+usr/share/man/man7/dracut.cmdline.7
+usr/share/man/man1/lsinitrd.1
 debian/tmp/usr/share/man/man8/*
