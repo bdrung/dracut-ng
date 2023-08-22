@@ -24,7 +24,7 @@ Package: dracut-core
 Architecture: any
 Multi-Arch: foreign
 Recommends: cryptsetup, dmsetup, dmraid, lvm2, mdadm, console-setup, binutils, systemd, pigz, pkg-config
-Depends: cpio, kmod, udev, kpartx, libkmod2, e2fsprogs, ${shlibs:Depends}, ${misc:Depends}
+Depends: cpio, dracut-install, kmod, udev, kpartx, libkmod2, e2fsprogs, ${shlibs:Depends}, ${misc:Depends}
 Breaks: dracut-network (<< 057+157-2), dracut-live (<< 059-2)
 Replaces: dracut-network (<< 057+157-2), dracut-live (<< 059-2)
 Description: dracut is an event driven initramfs infrastructure (core tools)
@@ -37,6 +37,15 @@ Description: dracut is an event driven initramfs infrastructure (core tools)
  then when we have the rootfs's device node, we mount and carry on.
  Having the root on MD, LVM2, LUKS is supported as well as NFS, iSCSI,
  NBD and FCOE with dracut-network.
+
+Package: dracut-install
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Breaks: dracut-core (<< 059-5~)
+Replaces: dracut-core (<< 059-5~)
+Description: dracut is an event driven initramfs infrastructure (dracut-install)
+ This package just contains the dracut-install command to be used by
+ initramfs generating tools.
 
 Package: dracut-network
 Architecture: all
