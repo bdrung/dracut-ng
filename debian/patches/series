@@ -5,5 +5,4 @@ fido-libz
 makefile
 vconsole
 microcode
-plymouth
 initrd-not-initramfs.patch
