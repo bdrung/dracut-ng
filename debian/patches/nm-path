@@ -23,14 +23,3 @@
      else
          warn "nm-initrd-generator not found"
      fi
---- a/modules.d/40network/module-setup.sh
-+++ b/modules.d/40network/module-setup.sh
-@@ -21,7 +21,7 @@
-             network_handler="network-wicked"
-         elif [[ -e $dracutsysrootdir$systemdsystemunitdir/connman.service ]]; then
-             network_handler="connman"
--        elif [[ -x $dracutsysrootdir/usr/libexec/nm-initrd-generator ]] || [[ -x $dracutsysrootdir/usr/lib/nm-initrd-generator ]]; then
-+        elif [[ -x $dracutsysrootdir/usr/libexec/nm-initrd-generator ]] || [[ -x $dracutsysrootdir/usr/lib/nm-initrd-generator ]] || [[ -x $dracutsysrootdir/usr/lib/NetworkManager/nm-initrd-generator ]]; then
-             network_handler="network-manager"
-         elif [[ -x $dracutsysrootdir$systemdutildir/systemd-networkd ]]; then
-             network_handler="systemd-networkd"
