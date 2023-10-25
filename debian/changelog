@@ -2,7 +2,7 @@ dracut (059-4) unstable; urgency=low
 
   * Fix file name in patch initrd-not-initramfs.patch
     Closes: #1029413, #1030191
-    Thanks to nabijaczleweli for for the patch
+    Thanks to nabijaczleweli for the patch
 
  -- Thomas Lange <lange@debian.org>  Thu, 09 Mar 2023 19:13:42 +0100
 
