@@ -54,7 +54,6 @@ find_binary() {
     [[ -z ${1##/*} ]] || _delim="/"
 
     if [[ $1 == *.so* ]]; then
-        # shellcheck disable=SC2154
         for l in $libdirs; do
             _path="${l}${_delim}${1}"
             if { $DRACUT_LDD "${dracutsysrootdir}${_path}" &> /dev/null; }; then
@@ -91,9 +90,9 @@ ldconfig_paths() {
     $DRACUT_LDCONFIG ${dracutsysrootdir:+-r ${dracutsysrootdir} -f /etc/ld.so.conf} -pN 2> /dev/null | grep -E -v '/(lib|lib64|usr/lib|usr/lib64)/[^/]*$' | sed -n 's,.* => \(.*\)/.*,\1,p' | sort | uniq
 }
 
-# Version comparision function.  Assumes Linux style version scheme.
+# Version comparison function.  Assumes Linux style version scheme.
 # $1 = version a
-# $2 = comparision op (gt, ge, eq, le, lt, ne)
+# $2 = comparison op (gt, ge, eq, le, lt, ne)
 # $3 = version b
 vercmp() {
     local _n1
@@ -244,7 +243,7 @@ get_maj_min() {
     local _out
 
     if [[ $get_maj_min_cache_file ]]; then
-        _out="$(grep -m1 -oP "^$1 \K\S+$" "$get_maj_min_cache_file")"
+        _out="$(grep -m1 -oE "^$1 \S+$" "$get_maj_min_cache_file" | awk '{print $NF}')"
     fi
 
     if ! [[ "$_out" ]]; then
@@ -712,7 +711,7 @@ fs_get_option() {
     while [ $# -gt 0 ]; do
         case $1 in
             $_option=*)
-                echo "${1#${_option}=}"
+                echo "${1#"${_option}"=}"
                 break
                 ;;
         esac
@@ -983,12 +982,41 @@ block_is_netdevice() {
     block_is_nbd "$1" || block_is_iscsi "$1" || block_is_fcoe "$1"
 }
 
+# convert the driver name given by udevadm to the corresponding kernel module name
+get_module_name() {
+    local dev_driver
+    while read -r dev_driver; do
+        case "$dev_driver" in
+            mmcblk)
+                echo "mmc_block"
+                ;;
+            *)
+                echo "$dev_driver"
+                ;;
+        esac
+    done
+}
+
 # get the corresponding kernel modules of a /sys/class/*/* or/dev/* device
 get_dev_module() {
     local dev_attr_walk
     local dev_drivers
+    local dev_paths
     dev_attr_walk=$(udevadm info -a "$1")
-    dev_drivers=$(echo "$dev_attr_walk" | sed -n 's/\s*DRIVERS=="\(\S\+\)"/\1/p')
+    dev_drivers=$(echo "$dev_attr_walk" \
+        | sed -n 's/\s*DRIVERS=="\(\S\+\)"/\1/p' \
+        | get_module_name)
+
+    # also return modalias info from sysfs paths parsed by udevadm
+    dev_paths=$(echo "$dev_attr_walk" | sed -n 's/.*\(\/devices\/.*\)'\'':/\1/p')
+    local dev_path
+    for dev_path in $dev_paths; do
+        local modalias_file="/sys$dev_path/modalias"
+        if [ -e "$modalias_file" ]; then
+            dev_drivers="$(printf "%s\n%s" "$dev_drivers" "$(cat "$modalias_file")")"
+        fi
+    done
+
     # if no kernel modules found and device is in a virtual subsystem, follow symlinks
     if [[ -z $dev_drivers && $(udevadm info -q path "$1") == "/devices/virtual"* ]]; then
         local dev_vkernel
@@ -1005,9 +1033,51 @@ get_dev_module() {
                 [[ -n $dev_drivers && ${dev_drivers: -1} != $'\n' ]] && dev_drivers+=$'\n'
                 dev_drivers+=$(udevadm info -a "$dev_vpath/$dev_link" \
                     | sed -n 's/\s*DRIVERS=="\(\S\+\)"/\1/p' \
+                    | get_module_name \
                     | grep -v -e pcieport)
             done
         fi
     fi
     echo "$dev_drivers"
+}
+
+# Check if file is in PE format
+pe_file_format() {
+    if [[ $# -eq 1 ]]; then
+        local magic
+        magic=$(objdump -p "$1" \
+            | gawk '{if ($1 == "Magic"){print strtonum("0x"$2)}}')
+        magic=$(printf "0x%x" "$magic")
+        # 0x10b (PE32), 0x20b (PE32+)
+        [[ $magic == 0x20b || $magic == 0x10b ]] && return 0
+    fi
+    return 1
+}
+
+# Get specific data from the PE header
+pe_get_header_data() {
+    local data_header
+    [[ $# -ne "2" ]] && return 1
+    [[ $(pe_file_format "$1") -eq 1 ]] && return 1
+    data_header=$(objdump -p "$1" \
+        | awk -v data="$2" '{if ($1 == data){print $2}}')
+    echo "$data_header"
+}
+
+# Get the SectionAlignment data from the PE header
+pe_get_section_align() {
+    local align_hex
+    [[ $# -ne "1" ]] && return 1
+    align_hex=$(pe_get_header_data "$1" "SectionAlignment")
+    [[ $? -eq 1 ]] && return 1
+    echo "$((16#$align_hex))"
+}
+
+# Get the ImageBase data from the PE header
+pe_get_image_base() {
+    local base_image
+    [[ $# -ne "1" ]] && return 1
+    base_image=$(pe_get_header_data "$1" "ImageBase")
+    [[ $? -eq 1 ]] && return 1
+    echo "$((16#$base_image))"
 }

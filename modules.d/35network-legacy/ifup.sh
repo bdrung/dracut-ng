@@ -420,7 +420,7 @@ if ! ip link show dev "$netif" > /dev/null 2>&1; then
 fi
 
 # disable manual ifup while netroot is set for simplifying our logic
-# in netroot case we prefer netroot to bringup $netif automaticlly
+# in netroot case we prefer netroot to bringup $netif automatically
 [ -n "$2" -a "$2" = "-m" ] && [ -z "$netroot" ] && manualup="$2"
 
 if [ -n "$manualup" ]; then
@@ -517,10 +517,6 @@ for p in $(getargs ip=); do
             if [ -z "$manualup" ]; then
                 /sbin/netroot "$netif"
             fi
-        fi
-
-        if command -v wicked > /dev/null && [ -z "$manualup" ]; then
-            /sbin/netroot "$netif"
         fi
 
         exit $ret

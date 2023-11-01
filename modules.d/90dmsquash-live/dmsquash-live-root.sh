@@ -1,6 +1,7 @@
 #!/bin/sh
 
 type getarg > /dev/null 2>&1 || . /lib/dracut-lib.sh
+type det_fs > /dev/null 2>&1 || . /lib/fs-lib.sh
 
 command -v unpack_archive > /dev/null || . /lib/img-lib.sh
 
@@ -61,7 +62,7 @@ get_check_dev() {
 # Find the right device to run check on
 check_dev=$(get_check_dev "$livedev")
 # CD/DVD media check
-[ -b "$check_dev" ] && fs=$(blkid -s TYPE -o value "$check_dev")
+[ -b "$check_dev" ] && fs=$(det_fs "$check_dev")
 if [ "$fs" = "iso9660" -o "$fs" = "udf" ]; then
     check="yes"
 fi
@@ -110,7 +111,7 @@ if [ -f "$livedev" ]; then
     esac
     [ -e /sys/fs/"$fstype" ] || modprobe "$fstype"
 else
-    livedev_fstype=$(blkid -o value -s TYPE "$livedev")
+    livedev_fstype=$(det_fs "$livedev")
     if [ "$livedev_fstype" = "squashfs" ]; then
         # no mount needed - we've already got the LiveOS image in $livedev
         SQUASHED=$livedev
@@ -300,7 +301,7 @@ do_live_overlay() {
         echo 0 "$sz" snapshot "$base" "$over" PO 8 | dmsetup create live-rw
     fi
 
-    # Create a device for the ro base of overlayed file systems.
+    # Create a device for the ro base of overlaid file systems.
     if [ -z "$overlayfs" ]; then
         echo 0 "$sz" linear "$BASE_LOOPDEV" 0 | dmsetup create --readonly live-base
     fi
@@ -314,6 +315,8 @@ if [ -e /run/initramfs/live/${live_dir}/${squash_image} ]; then
 fi
 if [ -e "$SQUASHED" ]; then
     if [ -n "$live_ram" ]; then
+        imgsize=$(($(stat -c %s -- $SQUASHED) / (1024 * 1024)))
+        check_live_ram $imgsize
         echo 'Copying live image to RAM...' > /dev/kmsg
         echo ' (this may take a minute)' > /dev/kmsg
         dd if=$SQUASHED of=/run/initramfs/squashed.img bs=512 2> /dev/null
@@ -402,6 +405,10 @@ if [ -n "$reloadsysrootmountunit" ]; then
 fi
 
 ROOTFLAGS="$(getarg rootflags)"
+
+if [ "$overlayfs" = required ]; then
+    echo "rd.live.overlay.overlayfs=1" > /etc/cmdline.d/dmsquash-need-overlay.conf
+fi
 
 if [ -n "$overlayfs" ]; then
     if [ -n "$FSIMG" ]; then

@@ -1,17 +1,16 @@
 -include dracut-version.sh
 
-DRACUT_MAIN_VERSION := $(shell env GIT_CEILING_DIRECTORIES=$(CURDIR)/.. git describe --abbrev=0 --tags --always 2>/dev/null || :)
+DRACUT_MAIN_VERSION ?= $(shell env GIT_CEILING_DIRECTORIES=$(CURDIR)/.. git describe --abbrev=0 --tags --always 2>/dev/null || :)
 ifeq ($(DRACUT_MAIN_VERSION),)
 DRACUT_MAIN_VERSION = $(DRACUT_VERSION)
 endif
-DRACUT_FULL_VERSION := $(shell env GIT_CEILING_DIRECTORIES=$(CURDIR)/.. git describe --tags --always 2>/dev/null || :)
+DRACUT_FULL_VERSION ?= $(shell env GIT_CEILING_DIRECTORIES=$(CURDIR)/.. git describe --tags --always 2>/dev/null || :)
 ifeq ($(DRACUT_FULL_VERSION),)
 DRACUT_FULL_VERSION = $(DRACUT_VERSION)
 endif
 
-HAVE_SHELLCHECK ?= $(shell which shellcheck >/dev/null 2>&1 && echo yes)
-HAVE_SHFMT ?= $(shell which shfmt >/dev/null  2>&1 && echo yes)
-HAVE_RPMBUILD ?= $(shell which rpmbuild >/dev/null  2>&1 && echo yes)
+HAVE_SHELLCHECK ?= $(shell command -v shellcheck >/dev/null 2>&1 && echo yes)
+HAVE_SHFMT ?= $(shell command -v shfmt >/dev/null  2>&1 && echo yes)
 
 -include Makefile.inc
 
@@ -49,9 +48,9 @@ man8pages = man/dracut.8 \
 
 manpages = $(man1pages) $(man5pages) $(man7pages) $(man8pages)
 
-.PHONY: install clean archive rpm srpm testimage test all check AUTHORS CONTRIBUTORS doc dracut-version.sh
+.PHONY: install clean archive testimage test all check AUTHORS CONTRIBUTORS doc
 
-all: dracut-version.sh dracut.pc dracut-install src/skipcpio/skipcpio dracut-util
+all: dracut.pc dracut-install src/skipcpio/skipcpio dracut-util
 
 %.o : %.c
 	$(CC) -c $(CFLAGS) $(CPPFLAGS) $(KMOD_CFLAGS) $< -o $@
@@ -219,18 +218,13 @@ endif
 	mkdir -p $(DESTDIR)${pkgconfigdatadir}
 	install -m 0644 dracut.pc $(DESTDIR)${pkgconfigdatadir}/dracut.pc
 
-dracut-version.sh:
-	@rm -f dracut-version.sh
-	@printf "#!/bin/sh\n# shellcheck disable=SC2034\nDRACUT_VERSION=%s\n" "$(DRACUT_FULL_VERSION)" > dracut-version.sh
-
 clean:
 	$(RM) *~
 	$(RM) */*~
 	$(RM) */*/*~
 	$(RM) $(manpages:%=%.xml) dracut.xml
 	$(RM) test-*.img
-	$(RM) dracut-*.rpm dracut-*.tar.bz2 dracut-*.tar.xz
-	$(RM) dracut-version.sh
+	$(RM) dracut-*.tar.bz2 dracut-*.tar.xz
 	$(RM) dracut-install src/install/dracut-install $(DRACUT_INSTALL_OBJECTS)
 	$(RM) skipcpio/skipcpio $(SKIPCPIO_OBJECTS)
 	$(RM) dracut-util util/util $(UTIL_OBJECTS)
@@ -242,42 +236,13 @@ clean:
 dist: dracut-$(DRACUT_MAIN_VERSION).tar.xz
 
 dracut-$(DRACUT_MAIN_VERSION).tar.xz: doc syncheck
-	@echo "DRACUT_VERSION=$(DRACUT_MAIN_VERSION)" > dracut-version.sh
 	git archive --format=tar $(DRACUT_MAIN_VERSION) --prefix=dracut-$(DRACUT_MAIN_VERSION)/ > dracut-$(DRACUT_MAIN_VERSION).tar
 	mkdir -p dracut-$(DRACUT_MAIN_VERSION)
-	for i in $(manpages) dracut.html dracut-version.sh; do [ "$${i%/*}" != "$$i" ] && mkdir -p "dracut-$(DRACUT_MAIN_VERSION)/$${i%/*}"; cp "$$i" "dracut-$(DRACUT_MAIN_VERSION)/$$i"; done
+	for i in $(manpages) dracut.html; do [ "$${i%/*}" != "$$i" ] && mkdir -p "dracut-$(DRACUT_MAIN_VERSION)/$${i%/*}"; cp "$$i" "dracut-$(DRACUT_MAIN_VERSION)/$$i"; done
 	tar --owner=root --group=root -rf dracut-$(DRACUT_MAIN_VERSION).tar $$(find dracut-$(DRACUT_MAIN_VERSION) -type f)
 	rm -fr -- dracut-$(DRACUT_MAIN_VERSION).tar.xz dracut-$(DRACUT_MAIN_VERSION)
 	xz -9 dracut-$(DRACUT_MAIN_VERSION).tar
 	rm -f -- dracut-$(DRACUT_MAIN_VERSION).tar
-
-ifeq ($(HAVE_RPMBUILD),yes)
-rpm: dracut-$(DRACUT_MAIN_VERSION).tar.xz syncheck
-	rpmbuild=$$(mktemp -d -p /var/tmp rpmbuild-dracut.XXXXXX); src=$$(pwd); \
-	cp dracut-$(DRACUT_MAIN_VERSION).tar.xz "$$rpmbuild"; \
-	LC_MESSAGES=C $$src/tools/git2spec.pl $(DRACUT_MAIN_VERSION) "$$rpmbuild" < pkgbuild/dracut.spec > $$rpmbuild/dracut.spec; \
-	(cd "$$rpmbuild"; \
-	wget https://www.gnu.org/licenses/lgpl-2.1.txt; \
-	rpmbuild --define "_topdir $$PWD" --define "_sourcedir $$PWD" \
-	        --define "_specdir $$PWD" --define "_srcrpmdir $$PWD" \
-		--define "_rpmdir $$PWD" -ba dracut.spec; ) && \
-	( mv "$$rpmbuild"/{,$$(uname -m)/}*.rpm $(DESTDIR).; rm -fr -- "$$rpmbuild"; ls $(DESTDIR)*.rpm )
-
-srpm: dracut-$(DRACUT_MAIN_VERSION).tar.xz syncheck
-	rpmbuild=$$(mktemp -d -t rpmbuild-dracut.XXXXXX); src=$$(pwd); \
-	cp dracut-$(DRACUT_MAIN_VERSION).tar.xz "$$rpmbuild"; \
-	LC_MESSAGES=C $$src/tools/git2spec.pl $(DRACUT_MAIN_VERSION) "$$rpmbuild" < pkgbuild/dracut.spec > $$rpmbuild/dracut.spec; \
-	(cd "$$rpmbuild"; \
-	[ -f $$src/lgpl-2.1.txt ] && cp $$src/lgpl-2.1.txt . || wget https://www.gnu.org/licenses/lgpl-2.1.txt; \
-	rpmbuild --define "_topdir $$PWD" --define "_sourcedir $$PWD" \
-	        --define "_specdir $$PWD" --define "_srcrpmdir $$PWD" \
-		--define "_rpmdir $$PWD" -bs dracut.spec; ) && \
-	( mv "$$rpmbuild"/*.src.rpm $(DESTDIR).; rm -fr -- "$$rpmbuild"; ls $(DESTDIR)*.rpm )
-else
-.PHONY: rpm srpm
-rpm: syncheck
-srpm: syncheck
-endif
 
 syncheck:
 	@ret=0;for i in dracut-initramfs-restore.sh modules.d/*/*.sh; do \
@@ -298,7 +263,7 @@ else
 endif
 endif
 
-check: all syncheck rpm
+check: all syncheck
 	@[ "$$EUID" == "0" ] || { echo "'check' must be run as root! Please use 'sudo'."; exit 1; }
 	@$(MAKE) -C test check
 
@@ -329,14 +294,7 @@ efi: all
 	@echo wrote linux-$(KVERSION).efi
 
 AUTHORS:
-	git shortlog  --numbered --summary -e |while read a rest || [ -n "$$rest" ]; do echo $$rest;done > AUTHORS
+	@git log | git shortlog --numbered --summary -e | while read -r a rest || [ -n "$$rest" ]; do echo "$$rest"; done > AUTHORS
 
 CONTRIBUTORS:
-	@git shortlog $(DRACUT_MAIN_VERSION).. --numbered --summary -e |while read a rest || [ -n "$$rest" ]; do echo "- $$rest";done
-
-dracut.html.sign: dracut-$(DRACUT_MAIN_VERSION).tar.xz dracut.html
-	gpg-sign-all dracut-$(DRACUT_MAIN_VERSION).tar.xz dracut.html
-
-upload: dracut.html.sign
-	kup put dracut-$(DRACUT_MAIN_VERSION).tar.xz dracut-$(DRACUT_MAIN_VERSION).tar.sign /pub/linux/utils/boot/dracut/
-	kup put dracut.html dracut.html.sign /pub/linux/utils/boot/dracut/
+	@git log | git shortlog $(DRACUT_MAIN_VERSION).. --numbered --summary -e | while read -r a rest || [ -n "$$rest" ]; do echo "- $$rest"; done

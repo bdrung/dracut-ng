@@ -18,6 +18,15 @@ mount_boot() {
     boot=$(getarg boot=)
 
     if [ -n "$boot" ]; then
+        if [ -d /boot ] && ismounted /boot; then
+            boot_dev=
+            if command -v findmnt > /dev/null; then
+                boot_dev=$(findmnt -n -o SOURCE /boot)
+            fi
+            fips_info "Ignoring 'boot=$boot' as /boot is already mounted ${boot_dev:+"from '$boot_dev'"}"
+            return 0
+        fi
+
         case "$boot" in
             LABEL=* | UUID=* | PARTUUID=* | PARTLABEL=*)
                 boot="$(label_uuid_to_dev "$boot")"
@@ -47,10 +56,13 @@ mount_boot() {
         mkdir -p /boot
         fips_info "Mounting $boot as /boot"
         mount -oro "$boot" /boot || return 1
-    elif [ -d "$NEWROOT/boot" ]; then
+        FIPS_MOUNTED_BOOT=1
+    elif ! ismounted /boot && [ -d "$NEWROOT/boot" ]; then
         # shellcheck disable=SC2114
         rm -fr -- /boot
         ln -sf "$NEWROOT/boot" /boot
+    else
+        die "You have to specify boot=<boot device> as a boot option for fips=1"
     fi
 }
 
@@ -143,14 +155,14 @@ do_fips() {
             BOOT_IMAGE="$(echo "${BOOT_IMAGE}" | sed 's/^(.*)//')"
 
             BOOT_IMAGE_NAME="${BOOT_IMAGE##*/}"
-            BOOT_IMAGE_PATH="${BOOT_IMAGE%${BOOT_IMAGE_NAME}}"
+            BOOT_IMAGE_PATH="${BOOT_IMAGE%"${BOOT_IMAGE_NAME}"}"
 
             if [ -z "$BOOT_IMAGE_NAME" ]; then
                 BOOT_IMAGE_NAME="vmlinuz-${KERNEL}"
             elif ! [ -e "/boot/${BOOT_IMAGE_PATH}/${BOOT_IMAGE_NAME}" ]; then
                 #if /boot is not a separate partition BOOT_IMAGE might start with /boot
                 BOOT_IMAGE_PATH=${BOOT_IMAGE_PATH#"/boot"}
-                #on some achitectures BOOT_IMAGE does not contain path to kernel
+                #on some architectures BOOT_IMAGE does not contain path to kernel
                 #so if we can't find anything, let's treat it in the same way as if it was empty
                 if ! [ -e "/boot/${BOOT_IMAGE_PATH}/${BOOT_IMAGE_NAME}" ]; then
                     BOOT_IMAGE_NAME="vmlinuz-${KERNEL}"
@@ -172,7 +184,12 @@ do_fips() {
 
     : > /tmp/fipsdone
 
-    umount /boot > /dev/null 2>&1
+    if [ "$FIPS_MOUNTED_BOOT" = 1 ]; then
+        fips_info "Unmounting /boot"
+        umount /boot > /dev/null 2>&1
+    else
+        fips_info "Not unmounting /boot"
+    fi
 
     return 0
 }

@@ -20,7 +20,7 @@ cryptsetup luksOpen /dev/disk/by-id/ata-disk_disk1 dracut_disk1 < /keyfile
 cryptsetup luksOpen /dev/disk/by-id/ata-disk_disk2 dracut_disk2 < /keyfile
 cryptsetup luksOpen /dev/disk/by-id/ata-disk_disk3 dracut_disk3 < /keyfile
 mdadm --create /dev/md0 --run --auto=yes --level=5 --raid-devices=3 /dev/mapper/dracut_disk1 /dev/mapper/dracut_disk2 /dev/mapper/dracut_disk3
-# wait for the array to finish initailizing, otherwise this sometimes fails
+# wait for the array to finish initializing, otherwise this sometimes fails
 # randomly.
 mdadm -W /dev/md0
 lvm pvcreate -ff -y /dev/md0
@@ -28,9 +28,9 @@ lvm vgcreate dracut /dev/md0
 
 lvm lvcreate -l 100%FREE -n root dracut
 lvm vgchange -ay
-mke2fs /dev/dracut/root
+mkfs.ext4 /dev/dracut/root
 mkdir -p /sysroot
-mount /dev/dracut/root /sysroot
+mount -t ext4 /dev/dracut/root /sysroot
 cp -a -t /sysroot /source/*
 umount /sysroot
 lvm lvchange -a n /dev/dracut/root

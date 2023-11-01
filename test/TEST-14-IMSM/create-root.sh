@@ -51,7 +51,7 @@ udevadm settle
 
 mdadm --create /dev/md0 --run --auto=yes --level=5 --raid-devices=3 \
     /dev/mapper/isw*p*[234]
-# wait for the array to finish initailizing, otherwise this sometimes fails
+# wait for the array to finish initializing, otherwise this sometimes fails
 # randomly.
 mdadm -W /dev/md0
 set -e
@@ -59,9 +59,9 @@ lvm pvcreate -ff -y /dev/md0
 lvm vgcreate dracut /dev/md0
 lvm lvcreate -l 100%FREE -n root dracut
 lvm vgchange -ay
-mke2fs -L root /dev/dracut/root
+mkfs.ext4 -L root /dev/dracut/root
 mkdir -p /sysroot
-mount /dev/dracut/root /sysroot
+mount -t ext4 /dev/dracut/root /sysroot
 cp -a -t /sysroot /source/*
 umount /sysroot
 lvm lvchange -a n /dev/dracut/root

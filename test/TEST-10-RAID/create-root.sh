@@ -11,7 +11,7 @@ udevadm control --reload
 udevadm settle
 set -ex
 mdadm --create /dev/md0 --run --auto=yes --level=5 --raid-devices=3 /dev/disk/by-id/ata-disk_raid[123]
-# wait for the array to finish initailizing, otherwise this sometimes fails
+# wait for the array to finish initializing, otherwise this sometimes fails
 # randomly.
 mdadm -W /dev/md0 || :
 printf test > keyfile
@@ -22,9 +22,9 @@ lvm pvcreate -ff -y /dev/mapper/dracut_crypt_test
 lvm vgcreate dracut /dev/mapper/dracut_crypt_test
 lvm lvcreate -l 100%FREE -n root dracut
 lvm vgchange -ay
-mke2fs -L root /dev/dracut/root
+mkfs.ext4 -L root /dev/dracut/root
 mkdir -p /sysroot
-mount /dev/dracut/root /sysroot
+mount -t ext4 /dev/dracut/root /sysroot
 cp -a -t /sysroot /source/*
 mkdir -p /sysroot/run
 umount /sysroot

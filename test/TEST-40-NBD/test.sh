@@ -1,11 +1,7 @@
 #!/bin/bash
 
-[ -z "$USE_NETWORK" ] && USE_NETWORK="network-legacy"
-
 # shellcheck disable=SC2034
 TEST_DESCRIPTION="root filesystem on NBD with $USE_NETWORK"
-
-KVERSION=${KVERSION-$(uname -r)}
 
 # Uncomment this to debug failures
 # DEBUGFAIL="rd.debug systemd.log_target=console loglevel=7"
@@ -42,7 +38,7 @@ run_server() {
         -serial "${SERIAL:-"file:$TESTDIR/server.log"}" \
         -net nic,macaddr=52:54:00:12:34:56,model=e1000 \
         -net socket,listen=127.0.0.1:12340 \
-        -append "panic=1 oops=panic softlockup_panic=1 rd.luks=0 systemd.crash_reboot quiet root=/dev/disk/by-id/ata-disk_serverroot rootfstype=ext3 rw console=ttyS0,115200n81 selinux=0 $SERVER_DEBUG" \
+        -append "panic=1 oops=panic softlockup_panic=1 rd.luks=0 systemd.crash_reboot quiet root=/dev/disk/by-id/ata-disk_serverroot rootfstype=ext4 rw console=ttyS0,115200n81 selinux=0 $SERVER_DEBUG" \
         -initrd "$TESTDIR"/initramfs.server \
         -pidfile "$TESTDIR"/server.pid -daemonize || return 1
     chmod 644 "$TESTDIR"/server.pid || return 1
@@ -71,16 +67,16 @@ client_test() {
     local fsopt=$5
     local found opts nbdinfo
 
-    [[ $fstype ]] || fstype=ext3
+    [[ $fstype ]] || fstype=ext4
     [[ $fsopt ]] || fsopt="ro"
 
     echo "CLIENT TEST START: $test_name"
 
-    dd if=/dev/zero of="$TESTDIR"/marker.img bs=1MiB count=1
     declare -a disk_args=()
     declare -i disk_index=0
     qemu_add_drive_args disk_index disk_args "$TESTDIR"/marker.img marker
 
+    test_marker_reset
     "$testdir"/run-qemu \
         "${disk_args[@]}" \
         -net nic,macaddr="$mac",model=e1000 \
@@ -89,7 +85,7 @@ client_test() {
         -initrd "$TESTDIR"/initramfs.testing
 
     # shellcheck disable=SC2181
-    if [[ $? -ne 0 ]] || ! grep -U --binary-files=binary -F -m 1 -q nbd-OK "$TESTDIR"/marker.img; then
+    if [[ $? -ne 0 ]] || ! test_marker_check nbd-OK "$TESTDIR"/marker.img; then
         echo "CLIENT TEST END: $test_name [FAILED - BAD EXIT]"
         return 1
     fi
@@ -129,21 +125,21 @@ test_run() {
 }
 
 client_run() {
-    # The default is ext3,errors=continue so use that to determine
+    # The default is ext4,errors=continue so use that to determine
     # if our options were parsed and used
     client_test "NBD root=nbd:IP:port" 52:54:00:12:34:00 \
         "root=nbd:192.168.50.1:raw rd.luks=0" || return 1
 
     client_test "NBD root=nbd:IP:port::fsopts" 52:54:00:12:34:00 \
         "root=nbd:192.168.50.1:raw::errors=panic rd.luks=0" \
-        ext3 errors=panic || return 1
+        ext4 errors=panic || return 1
 
     client_test "NBD root=nbd:IP:port:fstype" 52:54:00:12:34:00 \
-        "root=nbd:192.168.50.1:raw:ext3 rd.luks=0" ext3 || return 1
+        "root=nbd:192.168.50.1:raw:ext4 rd.luks=0" ext4 || return 1
 
     client_test "NBD root=nbd:IP:port:fstype:fsopts" 52:54:00:12:34:00 \
-        "root=nbd:192.168.50.1:raw:ext3:errors=panic rd.luks=0" \
-        ext3 errors=panic || return 1
+        "root=nbd:192.168.50.1:raw:ext4:errors=panic rd.luks=0" \
+        ext4 errors=panic || return 1
 
     # DHCP root-path parsing
 
@@ -154,7 +150,7 @@ client_run() {
         52:54:00:12:34:02 "root=/dev/root netroot=dhcp ip=dhcp rd.luks=0" ext2 || return 1
 
     client_test "NBD root=/dev/root netroot=dhcp DHCP root-path nbd:srv:port::fsopts" \
-        52:54:00:12:34:03 "root=/dev/root netroot=dhcp ip=dhcp rd.luks=0" ext3 errors=panic || return 1
+        52:54:00:12:34:03 "root=/dev/root netroot=dhcp ip=dhcp rd.luks=0" ext4 errors=panic || return 1
 
     client_test "NBD root=/dev/root netroot=dhcp DHCP root-path nbd:srv:port:fstype:fsopts" \
         52:54:00:12:34:04 "root=/dev/root netroot=dhcp ip=dhcp rd.luks=0" ext2 errors=panic || return 1
@@ -176,7 +172,7 @@ client_run() {
         52:54:00:12:34:00 \
         "root=LABEL=dracut rd.luks.uuid=$ID_FS_UUID rd.lv.vg=dracut ip=dhcp netroot=nbd:192.168.50.1:encrypted" || return 1
 
-    # XXX This should be ext3,errors=panic but that doesn't currently
+    # XXX This should be ext4,errors=panic but that doesn't currently
     # XXX work when you have a real root= line in addition to netroot=
     # XXX How we should work here needs clarification
     #    client_test "NBD root=LABEL=dracut netroot=dhcp (w/ fstype and opts)" \
@@ -198,7 +194,7 @@ make_encrypted_root() {
         # shellcheck disable=SC2030
         export initdir=$TESTDIR/overlay/source
         # shellcheck disable=SC1090
-        . "$basedir"/dracut-init.sh
+        . "$PKGLIBDIR"/dracut-init.sh
         mkdir -p "$initdir"
         (
             cd "$initdir" || exit
@@ -212,9 +208,9 @@ make_encrypted_root() {
         done
         inst_multiple -o ${_terminfodir}/l/linux
 
-        inst_simple "${basedir}/modules.d/99base/dracut-lib.sh" "/lib/dracut-lib.sh"
-        inst_simple "${basedir}/modules.d/99base/dracut-dev-lib.sh" "/lib/dracut-dev-lib.sh"
-        inst_binary "${basedir}/dracut-util" "/usr/bin/dracut-util"
+        inst_simple "${PKGLIBDIR}/modules.d/99base/dracut-lib.sh" "/lib/dracut-lib.sh"
+        inst_simple "${PKGLIBDIR}/modules.d/99base/dracut-dev-lib.sh" "/lib/dracut-dev-lib.sh"
+        inst_binary "${PKGLIBDIR}/dracut-util" "/usr/bin/dracut-util"
         ln -s dracut-util "${initdir}/usr/bin/dracut-getarg"
         ln -s dracut-util "${initdir}/usr/bin/dracut-getargs"
 
@@ -231,13 +227,13 @@ make_encrypted_root() {
         # shellcheck disable=SC2031
         export initdir=$TESTDIR/overlay
         # shellcheck disable=SC1090
-        . "$basedir"/dracut-init.sh
+        . "$PKGLIBDIR"/dracut-init.sh
         (
             cd "$initdir" || exit
             mkdir -p dev sys proc etc tmp var run root
             ln -s ../run var/run
         )
-        inst_multiple mkfs.ext3 poweroff cp umount dd sync
+        inst_multiple mkfs.ext4 poweroff cp umount dd sync
         inst_hook shutdown-emergency 000 ./hard-off.sh
         inst_hook emergency 000 ./hard-off.sh
         inst_hook initqueue 01 ./create-encrypted-root.sh
@@ -247,27 +243,25 @@ make_encrypted_root() {
     # create an initramfs that will create the target root filesystem.
     # We do it this way so that we do not risk trashing the host mdraid
     # devices, volume groups, encrypted partitions, etc.
-    "$basedir"/dracut.sh -l -i "$TESTDIR"/overlay / \
+    "$DRACUT" -l -i "$TESTDIR"/overlay / \
         -m "dash crypt lvm mdraid kernel-modules qemu" \
-        -d "piix ide-gd_mod ata_piix ext3 ext3 sd_mod" \
+        -d "piix ide-gd_mod ata_piix ext4 sd_mod" \
         --no-hostonly-cmdline -N \
         -f "$TESTDIR"/initramfs.makeroot "$KVERSION" || return 1
     rm -rf -- "$TESTDIR"/overlay
 
-    dd if=/dev/zero of="$TESTDIR"/encrypted.img bs=1MiB count=120
-    dd if=/dev/zero of="$TESTDIR"/marker.img bs=1MiB count=1
     declare -a disk_args=()
     # shellcheck disable=SC2034
     declare -i disk_index=0
-    qemu_add_drive_args disk_index disk_args "$TESTDIR"/marker.img marker
-    qemu_add_drive_args disk_index disk_args "$TESTDIR"/encrypted.img root
+    qemu_add_drive_args disk_index disk_args "$TESTDIR"/marker.img marker 1
+    qemu_add_drive_args disk_index disk_args "$TESTDIR"/encrypted.img root 120
 
     # Invoke KVM and/or QEMU to actually create the target filesystem.
     "$testdir"/run-qemu \
         "${disk_args[@]}" \
         -append "root=/dev/fakeroot rw quiet console=ttyS0,115200n81 selinux=0" \
         -initrd "$TESTDIR"/initramfs.makeroot || return 1
-    grep -U --binary-files=binary -F -m 1 -q dracut-root-block-created "$TESTDIR"/marker.img || return 1
+    test_marker_check dracut-root-block-created || return 1
     grep -F -a -m 1 ID_FS_UUID "$TESTDIR"/marker.img > "$TESTDIR"/luks.uuid
 }
 
@@ -280,7 +274,7 @@ make_client_root() {
         # shellcheck disable=SC2031
         export initdir=$TESTDIR/overlay/source
         # shellcheck disable=SC1090
-        . "$basedir"/dracut-init.sh
+        . "$PKGLIBDIR"/dracut-init.sh
         mkdir -p "$initdir"
         (
             cd "$initdir" || exit
@@ -293,9 +287,9 @@ make_client_root() {
         done
         inst_multiple -o ${_terminfodir}/l/linux
 
-        inst_simple "${basedir}/modules.d/99base/dracut-lib.sh" "/lib/dracut-lib.sh"
-        inst_simple "${basedir}/modules.d/99base/dracut-dev-lib.sh" "/lib/dracut-dev-lib.sh"
-        inst_binary "${basedir}/dracut-util" "/usr/bin/dracut-util"
+        inst_simple "${PKGLIBDIR}/modules.d/99base/dracut-lib.sh" "/lib/dracut-lib.sh"
+        inst_simple "${PKGLIBDIR}/modules.d/99base/dracut-dev-lib.sh" "/lib/dracut-dev-lib.sh"
+        inst_binary "${PKGLIBDIR}/dracut-util" "/usr/bin/dracut-util"
         ln -s dracut-util "${initdir}/usr/bin/dracut-getarg"
         ln -s dracut-util "${initdir}/usr/bin/dracut-getargs"
 
@@ -318,8 +312,8 @@ make_client_root() {
         # shellcheck disable=SC2031
         export initdir=$TESTDIR/overlay
         # shellcheck disable=SC1090
-        . "$basedir"/dracut-init.sh
-        inst_multiple sfdisk mkfs.ext3 poweroff cp umount sync dd
+        . "$PKGLIBDIR"/dracut-init.sh
+        inst_multiple sfdisk mkfs.ext4 poweroff cp umount sync dd
         inst_hook initqueue 01 ./create-client-root.sh
         inst_hook initqueue/finished 01 ./finished-false.sh
     )
@@ -327,27 +321,25 @@ make_client_root() {
     # create an initramfs that will create the target root filesystem.
     # We do it this way so that we do not risk trashing the host mdraid
     # devices, volume groups, encrypted partitions, etc.
-    "$basedir"/dracut.sh -l -i "$TESTDIR"/overlay / \
+    "$DRACUT" -l -i "$TESTDIR"/overlay / \
         -m "dash rootfs-block kernel-modules qemu" \
-        -d "piix ide-gd_mod ata_piix ext3 sd_mod" \
+        -d "piix ide-gd_mod ata_piix ext4 sd_mod" \
         --nomdadmconf \
         --no-hostonly-cmdline -N \
         -f "$TESTDIR"/initramfs.makeroot "$KVERSION" || return 1
 
-    dd if=/dev/zero of="$TESTDIR"/unencrypted.img bs=1MiB count=120
-    dd if=/dev/zero of="$TESTDIR"/marker.img bs=1MiB count=1
     declare -a disk_args=()
     # shellcheck disable=SC2034
     declare -i disk_index=0
-    qemu_add_drive_args disk_index disk_args "$TESTDIR"/marker.img marker
-    qemu_add_drive_args disk_index disk_args "$TESTDIR"/unencrypted.img root
+    qemu_add_drive_args disk_index disk_args "$TESTDIR"/marker.img marker 1
+    qemu_add_drive_args disk_index disk_args "$TESTDIR"/unencrypted.img root 120
 
     # Invoke KVM and/or QEMU to actually create the target filesystem.
     "$testdir"/run-qemu \
         "${disk_args[@]}" \
-        -append "root=/dev/dracut/root rw rootfstype=ext3 quiet console=ttyS0,115200n81 selinux=0" \
+        -append "root=/dev/dracut/root rw rootfstype=ext4 quiet console=ttyS0,115200n81 selinux=0" \
         -initrd "$TESTDIR"/initramfs.makeroot || return 1
-    grep -U --binary-files=binary -F -m 1 -q dracut-root-block-created "$TESTDIR"/marker.img || return 1
+    test_marker_check dracut-root-block-created || return 1
     rm -fr "$TESTDIR"/overlay
 }
 
@@ -361,7 +353,7 @@ make_server_root() {
         # shellcheck disable=SC2031
         export initdir=$TESTDIR/overlay/source
         # shellcheck disable=SC1090
-        . "$basedir"/dracut-init.sh
+        . "$PKGLIBDIR"/dracut-init.sh
         mkdir -p "$initdir"
         (
             cd "$initdir" || exit
@@ -388,7 +380,6 @@ EOF
         inst_multiple -o ${_terminfodir}/l/linux
         instmods nfsd sunrpc ipv6 lockd af_packet 8021q ipvlan macvlan
         type -P dhcpd > /dev/null && inst_multiple dhcpd
-        [ -x /usr/sbin/dhcpd3 ] && inst /usr/sbin/dhcpd3 /usr/sbin/dhcpd
         inst ./server-init.sh /sbin/init
         inst_simple /etc/os-release
         inst ./hosts /etc/hosts
@@ -417,8 +408,8 @@ EOF
         # shellcheck disable=SC2031
         export initdir=$TESTDIR/overlay
         # shellcheck disable=SC1090
-        . "$basedir"/dracut-init.sh
-        inst_multiple sfdisk mkfs.ext3 poweroff cp umount sync dd sync
+        . "$PKGLIBDIR"/dracut-init.sh
+        inst_multiple sfdisk mkfs.ext4 poweroff cp umount sync dd sync
         inst_hook initqueue 01 ./create-server-root.sh
         inst_hook initqueue/finished 01 ./finished-false.sh
     )
@@ -426,27 +417,25 @@ EOF
     # create an initramfs that will create the target root filesystem.
     # We do it this way so that we do not risk trashing the host mdraid
     # devices, volume groups, encrypted partitions, etc.
-    "$basedir"/dracut.sh -l -i "$TESTDIR"/overlay / \
+    "$DRACUT" -l -i "$TESTDIR"/overlay / \
         -m "dash rootfs-block kernel-modules qemu" \
-        -d "piix ide-gd_mod ata_piix ext3 sd_mod" \
+        -d "piix ide-gd_mod ata_piix ext4 sd_mod" \
         --nomdadmconf \
         --no-hostonly-cmdline -N \
         -f "$TESTDIR"/initramfs.makeroot "$KVERSION" || return 1
 
-    dd if=/dev/zero of="$TESTDIR"/server.img bs=1MiB count=120
-    dd if=/dev/zero of="$TESTDIR"/marker.img bs=1MiB count=1
     declare -a disk_args=()
     # shellcheck disable=SC2034
     declare -i disk_index=0
-    qemu_add_drive_args disk_index disk_args "$TESTDIR"/marker.img marker
-    qemu_add_drive_args disk_index disk_args "$TESTDIR"/server.img root
+    qemu_add_drive_args disk_index disk_args "$TESTDIR"/marker.img marker 1
+    qemu_add_drive_args disk_index disk_args "$TESTDIR"/server.img root 120
 
     # Invoke KVM and/or QEMU to actually create the target filesystem.
     "$testdir"/run-qemu \
         "${disk_args[@]}" \
-        -append "root=/dev/dracut/root rw rootfstype=ext3 quiet console=ttyS0,115200n81 selinux=0" \
+        -append "root=/dev/dracut/root rw rootfstype=ext4 quiet console=ttyS0,115200n81 selinux=0" \
         -initrd "$TESTDIR"/initramfs.makeroot || return 1
-    grep -U --binary-files=binary -F -m 1 -q dracut-root-block-created "$TESTDIR"/marker.img || return 1
+    test_marker_check dracut-root-block-created || return 1
     rm -fr "$TESTDIR"/overlay
 }
 
@@ -462,7 +451,7 @@ test_setup() {
         # shellcheck disable=SC2030
         export initdir=$TESTDIR/overlay
         # shellcheck disable=SC1090
-        . "$basedir"/dracut-init.sh
+        . "$PKGLIBDIR"/dracut-init.sh
         inst_multiple poweroff shutdown dd
         inst_hook shutdown-emergency 000 ./hard-off.sh
         inst ./cryptroot-ask.sh /sbin/cryptroot-ask
@@ -479,7 +468,7 @@ test_setup() {
         inst_simple ./client.link /etc/systemd/network/01-client.link
     )
 
-    "$basedir"/dracut.sh -l -i "$TESTDIR"/overlay / \
+    "$DRACUT" -l -i "$TESTDIR"/overlay / \
         -o "plymouth iscsi nfs" \
         -a "debug watchdog ${USE_NETWORK}" \
         --no-hostonly-cmdline -N \
@@ -489,14 +478,14 @@ test_setup() {
         # shellcheck disable=SC2031
         export initdir="$TESTDIR"/overlay
         # shellcheck disable=SC1090
-        . "$basedir"/dracut-init.sh
+        . "$PKGLIBDIR"/dracut-init.sh
         rm "$initdir"/etc/systemd/network/01-client.link
         inst_simple ./server.link /etc/systemd/network/01-server.link
         inst_hook pre-mount 99 ./wait-if-server.sh
     )
-    "$basedir"/dracut.sh -l -i "$TESTDIR"/overlay / \
+    "$DRACUT" -l -i "$TESTDIR"/overlay / \
         -a "rootfs-block debug kernel-modules network network-legacy" \
-        -d "af_packet piix ide-gd_mod ata_piix ext3 sd_mod e1000 drbg" \
+        -d "af_packet piix ide-gd_mod ata_piix ext4 sd_mod e1000 drbg" \
         --no-hostonly-cmdline -N \
         -f "$TESTDIR"/initramfs.server "$KVERSION" || return 1
 

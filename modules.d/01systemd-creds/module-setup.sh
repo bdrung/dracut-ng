@@ -6,7 +6,7 @@
 check() {
 
     # If the binary(s) requirements are not fulfilled the module can't be installed.
-    require_binaries "$systemdutildir"/systemd-rfkill || return 1
+    require_binaries systemd-creds || return 1
 
     # Return 255 to only include the module, if another module requires it.
     return 255
@@ -15,9 +15,13 @@ check() {
 
 # Module dependency requirements.
 depends() {
+    local deps
 
     # This module has external dependency on other module(s).
-    echo systemd
+    deps="systemd"
+    systemd-creds -q has-tpm2 && deps+=" tpm2-tss"
+    echo "$deps"
+
     # Return 0 to include the dependent module(s) in the initramfs.
     return 0
 
@@ -27,17 +31,16 @@ depends() {
 install() {
 
     inst_multiple -o \
-        "$systemdutildir"/systemd-rfkill \
-        "$systemdsystemunitdir"/systemd-rfkill.service \
-        "$systemdsystemunitdir"/systemd-rfkill.socket
+        "/usr/lib/credstore/*" \
+        "/usr/lib/credstore.encrypted/*" \
+        "$tmpfilesdir/credstore.conf" \
+        systemd-creds
 
     # Install the hosts local user configurations if enabled.
     if [[ $hostonly ]]; then
         inst_multiple -H -o \
-            "$systemdsystemconfdir"/systemd-rfkill.service \
-            "$systemdsystemconfdir/systemd-rfkill.service.d/*.conf" \
-            "$systemdsystemconfdir"/systemd-rfkill.socket \
-            "$systemdsystemconfdir/systemd-rfkill.socket.d/*.conf"
+            "/etc/credstore/*" \
+            "/etc/credstore.encrypted/*"
     fi
 
 }

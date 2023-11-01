@@ -36,6 +36,7 @@ strstr() {
 # An empty $1 will not be considered matched, even if $2 is * which technically
 # matches; as it would match anything, it's not an interesting case.
 strglob() {
+    # shellcheck disable=SC2295
     [ -n "$1" -a -z "${1##$2}" ]
 }
 
@@ -43,6 +44,7 @@ strglob() {
 # An empty $1 will not be considered matched, even if $2 is * which technically
 # matches; as it would match anything, it's not an interesting case.
 strglobin() {
+    # shellcheck disable=SC2295
     [ -n "$1" -a -z "${1##*$2*}" ]
 }
 
@@ -323,7 +325,7 @@ getoptcomma() {
 
     case "${line}" in
         *,${opt}=*,*)
-            tmp="${line#*,${opt}=}"
+            tmp="${line#*,"${opt}"=}"
             echo "${tmp%%,*}"
             return 0
             ;;
@@ -335,7 +337,7 @@ getoptcomma() {
 # Splits given string 'str' with separator 'sep' into variables 'var1', 'var2',
 # 'varN'.  If number of fields is less than number of variables, remaining are
 # not set.  If number of fields is greater than number of variables, the last
-# variable takes remaining fields.  In short - it acts similary to 'read'.
+# variable takes remaining fields.  In short - it acts similarly to 'read'.
 #
 # splitsep sep str var1 var2 varN
 #
@@ -353,10 +355,10 @@ splitsep() {
     local tmp
 
     while [ -n "$str" -a "$#" -gt 1 ]; do
-        tmp="${str%%$sep*}"
+        tmp="${str%%"$sep"*}"
         eval "$1='${tmp}'"
         str="${str#"$tmp"}"
-        str="${str#$sep}"
+        str="${str#"$sep"}"
         shift
     done
     [ -n "$str" -a -n "$1" ] && eval "$1='$str'"
@@ -408,13 +410,17 @@ source_hook() {
 }
 
 check_finished() {
-    local f
+    local f rc=0
     for f in "$hookdir"/initqueue/finished/*.sh; do
         [ "$f" = "$hookdir/initqueue/finished/*.sh" ] && return 0
         # shellcheck disable=SC1090
-        { [ -e "$f" ] && (. "$f"); } || return 1
+        if [ -e "$f" ] && (. "$f"); then
+            rm -f "$f"
+        else
+            rc=1
+        fi
     done
-    return 0
+    return $rc
 }
 
 source_conf() {
@@ -471,8 +477,8 @@ check_occurances() {
     local expected="$3"
     local count=0
 
-    while [ "${str#*$ch}" != "${str}" ]; do
-        str="${str#*$ch}"
+    while [ "${str#*"$ch"}" != "${str}" ]; do
+        str="${str#*"$ch"}"
         count=$((count + 1))
     done
 
@@ -827,7 +833,7 @@ killproc() {
     debug_off
     local _exe
     _exe="$(command -v "$1")"
-    local _sig=$2
+    local _sig="$2"
     local _i
     [ -x "$_exe" ] || return 1
     for _i in /proc/[0-9]*; do
@@ -891,7 +897,7 @@ if ! command -v pidof > /dev/null 2> /dev/null; then
                 [ "$i" -ef "$_exe" ] || continue
             else
                 _rl=$(readlink -f "$i")
-                [ "${_rl%/$_cmd}" != "$_rl" ] || continue
+                [ "${_rl%/"$_cmd"}" != "$_rl" ] || continue
             fi
             i=${i%/exe}
             echo "${i##/proc/}"
@@ -1138,5 +1144,35 @@ remove_hostonly_files() {
 # returns OK if kernel_module is loaded
 # modprobe fails if /lib/modules is not available (--no-kernel use case)
 load_fstype() {
-    strstr "$(cat /proc/filesystems)" "${2:-$1}" || modprobe "$1"
+    local - fs _fs="${2:-$1}"
+    set +x
+    while read -r d fs || [ "$d" ]; do
+        [ "${fs:-$d}" = "$_fs" ] && return 0
+    done < /proc/filesystems
+    modprobe "$1"
+}
+
+# parameter: size of live image
+# calls emergency shell if ram size is too small for the image
+check_live_ram() {
+    minmem=$(getarg rd.minmem)
+    minmem=${minmem:-1024}
+    imgsize=$1
+    memsize=$(($(sed -n 's/MemTotal: *\([[:digit:]]*\).*/\1/p' /proc/meminfo) / 1024))
+
+    if [ -z "$imgsize" ]; then
+        warn "Image size could not be determined"
+        return 0
+    fi
+
+    if [ $((memsize - imgsize)) -lt "$minmem" ]; then
+        sed -i "N;/and attach it to a bug report./s/echo$/echo\n\
+         echo \n\
+         echo 'Warning!!!'\n\
+         echo 'The memory size of your system is too small for this live image.'\n\
+         echo 'Expect killed processes due to out of memory conditions.'\n\
+         echo \n/" /usr/bin/dracut-emergency
+
+        emergency_shell
+    fi
 }

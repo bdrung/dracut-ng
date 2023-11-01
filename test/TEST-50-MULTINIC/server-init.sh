@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 exec < /dev/console > /dev/console 2>&1
 set -x
 export PATH=/usr/sbin:/usr/bin:/sbin:/bin
@@ -37,7 +37,7 @@ wait_for_route_ok() {
     local cnt=0
     while [ $cnt -lt 200 ]; do
         li=$(ip route show)
-        [ -n "$li" ] && [ -z "${li##*$1*}" ] && return 0
+        [ -n "$li" ] && [ -z "${li##*"$1"*}" ] && return 0
         sleep 0.1
         cnt=$((cnt + 1))
     done
