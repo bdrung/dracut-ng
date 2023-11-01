@@ -36,7 +36,6 @@ usr/lib/dracut/modules.d/01systemd-portabled
 usr/lib/dracut/modules.d/01systemd-pstore
 usr/lib/dracut/modules.d/01systemd-repart
 usr/lib/dracut/modules.d/01systemd-resolved
-usr/lib/dracut/modules.d/01systemd-rfkill
 usr/lib/dracut/modules.d/01systemd-sysctl
 usr/lib/dracut/modules.d/01systemd-sysext
 usr/lib/dracut/modules.d/01systemd-sysusers
