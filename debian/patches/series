@@ -5,3 +5,4 @@ fido-libz
 vconsole
 microcode
 initrd-not-initramfs.patch
+fix-test-running-tests-no-longer-requires-to-be-root.patch
