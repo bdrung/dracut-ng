@@ -2,7 +2,6 @@ rpc-user
 udevsettle
 nm-path
 fido-libz
-makefile
 vconsole
 microcode
 initrd-not-initramfs.patch
