@@ -1,3 +1,9 @@
+dracut (059+212-1) unstable; urgency=low
+
+  * merge upstream changes, Closes: #1056059, #1041562, #1054400, #1016052
+
+ -- Thomas Lange <lange@debian.org>  Thu, 30 Nov 2023 22:10:02 +0100
+
 dracut (059-4) unstable; urgency=low
 
   * Fix file name in patch initrd-not-initramfs.patch
