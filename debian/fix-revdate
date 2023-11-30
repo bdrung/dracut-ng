@@ -1,9 +1,9 @@
 sed -i -e '3i:revdate: 2022-08-26' man/dracut-catimages.8.asc
-sed -i -e '3i:revdate: 2022-08-26' man/dracut.8.asc
-sed -i -e '3i:revdate: 2021-05-04' man/dracut.bootup.7.asc
-sed -i -e '3i:revdate: 2022-10-21' man/dracut.cmdline.7.asc
-sed -i -e '3i:revdate: 2022-10-21' man/dracut.conf.5.asc
-sed -i -e '3i:revdate: 2021-05-04' man/dracut.modules.7.asc
+sed -i -e '3i:revdate: 2023-08-21' man/dracut.8.asc
+sed -i -e '3i:revdate: 2023-07-24' man/dracut.bootup.7.asc
+sed -i -e '3i:revdate: 2023-08-21' man/dracut.cmdline.7.asc
+sed -i -e '3i:revdate: 2023-08-21' man/dracut.conf.5.asc
+sed -i -e '3i:revdate: 2023-08-21' man/dracut.modules.7.asc
 sed -i -e '3i:revdate: 2022-08-26' man/lsinitrd.1.asc
 sed -i -e '3i:revdate: 2015-03-19' modules.d/98dracut-systemd/dracut-cmdline.service.8.asc
 sed -i -e '3i:revdate: 2015-03-19' modules.d/98dracut-systemd/dracut-initqueue.service.8.asc
