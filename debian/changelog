@@ -1,3 +1,9 @@
+dracut (059+212-2) unstable; urgency=low
+
+  * debian/rules: use correct Debian version
+
+ -- Thomas Lange <lange@debian.org>  Wed, 06 Dec 2023 12:00:30 +0100
+
 dracut (059+212-1) unstable; urgency=low
 
   * merge upstream changes, Closes: #1056059, #1041562, #1054400, #1016052
