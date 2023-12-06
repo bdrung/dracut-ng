@@ -1,3 +1,9 @@
+dracut (059+212-3) unstable; urgency=medium
+
+  * fix handling of dracut-version.sh
+
+ -- Thomas Lange <lange@debian.org>  Wed, 06 Dec 2023 14:36:26 +0100
+
 dracut (059+212-2) unstable; urgency=low
 
   * debian/rules: use correct Debian version
