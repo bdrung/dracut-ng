@@ -15,6 +15,7 @@ export DRACUT_FULL_VERSION=$(DEB_VERSION)
 override_dh_auto_configure:
 	dh_auto_configure -- --systemdsystemunitdir=/lib/systemd/system --libdir=/usr/lib
 	$(SHELL) debian/fix-revdate
+	mv dracut-version.sh dracut-version.sh.orig
 	echo '#!/bin/sh' > dracut-version.sh
 	echo "DRACUT_VERSION=$${DRACUT_FULL_VERSION}" >> dracut-version.sh
 
@@ -40,7 +41,8 @@ endif
 override_dh_auto_test:
 
 override_dh_clean:
+	if test -e dracut-version.sh.orig ; then \
+	   mv -f dracut-version.sh.orig dracut-version.sh ;\
+	fi
 	dh_clean dracut.pc Makefile.inc src/skipcpio/skipcpio src/util/util
 	git status|grep modified: | awk '/.asc/ {print $$2}' | xargs -r git checkout
-	rm dracut-version.sh
-	git checkout dracut-version.sh
