@@ -1,9 +1,11 @@
-dracut (060+5-1) unstable; urgency=low
+dracut (060+5-1) unstable; urgency=medium
 
-  * upstream changed the release process, they do not tag the releases any more
-  * this is already version 060
+  * upstream changed the release process, and do not tag the releases any
+    more
+  * 059+212 was already version 060+5
+  * add dracut-network.conffiles, Closes: 1057807
 
- -- Thomas Lange <lange@debian.org>  Wed, 06 Dec 2023 18:49:19 +0100
+ -- Thomas Lange <lange@debian.org>  Fri, 08 Dec 2023 21:09:47 +0100
 
 dracut (059+212-3) unstable; urgency=medium
 
