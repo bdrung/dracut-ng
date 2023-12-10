@@ -8,7 +8,6 @@ usr/lib/dracut/dracut-initramfs-restore
 usr/lib/dracut/dracut-util
 usr/lib/dracut/skipcpio
 usr/lib/dracut/dracut-logger.sh
-lib/systemd/system
 usr/share/bash-completion/completions
 usr/share/pkgconfig/dracut.pc
 usr/lib/dracut/dracut-version.sh
