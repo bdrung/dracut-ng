@@ -1,0 +1,36 @@
+From: Laszlo Gombos <laszlo.gombos@gmail.com>
+Date: Sat, 4 Nov 2023 02:25:18 -0400
+Subject: test(FULL SYSTEMD): no need to include dbus to the target rootfs
+
+systemd does not depend on dbus.
+
+Origin: upstream, https://github.com/dracutdevs/dracut/pull/2549
+---
+ test/TEST-04-FULL-SYSTEMD/test-init.sh | 3 +--
+ test/TEST-04-FULL-SYSTEMD/test.sh      | 2 +-
+ 2 files changed, 2 insertions(+), 3 deletions(-)
+
+diff --git a/test/TEST-04-FULL-SYSTEMD/test-init.sh b/test/TEST-04-FULL-SYSTEMD/test-init.sh
+index b7261b5..055aa75 100755
+--- a/test/TEST-04-FULL-SYSTEMD/test-init.sh
++++ b/test/TEST-04-FULL-SYSTEMD/test-init.sh
+@@ -37,5 +37,4 @@ if getargbool 0 rd.shell; then
+     setsid $CTTY sh -i
+ fi
+ echo "Powering down."
+-systemctl --no-block poweroff
+-exit 0
++poweroff -f
+diff --git a/test/TEST-04-FULL-SYSTEMD/test.sh b/test/TEST-04-FULL-SYSTEMD/test.sh
+index 160104f..a6d5345 100755
+--- a/test/TEST-04-FULL-SYSTEMD/test.sh
++++ b/test/TEST-04-FULL-SYSTEMD/test.sh
+@@ -52,7 +52,7 @@ test_setup() {
+ 
+     # Create what will eventually be our root filesystem onto an overlay
+     "$DRACUT" -l --keep --tmpdir "$TESTDIR" \
+-        -m "test-root dbus" \
++        -m "test-root systemd" \
+         -I "ldconfig" \
+         -i ./test-init.sh /sbin/test-init \
+         -i ./fstab /etc/fstab \

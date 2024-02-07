@@ -6,3 +6,4 @@ vconsole
 microcode
 initrd-not-initramfs.patch
 fix-test-running-tests-no-longer-requires-to-be-root.patch
+test-FULL-SYSTEMD-no-need-to-include-dbus-to-the-target-r.patch
