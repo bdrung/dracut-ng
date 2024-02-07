@@ -1,0 +1,70 @@
+# Skip following test cases:
+# * TEST-14-IMSM: dmraid was removed from Debian
+# * TEST-20-NFS: https://github.com/dracutdevs/dracut/issues/1901
+# * TEST-30-ISCSI: https://github.com/dracutdevs/dracut/issues/2497
+# * TEST-35-ISCSI-MULTI: https://github.com/dracutdevs/dracut/issues/2498
+# * TEST-50-MULTINIC: disabled in upstream CI since 2023-01-02
+# * TEST-60-BONDBRIDGEVLAN: https://github.com/dracutdevs/dracut/issues/2328
+# arm64, armhf, ppc64el, and s390x need upstream support: https://github.com/dracutdevs/dracut/issues/2493
+Architecture: amd64
+Test-Command: debian/tests/run-upstream-tests SKIP="14 16 20 30 35 40 50 60"
+Depends: btrfs-progs,
+         busybox,
+         cryptsetup,
+         dracut-core,
+         fdisk,
+         gawk,
+         kbd,
+         linux-image-generic,
+         lvm2,
+         make,
+         mdadm,
+         mount,
+         qemu-kvm,
+         systemd-boot-efi,
+         systemd-sysv,
+         util-linux
+Restrictions: allow-stderr
+Features: test-name=upstream-dracut-core
+
+Architecture: amd64
+Test-Command: debian/tests/run-upstream-tests TESTS="16"
+Depends: btrfs-progs,
+         busybox,
+         dracut-live,
+         fdisk,
+         kbd,
+         linux-image-generic,
+         make,
+         mount,
+         parted,
+         qemu-kvm,
+         squashfs-tools,
+         systemd-sysv,
+         util-linux
+Restrictions: allow-stderr
+Features: test-name=upstream-dracut-live
+
+Architecture: amd64
+Test-Command: debian/tests/run-upstream-tests TESTS="40"
+Depends: cryptsetup,
+         dracut-network,
+         gawk,
+         iproute2,
+         iputils-ping,
+         isc-dhcp-client,
+         isc-dhcp-server,
+         linux-image-generic,
+         lvm2,
+         make,
+         mdadm,
+         mount,
+         nbd-client,
+         nbd-server,
+         procps,
+         qemu-kvm,
+         systemd-sysv,
+         util-linux,
+         vim
+Restrictions: allow-stderr
+Features: test-name=upstream-dracut-network

@@ -1,0 +1,18 @@
+#!/bin/sh
+set -eu
+
+if test -n "${AUTOPKGTEST_TMP-}"; then
+	export TMPDIR="${AUTOPKGTEST_TMP}"
+fi
+
+# shellcheck disable=SC2012
+KVERSION=$(cd /lib/modules; ls -1 | tail -1)
+export KVERSION
+export DRACUT=dracut
+export PKGLIBDIR=/usr/lib/dracut
+
+# Prapare out-of-tree test directory
+TESTDIR="$(mktemp -d -t dracut-test.XXXXXXXXXX)"
+cp -r test/* "$TESTDIR"
+
+make -C "$TESTDIR" V=1 check "$@"
