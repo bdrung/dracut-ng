@@ -1,6 +1,6 @@
 dracut (060+5-2) unstable; urgency=low
 
-  * set --systemdsystemunitdir from pkg-config, MR #32
+  * set --systemdsystemunitdir from pkg-config, MR #32, Closes: #1057927
   * split dracut-install into separate package for initramfs-tools, MR #27
   * enable autopkgtest test suite, MR #24
 
