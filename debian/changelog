@@ -1,3 +1,10 @@
+dracut (060+5-7) unstable; urgency=low
+
+  * control: update package depends name
+  * add lintian override
+
+ -- Thomas Lange <lange@debian.org>  Mon, 01 Apr 2024 23:01:58 +0200
+
 dracut (060+5-2) unstable; urgency=low
 
   * set --systemdsystemunitdir from pkg-config, MR #32, Closes: #1057927
