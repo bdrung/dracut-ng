@@ -2,7 +2,7 @@ Source: dracut
 Section: utils
 Priority: optional
 Maintainer: Thomas Lange <lange@debian.org>
-Build-Depends: debhelper-compat (= 12), debhelper, asciidoc-base, xsltproc, docbook-xsl, docbook-xml, quilt, libkmod-dev, pkg-config, systemd-dev
+Build-Depends: debhelper-compat (= 12), debhelper, asciidoc-base, xsltproc, docbook-xsl, docbook-xml, quilt, libkmod-dev, pkgconf, systemd-dev
 Standards-Version: 4.6.2
 Vcs-Browser: https://salsa.debian.org/debian/dracut
 Vcs-Git: https://salsa.debian.org/debian/dracut.git
@@ -23,7 +23,7 @@ Description: Initramfs generator using udev
 Package: dracut-core
 Architecture: any
 Multi-Arch: foreign
-Recommends: cryptsetup, dmsetup, dmraid, lvm2, mdadm, console-setup, binutils, systemd, pigz, pkg-config
+Recommends: cryptsetup, dmsetup, dmraid, lvm2, mdadm, console-setup, binutils, systemd, pigz, pkgconf
 Depends: cpio, dracut-install, kmod, udev, kpartx, libkmod2, e2fsprogs, ${shlibs:Depends}, ${misc:Depends}
 Breaks: dracut-network (<< 057+157-2), dracut-live (<< 059-2)
 Replaces: dracut-network (<< 057+157-2), dracut-live (<< 059-2)
