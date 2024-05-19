@@ -41,8 +41,8 @@ Description: dracut is an event driven initramfs infrastructure (core tools)
 Package: dracut-install
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Breaks: dracut-core (<< 059-5~)
-Replaces: dracut-core (<< 059-5~)
+Breaks: dracut-core (<< 060+5-7~)
+Replaces: dracut-core (<< 060+5-7~)
 Description: dracut is an event driven initramfs infrastructure (dracut-install)
  This package just contains the dracut-install command to be used by
  initramfs generating tools.
