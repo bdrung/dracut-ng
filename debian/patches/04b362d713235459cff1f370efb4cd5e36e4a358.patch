@@ -19,11 +19,9 @@ Closes #2642
  modules.d/01systemd-journald/module-setup.sh | 5 +++--
  3 files changed, 12 insertions(+), 2 deletions(-)
 
-diff --git a/modules.d/00systemd/module-setup.sh b/modules.d/00systemd/module-setup.sh
-index 66e08ea69..723417464 100755
 --- a/modules.d/00systemd/module-setup.sh
 +++ b/modules.d/00systemd/module-setup.sh
-@@ -260,6 +260,8 @@ EOF
+@@ -260,6 +260,8 @@
      # Install library file(s)
      _arch=${DRACUT_ARCH:-$(uname -m)}
      inst_libdir_file \
@@ -32,11 +30,9 @@ index 66e08ea69..723417464 100755
          {"tls/$_arch/",tls/,"$_arch/",}"libnss_*"
  
  }
-diff --git a/modules.d/01systemd-coredump/module-setup.sh b/modules.d/01systemd-coredump/module-setup.sh
-index 69ec96686..47666b6ca 100755
 --- a/modules.d/01systemd-coredump/module-setup.sh
 +++ b/modules.d/01systemd-coredump/module-setup.sh
-@@ -40,6 +40,13 @@ install() {
+@@ -40,6 +40,13 @@
          "$sysusers"/systemd-coredump.conf \
          coredumpctl
  
@@ -50,11 +46,9 @@ index 69ec96686..47666b6ca 100755
      # Install the hosts local user configurations if enabled.
      if [[ $hostonly ]]; then
          inst_multiple -H -o \
-diff --git a/modules.d/01systemd-journald/module-setup.sh b/modules.d/01systemd-journald/module-setup.sh
-index 3cf2a1a11..276e75282 100755
 --- a/modules.d/01systemd-journald/module-setup.sh
 +++ b/modules.d/01systemd-journald/module-setup.sh
-@@ -53,9 +53,10 @@ install() {
+@@ -53,9 +53,10 @@
      # Install library file(s)
      _arch=${DRACUT_ARCH:-$(uname -m)}
      inst_libdir_file \

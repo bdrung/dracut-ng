@@ -1,6 +1,6 @@
 --- a/modules.d/00systemd/module-setup.sh
 +++ b/modules.d/00systemd/module-setup.sh
-@@ -245,7 +245,8 @@
+@@ -243,7 +243,8 @@
          systemd-ask-password-console.service \
          systemd-ask-password-plymouth.service; do
          [[ -f "$systemdsystemunitdir"/$i ]] || continue
