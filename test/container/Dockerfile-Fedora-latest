@@ -1,7 +1,5 @@
 FROM registry.fedoraproject.org/fedora:latest
 
-MAINTAINER https://github.com/dracutdevs/dracut
-
 # Install needed packages for the dracut CI container
 RUN dnf -y install --setopt=install_weak_deps=False \
     asciidoc \
@@ -58,7 +56,6 @@ RUN dnf -y install --setopt=install_weak_deps=False \
     shfmt \
     squashfs-tools \
     strace \
-    sudo \
     systemd-boot-unsigned \
     systemd-networkd \
     systemd-resolved \
@@ -66,6 +63,5 @@ RUN dnf -y install --setopt=install_weak_deps=False \
     tcpdump \
     tpm2-tools \
     wget \
-    which \
     xz \
     && dnf -y remove dracut --noautoremove && dnf -y update && dnf clean all

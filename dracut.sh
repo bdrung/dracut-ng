@@ -305,6 +305,7 @@ long_version() {
 push_host_devs() {
     local _dev
     for _dev in "$@"; do
+        [[ -z $_dev ]] && continue
         [[ " ${host_devs[*]} " == *" $_dev "* ]] && return
         host_devs+=("$_dev")
     done
@@ -1153,7 +1154,7 @@ if ! [[ $outfile ]]; then
             outfile="$dracutsysrootdir/boot/efi/${MACHINE_ID}/${kernel}/initrd"
         elif [[ -f "$dracutsysrootdir"/lib/modules/${kernel}/initrd ]]; then
             outfile="$dracutsysrootdir/lib/modules/${kernel}/initrd"
-        elif [[ -e $dracutsysrootdir/boot/vmlinuz-${kernel} ]]; then
+        elif [[ -e $dracutsysrootdir/boot/vmlinuz-${kernel} || -e $dracutsysrootdir/boot/vmlinux-${kernel} ]]; then
             outfile="$dracutsysrootdir/boot/initramfs-${kernel}.img"
         elif [[ -z $dracutsysrootdir ]] \
             && [[ $MACHINE_ID ]] \
@@ -2036,7 +2037,7 @@ if [[ $kernel_only != yes ]]; then
     if [[ $DRACUT_RESOLVE_LAZY ]] && [[ $DRACUT_INSTALL ]]; then
         dinfo "*** Resolving executable dependencies ***"
         # shellcheck disable=SC2086
-        find "$initdir" -type f -perm /0111 -not -path '*.ko' -print0 \
+        find "$initdir" -type f -perm /0111 -not -path '*.ko*' -print0 \
             | xargs -r -0 $DRACUT_INSTALL ${initdir:+-D "$initdir"} ${dracutsysrootdir:+-r "$dracutsysrootdir"} -R ${DRACUT_FIPS_MODE:+-f} --
         # shellcheck disable=SC2181
         if (($? == 0)); then
@@ -2154,6 +2155,8 @@ if [[ $early_microcode == yes ]]; then
                 done
                 for i in $_fwdir/$_fw/$_src; do
                     [[ -e $i ]] || continue
+                    # skip README{.xz,.zst,...}
+                    str_starts "$i" "$_fwdir/$_fw/README" && continue
                     # skip gpg files
                     str_ends "$i" ".asc" && continue
                     cat "$i" >> "$_dest_dir/${ucode_dest[$idx]}"
@@ -2252,7 +2255,7 @@ if [[ $do_strip == yes ]] && ! [[ $DRACUT_FIPS_MODE ]]; then
     [[ -n $enhanced_cpio ]] && ddebug "strip is enabled alongside cpio reflink"
     dinfo "*** Stripping files ***"
     find "$initdir" -type f \
-        -executable -not -path '*/lib/modules/*.ko' -print0 \
+        -executable -not -path '*/lib/modules/*.ko*' -print0 \
         | xargs -r -0 $strip_cmd "${strip_args[@]}" 2> /dev/null
 
     # strip kernel modules, but do not touch signed modules

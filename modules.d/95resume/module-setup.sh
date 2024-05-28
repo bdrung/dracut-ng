@@ -10,13 +10,31 @@ check() {
         return 1
     }
 
-    # Only support resume if hibernation is currently on
-    # and no swap is mounted on a net device
-    [[ $hostonly ]] || [[ $mount_needs ]] && {
-        swap_on_netdevice || [[ -f /sys/power/resume && "$(< /sys/power/resume)" == "0:0" ]] || grep -rq '^\|[[:space:]]resume=' /proc/cmdline /etc/cmdline /etc/cmdline.d /etc/kernel/cmdline /usr/lib/kernel/cmdline 2> /dev/null && return 255
-    }
-
-    return 0
+    # If hostonly check if we want to include the resume module
+    if [[ $hostonly ]] || [[ $mount_needs ]]; then
+        # Resuming won't work if swap is on a netdevice
+        swap_on_netdevice && return 255
+        if grep -rq 'resume=' /proc/cmdline /etc/cmdline /etc/cmdline.d /etc/kernel/cmdline /usr/lib/kernel/cmdline 2> /dev/null; then
+            # hibernation support requested on kernel command line
+            return 0
+        else
+            # resume= not set on kernel command line
+            if [[ -f /sys/power/resume ]]; then
+                if [[ "$(< /sys/power/resume)" == "0:0" ]]; then
+                    # hibernation supported by the kernel, but not enabled
+                    return 255
+                else
+                    # hibernation supported by the kernel and enabled
+                    return 0
+                fi
+            else
+                # resume file doesn't exist, hibernation not supported by kernel
+                return 255
+            fi
+        fi
+    else
+        return 0
+    fi
 }
 
 # called by dracut
@@ -44,6 +62,7 @@ install() {
     if dracut_module_included "systemd" && [[ -x $dracutsysrootdir$systemdutildir/systemd-hibernate-resume ]]; then
         inst_multiple -o \
             "$systemdutildir"/system-generators/systemd-hibernate-resume-generator \
+            "$systemdsystemunitdir"/systemd-hibernate-resume.service \
             "$systemdsystemunitdir"/systemd-hibernate-resume@.service \
             "$systemdutildir"/systemd-hibernate-resume
         return 0

@@ -22,12 +22,17 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Install dependencies
+        run: |
+          sudo apt -y update
+          sudo apt -y install asciidoc
+
       - name: Build
         run: bash ${GITHUB_WORKSPACE}/tools/release.sh ${{ inputs.tag }}
 
       - name: Release
         if: ${{ env.new_version }}
-        uses: softprops/action-gh-release@v0.1.15
+        uses: softprops/action-gh-release@v2.0.4
         with:
           tag_name: ${{ env.new_version }}
           name: dracut-${{ env.new_version }}

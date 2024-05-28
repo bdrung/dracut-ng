@@ -76,7 +76,9 @@ if [ -n "$check" ]; then
         checkisomd5 --verbose "$check_dev"
     fi
     if [ $? -eq 1 ]; then
-        die "CD check failed!"
+        warn "Media check failed! We do not recommend using this medium. System will halt in 12 hours"
+        sleep 43200
+        die "Media check failed!"
         exit 1
     fi
     type plymouth > /dev/null 2>&1 && plymouth --show-splash
@@ -143,6 +145,8 @@ do_live_overlay() {
 
     if [ -z "$pathspec" -o "$pathspec" = "auto" ]; then
         pathspec="/${live_dir}/overlay-$l-$u"
+    elif ! str_starts "$pathspec" "/"; then
+        pathspec=/"${pathspec}"
     fi
     devspec=${overlay%%:*}
 
@@ -296,7 +300,7 @@ do_live_overlay() {
         dmsetup message /dev/mapper/live-overlay-pool 0 "create_thin 0"
 
         # Create a snapshot of the base image
-        echo 0 "$sz" thin /dev/mapper/live-overlay-pool 0 "$base" | dmsetup create live-rw
+        echo 0 "$thin_data_sz" thin /dev/mapper/live-overlay-pool 0 "$base" | dmsetup create live-rw
     elif [ -z "$overlayfs" ]; then
         echo 0 "$sz" snapshot "$base" "$over" PO 8 | dmsetup create live-rw
     fi

@@ -7,6 +7,11 @@ TEST_DESCRIPTION="root filesystem on NFS with multiple nics with $USE_NETWORK"
 #DEBUGFAIL="loglevel=7 rd.shell rd.break"
 #SERIAL="tcp:127.0.0.1:9999"
 
+# skip the test if ifcfg dracut module can not be installed
+test_check() {
+    test -d /etc/sysconfig/network-scripts
+}
+
 run_server() {
     # Start server first
     echo "MULTINIC TEST SETUP: Starting DHCP/NFS server"
@@ -73,7 +78,7 @@ client_test() {
         -device e1000,netdev=n1,mac=52:54:00:12:34:98 \
         -device e1000,netdev=n2,mac=52:54:00:12:34:99 \
         -device i6300esb -watchdog-action poweroff \
-        -append "quiet panic=1 oops=panic softlockup_panic=1 systemd.crash_reboot rd.shell=0 $cmdline $DEBUGFAIL rd.retry=5 ro console=ttyS0,115200n81 selinux=0 init=/sbin/init rd.debug systemd.log_target=console" \
+        -append "quiet panic=1 oops=panic softlockup_panic=1 systemd.crash_reboot rd.shell=0 $cmdline $DEBUGFAIL rd.retry=5 ro console=ttyS0,115200n81 selinux=0 init=/sbin/init systemd.log_target=console" \
         -initrd "$TESTDIR"/initramfs.testing || return 1
 
     {

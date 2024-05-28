@@ -1,4 +1,7 @@
-ARG TAG=musl
+# ARG TAG=musl # to enable musl instead of glibc
+
+ARG TAG=systemd
+
 FROM docker.io/gentoo/portage:latest as portage
 
 # uefi stub in a separate builder
@@ -6,7 +9,7 @@ FROM docker.io/gentoo/stage3 as efistub
 COPY --from=portage /var/db/repos/gentoo /var/db/repos/gentoo
 
 # systemd-boot
-RUN echo 'sys-apps/systemd-utils boot' > /etc/portage/package.use/systemd-utils && \
+RUN echo 'sys-apps/systemd-utils boot kernel-install' > /etc/portage/package.use/systemd-utils && \
     emerge -qv sys-apps/systemd-utils
 
 # kernel and its dependencies in a separate builder
@@ -22,8 +25,6 @@ COPY --from=kernel /boot /boot
 COPY --from=kernel /lib/modules /lib/modules
 COPY --from=efistub /usr/lib/systemd/boot/efi /usr/lib/systemd/boot/efi
 ARG TAG
-
-MAINTAINER https://github.com/dracutdevs/dracut
 
 # required by sys-fs/dmraid
 RUN echo 'sys-fs/lvm2 lvm thin' > /etc/portage/package.use/lvm2
