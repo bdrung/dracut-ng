@@ -20,7 +20,7 @@ check() {
 depends() {
 
     # This module has external dependency on other module(s).
-    echo systemd-sysusers
+    echo systemd systemd-sysusers
     # Return 0 to include the dependent module(s) in the initramfs.
     return 0
 
@@ -53,9 +53,10 @@ install() {
     # Install library file(s)
     _arch=${DRACUT_ARCH:-$(uname -m)}
     inst_libdir_file \
+        {"tls/$_arch/",tls/,"$_arch/",}"libgcrypt.so*" \
         {"tls/$_arch/",tls/,"$_arch/",}"liblz4.so.*" \
-        {"tls/$_arch/",tls/,"$_arch/",}"libzstd.so.*" \
-        {"tls/$_arch/",tls/,"$_arch/",}"liblzma.so.*"
+        {"tls/$_arch/",tls/,"$_arch/",}"liblzma.so.*" \
+        {"tls/$_arch/",tls/,"$_arch/",}"libzstd.so.*"
 
     # Install the hosts local user configurations if enabled.
     if [[ $hostonly ]]; then

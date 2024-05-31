@@ -13,10 +13,10 @@ run_server() {
 
     declare -a disk_args=()
     declare -i disk_index=0
-    qemu_add_drive_args disk_index disk_args "$TESTDIR"/server.img serverroot 0 1
-    qemu_add_drive_args disk_index disk_args "$TESTDIR"/singleroot.img singleroot
-    qemu_add_drive_args disk_index disk_args "$TESTDIR"/raid0-1.img raid0-1
-    qemu_add_drive_args disk_index disk_args "$TESTDIR"/raid0-2.img raid0-2
+    qemu_add_drive disk_index disk_args "$TESTDIR"/server.img serverroot 0 1
+    qemu_add_drive disk_index disk_args "$TESTDIR"/singleroot.img singleroot
+    qemu_add_drive disk_index disk_args "$TESTDIR"/raid0-1.img raid0-1
+    qemu_add_drive disk_index disk_args "$TESTDIR"/raid0-2.img raid0-2
 
     "$testdir"/run-qemu \
         "${disk_args[@]}" \
@@ -24,7 +24,7 @@ run_server() {
         -net nic,macaddr=52:54:00:12:34:56,model=e1000 \
         -net nic,macaddr=52:54:00:12:34:57,model=e1000 \
         -net socket,listen=127.0.0.1:12330 \
-        -append "panic=1 oops=panic softlockup_panic=1 quiet root=/dev/disk/by-id/ata-disk_serverroot rootfstype=ext4 rw console=ttyS0,115200n81 selinux=0 $SERVER_DEBUG" \
+        -append "panic=1 oops=panic softlockup_panic=1 quiet root=/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_serverroot rootfstype=ext4 rw console=ttyS0,115200n81 selinux=0 $SERVER_DEBUG" \
         -initrd "$TESTDIR"/initramfs.server \
         -pidfile "$TESTDIR"/server.pid -daemonize || return 1
     chmod 644 "$TESTDIR"/server.pid || return 1
@@ -53,7 +53,7 @@ run_client() {
 
     declare -a disk_args=()
     declare -i disk_index=0
-    qemu_add_drive_args disk_index disk_args "$TESTDIR"/marker.img marker
+    qemu_add_drive disk_index disk_args "$TESTDIR"/marker.img marker
 
     test_marker_reset
     "$testdir"/run-qemu \
@@ -126,28 +126,31 @@ test_check() {
         echo "Need tgtd and tgtadm from scsi-target-utils"
         return 1
     fi
+    if ! [ -f /lib/systemd/system/iscsiuio.socket ]; then
+        echo "Need iscsiuio.socket to run this test"
+        return 1
+    fi
 }
 
 test_setup() {
     # Create what will eventually be the client root filesystem onto an overlay
-    "$DRACUT" -l --keep --tmpdir "$TESTDIR" \
+    "$DRACUT" -N -l --keep --tmpdir "$TESTDIR" \
         -m "test-root" \
-        -i ./client-init.sh /sbin/init \
-        -I "ip ping grep setsid" \
+        -I "ip grep setsid" \
         -i "${PKGLIBDIR}/modules.d/99base/dracut-lib.sh" "/lib/dracut-lib.sh" \
         -i "${PKGLIBDIR}/modules.d/99base/dracut-dev-lib.sh" "/lib/dracut-dev-lib.sh" \
-        --no-hostonly --no-hostonly-cmdline --nohardlink \
         -f "$TESTDIR"/initramfs.root "$KVERSION" || return 1
     mkdir -p "$TESTDIR"/overlay/source && mv "$TESTDIR"/dracut.*/initramfs/* "$TESTDIR"/overlay/source && rm -rf "$TESTDIR"/dracut.*
 
     mkdir -p -- "$TESTDIR"/overlay/source/var/lib/nfs/rpc_pipefs
+    cp ./client-init.sh "$TESTDIR"/overlay/source/sbin/init
 
     # create an initramfs that will create the target root filesystem.
     # We do it this way so that we do not risk trashing the host mdraid
     # devices, volume groups, encrypted partitions, etc.
     "$DRACUT" -l -i "$TESTDIR"/overlay / \
         -m "test-makeroot crypt lvm mdraid" \
-        -I "mkfs.ext4 setsid blockdev" \
+        -I "setsid blockdev" \
         -i ./create-client-root.sh /lib/dracut/hooks/initqueue/01-create-client-root.sh \
         --no-hostonly-cmdline -N \
         -f "$TESTDIR"/initramfs.makeroot "$KVERSION" || return 1
@@ -155,10 +158,10 @@ test_setup() {
 
     declare -a disk_args=()
     declare -i disk_index=0
-    qemu_add_drive_args disk_index disk_args "$TESTDIR"/marker.img marker 1
-    qemu_add_drive_args disk_index disk_args "$TESTDIR"/singleroot.img singleroot 200
-    qemu_add_drive_args disk_index disk_args "$TESTDIR"/raid0-1.img raid0-1 100
-    qemu_add_drive_args disk_index disk_args "$TESTDIR"/raid0-2.img raid0-2 100
+    qemu_add_drive disk_index disk_args "$TESTDIR"/marker.img marker 1
+    qemu_add_drive disk_index disk_args "$TESTDIR"/singleroot.img singleroot 200
+    qemu_add_drive disk_index disk_args "$TESTDIR"/raid0-1.img raid0-1 100
+    qemu_add_drive disk_index disk_args "$TESTDIR"/raid0-2.img raid0-2 100
 
     # Invoke KVM and/or QEMU to actually create the target filesystem.
     "$testdir"/run-qemu \
@@ -169,40 +172,36 @@ test_setup() {
     rm -- "$TESTDIR"/marker.img
 
     # Create what will eventually be the server root filesystem onto an overlay
-    "$DRACUT" -l --keep --tmpdir "$TESTDIR" \
-        -m "test-root network network-legacy" \
+    "$DRACUT" -N -l --keep --tmpdir "$TESTDIR" \
+        -m "test-root network-legacy" \
         -d "iscsi_tcp crc32c ipv6" \
-        -i ./server-init.sh /sbin/init \
         -i "${PKGLIBDIR}/modules.d/99base/dracut-lib.sh" "/lib/dracut-lib.sh" \
         -i "${PKGLIBDIR}/modules.d/99base/dracut-dev-lib.sh" "/lib/dracut-dev-lib.sh" \
-        -I "modprobe chmod ip ping tcpdump setsid pidof tgtd tgtadm /etc/passwd" \
+        -I "modprobe chmod ip tcpdump setsid pidof tgtd tgtadm /etc/passwd" \
         --install-optional "/etc/netconfig dhcpd /etc/group /etc/nsswitch.conf /etc/rpc /etc/protocols /etc/services /usr/etc/nsswitch.conf /usr/etc/rpc /usr/etc/protocols /usr/etc/services" \
         -i "./hosts" "/etc/hosts" \
         -i "./dhcpd.conf" "/etc/dhcpd.conf" \
-        --no-hostonly --no-hostonly-cmdline --nohardlink \
         -f "$TESTDIR"/initramfs.root "$KVERSION" || return 1
     mkdir -p "$TESTDIR"/overlay/source && mv "$TESTDIR"/dracut.*/initramfs/* "$TESTDIR"/overlay/source && rm -rf "$TESTDIR"/dracut.*
 
     mkdir -p "$TESTDIR"/overlay/source/var/lib/dhcpd
+    cp ./server-init.sh "$TESTDIR"/overlay/source/sbin/init
 
     # second, install the files needed to make the root filesystem
     # create an initramfs that will create the target root filesystem.
     # We do it this way so that we do not risk trashing the host mdraid
     # devices, volume groups, encrypted partitions, etc.
-    "$DRACUT" -l -i "$TESTDIR"/overlay / \
+    "$DRACUT" -N -l -i "$TESTDIR"/overlay / \
         -m "test-makeroot" \
-        -I "mkfs.ext4" \
         -i ./create-server-root.sh /lib/dracut/hooks/initqueue/01-create-server-root.sh \
-        --nomdadmconf \
-        --no-hostonly-cmdline -N \
         -f "$TESTDIR"/initramfs.makeroot "$KVERSION" || return 1
     rm -rf -- "$TESTDIR"/overlay
 
     declare -a disk_args=()
     # shellcheck disable=SC2034
     declare -i disk_index=0
-    qemu_add_drive_args disk_index disk_args "$TESTDIR"/marker.img marker 1
-    qemu_add_drive_args disk_index disk_args "$TESTDIR"/server.img root 240
+    qemu_add_drive disk_index disk_args "$TESTDIR"/marker.img marker 1
+    qemu_add_drive disk_index disk_args "$TESTDIR"/server.img root 240
 
     # Invoke KVM and/or QEMU to actually create the target filesystem.
     "$testdir"/run-qemu \
@@ -214,8 +213,8 @@ test_setup() {
 
     # Make server's dracut image
     "$DRACUT" -l \
-        -a "dash rootfs-block test kernel-modules network network-legacy" \
-        -d "piix ide-gd_mod ata_piix ext4 sd_mod e1000 drbg" \
+        -a "dash rootfs-block test kernel-modules network-legacy" \
+        -d "piix ide-gd_mod ata_piix ext4 sd_mod e1000 drbg virtio_pci virtio_scsi" \
         -i "./server.link" "/etc/systemd/network/01-server.link" \
         -i ./wait-if-server.sh /lib/dracut/hooks/pre-mount/99-wait-if-server.sh \
         --no-hostonly-cmdline -N \

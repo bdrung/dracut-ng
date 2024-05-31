@@ -12,7 +12,7 @@ udevadm control --reload
 udevadm settle
 
 # dmraid does not want symlinks in --disk "..."
-echo y | dmraid -f isw -C Test0 --type 1 --disk "$(realpath /dev/disk/by-id/ata-disk_disk1) $(realpath /dev/disk/by-id/ata-disk_disk2)"
+echo y | dmraid -f isw -C Test0 --type 1 --disk "$(realpath /dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_disk1) $(realpath /dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_disk2)"
 udevadm settle
 
 SETS=$(dmraid -c -s)
@@ -29,9 +29,9 @@ udevadm settle
 sfdisk -g /dev/mapper/isw*Test0
 sfdisk --no-reread /dev/mapper/isw*Test0 << EOF
 ,4M
-,28M
-,28M
-,28M
+,56M
+,56M
+,56M
 EOF
 
 set -x
@@ -59,7 +59,7 @@ lvm pvcreate -ff -y /dev/md0
 lvm vgcreate dracut /dev/md0
 lvm lvcreate -l 100%FREE -n root dracut
 lvm vgchange -ay
-mkfs.ext4 -L root /dev/dracut/root
+mkfs.ext4 -q -L root /dev/dracut/root
 mkdir -p /sysroot
 mount -t ext4 /dev/dracut/root /sysroot
 cp -a -t /sysroot /source/*
@@ -72,7 +72,7 @@ echo "MD_UUID=$MD_UUID"
 {
     echo "dracut-root-block-created"
     echo MD_UUID="$MD_UUID"
-} | dd oflag=direct,dsync of=/dev/disk/by-id/ata-disk_marker
+} | dd oflag=direct,dsync of=/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_marker status=none
 mdadm --wait-clean /dev/md0
 sync
 poweroff -f

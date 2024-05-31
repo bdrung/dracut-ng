@@ -49,8 +49,7 @@ run_server() {
         -device virtio-net-pci,netdev=n3,mac=52:54:01:12:34:59 \
         -hda "$TESTDIR"/server.ext4 \
         -serial "${SERIAL:-"file:$TESTDIR/server.log"}" \
-        -device i6300esb -watchdog-action poweroff \
-        -append "panic=1 oops=panic softlockup_panic=1 loglevel=7 root=LABEL=dracut rootfstype=ext4 rw console=ttyS0,115200n81 selinux=0 rd.debug" \
+        -append "panic=1 oops=panic softlockup_panic=1 root=LABEL=dracut rootfstype=ext4 rw console=ttyS0,115200n81 selinux=0" \
         -initrd "$TESTDIR"/initramfs.server \
         -pidfile "$TESTDIR"/server.pid -daemonize || return 1
     chmod 644 -- "$TESTDIR"/server.pid || return 1
@@ -92,16 +91,14 @@ client_test() {
         -netdev socket,connect=127.0.0.1:12373,id=n4 -device virtio-net-pci,mac=52:54:00:12:34:04,netdev=n4 \
         -netdev hubport,id=n5,hubid=1 -device virtio-net-pci,mac=52:54:00:12:34:05,netdev=n5 \
         -hda "$TESTDIR"/client.img \
-        -device i6300esb -watchdog-action poweroff \
         -append "
-        panic=1 oops=panic softlockup_panic=1
         ifname=net1:52:54:00:12:34:01
         ifname=net2:52:54:00:12:34:02
         ifname=net3:52:54:00:12:34:03
         ifname=net4:52:54:00:12:34:04
         ifname=net5:52:54:00:12:34:05
-        $cmdline rd.net.timeout.dhcp=30 systemd.crash_reboot
-        $DEBUGFAIL rd.retry=5 rw console=ttyS0,115200n81 selinux=0 init=/sbin/init" \
+        $cmdline rd.net.timeout.dhcp=30
+        rd.retry=5 rw init=/sbin/init" \
         -initrd "$TESTDIR"/initramfs.testing || return 1
 
     {
@@ -328,7 +325,7 @@ test_setup() {
         export initdir=$TESTDIR/overlay
         # shellcheck disable=SC1090
         . "$PKGLIBDIR"/dracut-init.sh
-        inst_multiple sfdisk mkfs.ext4 poweroff cp umount sync dd
+        inst_multiple mkfs.ext4 poweroff cp umount sync dd
         inst_hook initqueue 01 ./create-root.sh
         inst_hook initqueue/finished 01 ./finished-false.sh
     )
@@ -345,8 +342,8 @@ test_setup() {
 
     declare -a disk_args=()
     declare -i disk_index=0
-    qemu_add_drive_args disk_index disk_args "$TESTDIR"/marker.img marker 1
-    qemu_add_drive_args disk_index disk_args "$TESTDIR"/server.ext4 root 120
+    qemu_add_drive disk_index disk_args "$TESTDIR"/marker.img marker 1
+    qemu_add_drive disk_index disk_args "$TESTDIR"/server.ext4 root 120
 
     # Invoke KVM and/or QEMU to actually create the target filesystem.
     "$testdir"/run-qemu \
@@ -369,12 +366,9 @@ test_setup() {
         inst_simple ./client.link /etc/systemd/network/01-client.link
     )
     # Make client's dracut image
-    "$DRACUT" -l -i "$TESTDIR"/overlay / \
-        --no-early-microcode \
-        -o "plymouth" \
+    test_dracut \
         -a "debug ${USE_NETWORK} ifcfg" \
-        --no-hostonly-cmdline -N \
-        -f "$TESTDIR"/initramfs.testing "$KVERSION" || return 1
+        "$TESTDIR"/initramfs.testing
 
     (
         # shellcheck disable=SC2031
@@ -389,7 +383,7 @@ test_setup() {
     "$DRACUT" -l -i "$TESTDIR"/overlay / \
         --no-early-microcode \
         -m "rootfs-block debug kernel-modules watchdog qemu network network-legacy" \
-        -d "ipvlan macvlan af_packet piix ide-gd_mod ata_piix ext4 sd_mod nfsv2 nfsv3 nfsv4 nfs_acl nfs_layout_nfsv41_files nfsd virtio-net i6300esb ib700wdt" \
+        -d "ipvlan macvlan af_packet piix ide-gd_mod ata_piix ext4 sd_mod nfsv2 nfsv3 nfsv4 nfs_acl nfs_layout_nfsv41_files nfsd virtio-net i6300esb" \
         --no-hostonly-cmdline -N \
         -f "$TESTDIR"/initramfs.server "$KVERSION" || return 1
 }

@@ -313,7 +313,10 @@ dracut_instmods() {
     local i
     [[ $no_kernel == yes ]] && return
     for i in "$@"; do
-        [[ $i == "--silent" ]] && _silent=1
+        if [[ $i == "--silent" ]]; then
+            _silent=1
+            break
+        fi
     done
 
     if $DRACUT_INSTALL \
@@ -630,7 +633,7 @@ inst_hook() {
         dfatal "No such hook type $1. Aborting initrd creation."
         exit 1
     fi
-    hook="/lib/dracut/hooks/${1}/${2}-${3##*/}"
+    hook="/var/lib/dracut/hooks/${1}/${2}-${3##*/}"
     inst_simple "$3" "$hook"
     chmod u+x "$initdir/$hook"
 }
@@ -730,7 +733,7 @@ inst_decompress() {
         inst_simple "${_src}"
         # Decompress with chosen tool.  We assume that tool changes name e.g.
         # from 'name.gz' to 'name'.
-        ${_cmd} "${initdir}${_src}"
+        ${_cmd} "${initdir}${_src#"$dracutsysrootdir"}"
     done
 }
 

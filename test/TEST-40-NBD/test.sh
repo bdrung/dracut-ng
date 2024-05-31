@@ -27,18 +27,17 @@ run_server() {
     echo "NBD TEST SETUP: Starting DHCP/NBD server"
 
     declare -a disk_args=()
-    # shellcheck disable=SC2034
     declare -i disk_index=0
-    qemu_add_drive_args disk_index disk_args "$TESTDIR"/unencrypted.img unencrypted
-    qemu_add_drive_args disk_index disk_args "$TESTDIR"/encrypted.img encrypted
-    qemu_add_drive_args disk_index disk_args "$TESTDIR"/server.img serverroot
+    qemu_add_drive disk_index disk_args "$TESTDIR"/unencrypted.img unencrypted
+    qemu_add_drive disk_index disk_args "$TESTDIR"/encrypted.img encrypted
+    qemu_add_drive disk_index disk_args "$TESTDIR"/server.img serverroot
 
     "$testdir"/run-qemu \
         "${disk_args[@]}" \
         -serial "${SERIAL:-"file:$TESTDIR/server.log"}" \
         -net nic,macaddr=52:54:00:12:34:56,model=e1000 \
         -net socket,listen=127.0.0.1:12340 \
-        -append "panic=1 oops=panic softlockup_panic=1 rd.luks=0 systemd.crash_reboot quiet root=/dev/disk/by-id/ata-disk_serverroot rootfstype=ext4 rw console=ttyS0,115200n81 selinux=0 $SERVER_DEBUG" \
+        -append "panic=1 oops=panic softlockup_panic=1 rd.luks=0 systemd.crash_reboot quiet root=/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_serverroot rootfstype=ext4 rw console=ttyS0,115200n81 selinux=0 $SERVER_DEBUG" \
         -initrd "$TESTDIR"/initramfs.server \
         -pidfile "$TESTDIR"/server.pid -daemonize || return 1
     chmod 644 "$TESTDIR"/server.pid || return 1
@@ -74,14 +73,14 @@ client_test() {
 
     declare -a disk_args=()
     declare -i disk_index=0
-    qemu_add_drive_args disk_index disk_args "$TESTDIR"/marker.img marker
+    qemu_add_drive disk_index disk_args "$TESTDIR"/marker.img marker
 
     test_marker_reset
     "$testdir"/run-qemu \
         "${disk_args[@]}" \
         -net nic,macaddr="$mac",model=e1000 \
         -net socket,connect=127.0.0.1:12340 \
-        -append "panic=1 oops=panic softlockup_panic=1 systemd.crash_reboot rd.shell=0 $cmdline $DEBUGFAIL rd.auto rd.info rd.retry=10 ro console=ttyS0,115200n81  selinux=0  " \
+        -append "$cmdline rd.auto ro" \
         -initrd "$TESTDIR"/initramfs.testing
 
     # shellcheck disable=SC2181
@@ -165,7 +164,7 @@ client_run() {
 
     # Encrypted root handling via LVM/LUKS over NBD
 
-    # shellcheck disable=SC1090
+    # shellcheck source=$TESTDIR/luks.uuid
     . "$TESTDIR"/luks.uuid
 
     client_test "NBD root=LABEL=dracut netroot=nbd:IP:port" \
@@ -188,73 +187,32 @@ client_run() {
 
 make_encrypted_root() {
     rm -fr "$TESTDIR"/overlay
-    kernel=$KVERSION
     # Create what will eventually be our root filesystem onto an overlay
-    (
-        # shellcheck disable=SC2030
-        export initdir=$TESTDIR/overlay/source
-        # shellcheck disable=SC1090
-        . "$PKGLIBDIR"/dracut-init.sh
-        mkdir -p "$initdir"
-        (
-            cd "$initdir" || exit
-            mkdir -p dev sys proc etc run var/run tmp
-        )
-
-        inst_multiple sh df free ls shutdown poweroff stty cat ps ln ip \
-            mount dmesg mkdir cp ping dd sync
-        for _terminfodir in /lib/terminfo /etc/terminfo /usr/share/terminfo; do
-            [ -f ${_terminfodir}/l/linux ] && break
-        done
-        inst_multiple -o ${_terminfodir}/l/linux
-
-        inst_simple "${PKGLIBDIR}/modules.d/99base/dracut-lib.sh" "/lib/dracut-lib.sh"
-        inst_simple "${PKGLIBDIR}/modules.d/99base/dracut-dev-lib.sh" "/lib/dracut-dev-lib.sh"
-        inst_binary "${PKGLIBDIR}/dracut-util" "/usr/bin/dracut-util"
-        ln -s dracut-util "${initdir}/usr/bin/dracut-getarg"
-        ln -s dracut-util "${initdir}/usr/bin/dracut-getargs"
-
-        inst ./client-init.sh /sbin/init
-        inst_simple /etc/os-release
-        find_binary plymouth > /dev/null && inst_multiple plymouth
-        cp -a /etc/ld.so.conf* "$initdir"/etc
-        ldconfig -r "$initdir"
-    )
+    "$DRACUT" -l --keep --tmpdir "$TESTDIR" \
+        -m "test-root" \
+        -I "ip grep" \
+        -i "${basedir}/modules.d/99base/dracut-lib.sh" "/lib/dracut-lib.sh" \
+        -i "${basedir}/modules.d/99base/dracut-dev-lib.sh" "/lib/dracut-dev-lib.sh" \
+        --no-hostonly --no-hostonly-cmdline --nohardlink \
+        -f "$TESTDIR"/initramfs.root "$KVERSION" || return 1
+    mkdir -p "$TESTDIR"/overlay/source && mv "$TESTDIR"/dracut.*/initramfs/* "$TESTDIR"/overlay/source && rm -rf "$TESTDIR"/dracut.*
+    cp ./client-init.sh "$TESTDIR"/overlay/source/sbin/init
 
     # second, install the files needed to make the root filesystem
-    (
-        # shellcheck disable=SC2030
-        # shellcheck disable=SC2031
-        export initdir=$TESTDIR/overlay
-        # shellcheck disable=SC1090
-        . "$PKGLIBDIR"/dracut-init.sh
-        (
-            cd "$initdir" || exit
-            mkdir -p dev sys proc etc tmp var run root
-            ln -s ../run var/run
-        )
-        inst_multiple mkfs.ext4 poweroff cp umount dd sync
-        inst_hook shutdown-emergency 000 ./hard-off.sh
-        inst_hook emergency 000 ./hard-off.sh
-        inst_hook initqueue 01 ./create-encrypted-root.sh
-        inst_hook initqueue/finished 01 ./finished-false.sh
-    )
-
     # create an initramfs that will create the target root filesystem.
     # We do it this way so that we do not risk trashing the host mdraid
     # devices, volume groups, encrypted partitions, etc.
     "$DRACUT" -l -i "$TESTDIR"/overlay / \
-        -m "dash crypt lvm mdraid kernel-modules qemu" \
-        -d "piix ide-gd_mod ata_piix ext4 sd_mod" \
+        -m "test-makeroot crypt lvm mdraid" \
+        -i ./create-encrypted-root.sh /lib/dracut/hooks/initqueue/01-create-encrypted-root.sh \
         --no-hostonly-cmdline -N \
         -f "$TESTDIR"/initramfs.makeroot "$KVERSION" || return 1
     rm -rf -- "$TESTDIR"/overlay
 
     declare -a disk_args=()
-    # shellcheck disable=SC2034
     declare -i disk_index=0
-    qemu_add_drive_args disk_index disk_args "$TESTDIR"/marker.img marker 1
-    qemu_add_drive_args disk_index disk_args "$TESTDIR"/encrypted.img root 120
+    qemu_add_drive disk_index disk_args "$TESTDIR"/marker.img marker 1
+    qemu_add_drive disk_index disk_args "$TESTDIR"/encrypted.img root 120
 
     # Invoke KVM and/or QEMU to actually create the target filesystem.
     "$testdir"/run-qemu \
@@ -267,72 +225,31 @@ make_encrypted_root() {
 
 make_client_root() {
     rm -fr "$TESTDIR"/overlay
-    kernel=$KVERSION
-    (
-        mkdir -p "$TESTDIR"/overlay/source
-        # shellcheck disable=SC2030
-        # shellcheck disable=SC2031
-        export initdir=$TESTDIR/overlay/source
-        # shellcheck disable=SC1090
-        . "$PKGLIBDIR"/dracut-init.sh
-        mkdir -p "$initdir"
-        (
-            cd "$initdir" || exit
-            mkdir -p dev sys proc etc run var/run tmp
-        )
-        inst_multiple sh ls shutdown poweroff stty cat ps ln ip \
-            dmesg mkdir cp ping dd mount sync
-        for _terminfodir in /lib/terminfo /etc/terminfo /usr/share/terminfo; do
-            [ -f ${_terminfodir}/l/linux ] && break
-        done
-        inst_multiple -o ${_terminfodir}/l/linux
-
-        inst_simple "${PKGLIBDIR}/modules.d/99base/dracut-lib.sh" "/lib/dracut-lib.sh"
-        inst_simple "${PKGLIBDIR}/modules.d/99base/dracut-dev-lib.sh" "/lib/dracut-dev-lib.sh"
-        inst_binary "${PKGLIBDIR}/dracut-util" "/usr/bin/dracut-util"
-        ln -s dracut-util "${initdir}/usr/bin/dracut-getarg"
-        ln -s dracut-util "${initdir}/usr/bin/dracut-getargs"
-
-        inst ./client-init.sh /sbin/init
-        inst_simple /etc/os-release
-        inst_multiple -o {,/usr}/etc/nsswitch.conf
-        inst /etc/passwd /etc/passwd
-        inst /etc/group /etc/group
-        for i in /usr/lib*/libnss_files* /lib*/libnss_files*; do
-            [ -e "$i" ] || continue
-            inst "$i"
-        done
-        cp -a /etc/ld.so.conf* "$initdir"/etc
-        ldconfig -r "$initdir"
-    )
+    "$DRACUT" -l --keep --tmpdir "$TESTDIR" \
+        -m "test-root" \
+        -I "ip" \
+        -i "${basedir}/modules.d/99base/dracut-lib.sh" "/lib/dracut-lib.sh" \
+        -i "${basedir}/modules.d/99base/dracut-dev-lib.sh" "/lib/dracut-dev-lib.sh" \
+        --no-hostonly --no-hostonly-cmdline --nohardlink \
+        -f "$TESTDIR"/initramfs.root "$KVERSION" || return 1
+    mkdir -p "$TESTDIR"/overlay/source && mv "$TESTDIR"/dracut.*/initramfs/* "$TESTDIR"/overlay/source && rm -rf "$TESTDIR"/dracut.*
+    cp ./client-init.sh "$TESTDIR"/overlay/source/sbin/init
 
     # second, install the files needed to make the root filesystem
-    (
-        # shellcheck disable=SC2030
-        # shellcheck disable=SC2031
-        export initdir=$TESTDIR/overlay
-        # shellcheck disable=SC1090
-        . "$PKGLIBDIR"/dracut-init.sh
-        inst_multiple sfdisk mkfs.ext4 poweroff cp umount sync dd
-        inst_hook initqueue 01 ./create-client-root.sh
-        inst_hook initqueue/finished 01 ./finished-false.sh
-    )
-
     # create an initramfs that will create the target root filesystem.
     # We do it this way so that we do not risk trashing the host mdraid
     # devices, volume groups, encrypted partitions, etc.
     "$DRACUT" -l -i "$TESTDIR"/overlay / \
-        -m "dash rootfs-block kernel-modules qemu" \
-        -d "piix ide-gd_mod ata_piix ext4 sd_mod" \
+        -m "test-makeroot" \
+        -i ./create-client-root.sh /lib/dracut/hooks/initqueue/01-create-client-root.sh \
         --nomdadmconf \
         --no-hostonly-cmdline -N \
         -f "$TESTDIR"/initramfs.makeroot "$KVERSION" || return 1
 
     declare -a disk_args=()
-    # shellcheck disable=SC2034
     declare -i disk_index=0
-    qemu_add_drive_args disk_index disk_args "$TESTDIR"/marker.img marker 1
-    qemu_add_drive_args disk_index disk_args "$TESTDIR"/unencrypted.img root 120
+    qemu_add_drive disk_index disk_args "$TESTDIR"/marker.img marker 1
+    qemu_add_drive disk_index disk_args "$TESTDIR"/unencrypted.img root 120
 
     # Invoke KVM and/or QEMU to actually create the target filesystem.
     "$testdir"/run-qemu \
@@ -345,90 +262,51 @@ make_client_root() {
 
 make_server_root() {
     rm -fr "$TESTDIR"/overlay
-    # shellcheck disable=SC2031
-    export kernel=$KVERSION
-    (
-        mkdir -p "$TESTDIR"/overlay/source
-        # shellcheck disable=SC2030
-        # shellcheck disable=SC2031
-        export initdir=$TESTDIR/overlay/source
-        # shellcheck disable=SC1090
-        . "$PKGLIBDIR"/dracut-init.sh
-        mkdir -p "$initdir"
-        (
-            cd "$initdir" || exit
-            mkdir -p run dev sys proc etc var var/lib/dhcpd tmp etc/nbd-server
-            ln -s ../run var/run
-        )
-        cat > "$initdir/etc/nbd-server/config" << EOF
+
+    cat > /tmp/config << EOF
 [generic]
 [raw]
-exportname = /dev/disk/by-id/ata-disk_unencrypted
+exportname = /dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_unencrypted
 port = 2000
 bs = 4096
 [encrypted]
-exportname = /dev/disk/by-id/ata-disk_encrypted
+exportname = /dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_encrypted
 port = 2001
 bs = 4096
 EOF
-        inst_multiple sh ls shutdown poweroff stty cat ps ln ip \
-            dmesg mkdir cp ping grep \
-            sleep nbd-server chmod modprobe vi pidof
-        for _terminfodir in /lib/terminfo /etc/terminfo /usr/share/terminfo; do
-            [ -f ${_terminfodir}/l/linux ] && break
-        done
-        inst_multiple -o ${_terminfodir}/l/linux
-        instmods nfsd sunrpc ipv6 lockd af_packet 8021q ipvlan macvlan
-        type -P dhcpd > /dev/null && inst_multiple dhcpd
-        inst ./server-init.sh /sbin/init
-        inst_simple /etc/os-release
-        inst ./hosts /etc/hosts
-        inst ./dhcpd.conf /etc/dhcpd.conf
-        inst_multiple -o {,/usr}/etc/nsswitch.conf
-        inst /etc/passwd /etc/passwd
-        inst /etc/group /etc/group
-        _nsslibs=$(
-            cat "$dracutsysrootdir"/{,usr/}etc/nsswitch.conf 2> /dev/null \
-                | sed -e '/^#/d' -e 's/^.*://' -e 's/\[NOTFOUND=return\]//' \
-                | tr -s '[:space:]' '\n' | sort -u | tr -s '[:space:]' '|'
-        )
-        _nsslibs=${_nsslibs#|}
-        _nsslibs=${_nsslibs%|}
 
-        inst_libdir_file -n "$_nsslibs" 'libnss_*.so*'
+    "$DRACUT" -l --keep --tmpdir "$TESTDIR" \
+        -m "test-root network-legacy" \
+        -d "nfsd sunrpc ipv6 lockd af_packet 8021q ipvlan macvlan" \
+        -I "ip grep sleep nbd-server chmod modprobe vi pidof" \
+        -i "${basedir}/modules.d/99base/dracut-lib.sh" "/lib/dracut-lib.sh" \
+        -i "${basedir}/modules.d/99base/dracut-dev-lib.sh" "/lib/dracut-dev-lib.sh" \
+        --install-optional "/etc/netconfig dhcpd /etc/group /etc/nsswitch.conf /etc/rpc /etc/protocols /etc/services /usr/etc/nsswitch.conf /usr/etc/rpc /usr/etc/protocols /usr/etc/services" \
+        -i /tmp/config /etc/nbd-server/config \
+        -i "./hosts" "/etc/hosts" \
+        -i "./dhcpd.conf" "/etc/dhcpd.conf" \
+        --no-hostonly --no-hostonly-cmdline --nohardlink \
+        -f "$TESTDIR"/initramfs.root "$KVERSION" || return 1
+    mkdir -p "$TESTDIR"/overlay/source && mv "$TESTDIR"/dracut.*/initramfs/* "$TESTDIR"/overlay/source && rm -rf "$TESTDIR"/dracut.*
 
-        cp -a /etc/ld.so.conf* "$initdir"/etc
-        ldconfig -r "$initdir"
-        dracut_kernel_post
-    )
+    mkdir -p -- "$TESTDIR"/overlay/source/var/lib/dhcpd "$TESTDIR"/overlay/source/etc/nbd-server
+    cp ./server-init.sh "$TESTDIR"/overlay/source/sbin/init
 
     # second, install the files needed to make the root filesystem
-    (
-        # shellcheck disable=SC2030
-        # shellcheck disable=SC2031
-        export initdir=$TESTDIR/overlay
-        # shellcheck disable=SC1090
-        . "$PKGLIBDIR"/dracut-init.sh
-        inst_multiple sfdisk mkfs.ext4 poweroff cp umount sync dd sync
-        inst_hook initqueue 01 ./create-server-root.sh
-        inst_hook initqueue/finished 01 ./finished-false.sh
-    )
-
     # create an initramfs that will create the target root filesystem.
     # We do it this way so that we do not risk trashing the host mdraid
     # devices, volume groups, encrypted partitions, etc.
-    "$DRACUT" -l -i "$TESTDIR"/overlay / \
-        -m "dash rootfs-block kernel-modules qemu" \
-        -d "piix ide-gd_mod ata_piix ext4 sd_mod" \
+    "$DRACUT" -N -l -i "$TESTDIR"/overlay / \
+        -m "test-makeroot" \
+        -i ./create-server-root.sh /lib/dracut/hooks/initqueue/01-create-server-root.sh \
         --nomdadmconf \
         --no-hostonly-cmdline -N \
         -f "$TESTDIR"/initramfs.makeroot "$KVERSION" || return 1
 
     declare -a disk_args=()
-    # shellcheck disable=SC2034
     declare -i disk_index=0
-    qemu_add_drive_args disk_index disk_args "$TESTDIR"/marker.img marker 1
-    qemu_add_drive_args disk_index disk_args "$TESTDIR"/server.img root 120
+    qemu_add_drive disk_index disk_args "$TESTDIR"/marker.img marker 1
+    qemu_add_drive disk_index disk_args "$TESTDIR"/server.img root 240
 
     # Invoke KVM and/or QEMU to actually create the target filesystem.
     "$testdir"/run-qemu \
@@ -446,47 +324,26 @@ test_setup() {
 
     rm -fr "$TESTDIR"/overlay
     # Make the test image
-    (
-        # shellcheck disable=SC2031
-        # shellcheck disable=SC2030
-        export initdir=$TESTDIR/overlay
-        # shellcheck disable=SC1090
-        . "$PKGLIBDIR"/dracut-init.sh
-        inst_multiple poweroff shutdown dd
-        inst_hook shutdown-emergency 000 ./hard-off.sh
-        inst ./cryptroot-ask.sh /sbin/cryptroot-ask
 
-        #        inst ./debug-shell.service /lib/systemd/system/debug-shell.service
-        #        mkdir -p "${initdir}/lib/systemd/system/sysinit.target.wants"
-        #        ln -fs ../debug-shell.service "${initdir}/lib/systemd/system/sysinit.target.wants/debug-shell.service"
+    # shellcheck source=$TESTDIR/luks.uuid
+    . "$TESTDIR"/luks.uuid
 
-        # shellcheck disable=SC1090
-        . "$TESTDIR"/luks.uuid
-        mkdir -p "$initdir"/etc
-        echo "luks-$ID_FS_UUID /dev/nbd0 /etc/key" > "$initdir"/etc/crypttab
-        echo -n test > "$initdir"/etc/key
-        inst_simple ./client.link /etc/systemd/network/01-client.link
-    )
+    echo "luks-$ID_FS_UUID /dev/nbd0 /etc/key" > /tmp/crypttab
+    echo -n test > /tmp/key
 
-    "$DRACUT" -l -i "$TESTDIR"/overlay / \
-        -o "plymouth iscsi nfs" \
-        -a "debug watchdog ${USE_NETWORK}" \
-        --no-hostonly-cmdline -N \
-        -f "$TESTDIR"/initramfs.testing "$KVERSION" || return 1
+    test_dracut \
+        -a "${USE_NETWORK}" \
+        -i "./cryptroot-ask.sh" "/sbin/cryptroot-ask" \
+        -i "./client.link" "/etc/systemd/network/01-client.link" \
+        -i "/tmp/crypttab" "/etc/crypttab" \
+        -i "/tmp/key" "/etc/key" \
+        "$TESTDIR"/initramfs.testing
 
-    (
-        # shellcheck disable=SC2031
-        export initdir="$TESTDIR"/overlay
-        # shellcheck disable=SC1090
-        . "$PKGLIBDIR"/dracut-init.sh
-        rm "$initdir"/etc/systemd/network/01-client.link
-        inst_simple ./server.link /etc/systemd/network/01-server.link
-        inst_hook pre-mount 99 ./wait-if-server.sh
-    )
-    "$DRACUT" -l -i "$TESTDIR"/overlay / \
-        -a "rootfs-block debug kernel-modules network network-legacy" \
+    "$DRACUT" -N -l -i "$TESTDIR"/overlay / \
+        -a "test rootfs-block debug kernel-modules network-legacy" \
         -d "af_packet piix ide-gd_mod ata_piix ext4 sd_mod e1000 drbg" \
-        --no-hostonly-cmdline -N \
+        -i "./server.link" "/etc/systemd/network/01-server.link" \
+        -i "./wait-if-server.sh" "/lib/dracut/hooks/pre-mount/99-wait-if-server.sh" \
         -f "$TESTDIR"/initramfs.server "$KVERSION" || return 1
 
     rm -rf -- "$TESTDIR"/overlay

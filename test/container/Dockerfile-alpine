@@ -9,6 +9,7 @@ RUN apk add --no-cache \
     btrfs-progs \
     busybox \
     bzip2 \
+    cargo \
     coreutils \
     cpio \
     cryptsetup \
@@ -24,7 +25,6 @@ RUN apk add --no-cache \
     git \
     gpg \
     grep \
-    gummiboot \
     iputils \
     kbd \
     kmod-dev \
@@ -40,13 +40,13 @@ RUN apk add --no-cache \
     ntfs-3g-progs \
     open-iscsi \
     openssh \
-    ovmf \
     parted \
     partx \
     pigz \
     procps \
     qemu-img \
     qemu-system-x86_64 \
+    rng-tools \
     sed \
     sfdisk \
     squashfs-tools \

@@ -31,7 +31,7 @@ make AUTHORS
 cargo install clog-cli
 head -2 NEWS.md > NEWS_header.md
 tail +2 NEWS.md > NEWS_body.md
-printf "dracut-%s\n==========\n" "$NEW_VERSION" > NEWS_header_new.md
+printf "dracut-ng-%s\n=============\n" "$NEW_VERSION" > NEWS_header_new.md
 
 # Append the list to the section in `NEWS.md`
 cat CONTRIBUTORS.md NEWS_body.md > NEWS_body_with_conttributors.md
@@ -50,7 +50,7 @@ cat -s NEWS_body_new.md CONTRIBUTORS.md > release.md
 # dracut-version.sh
 printf "#!/bin/sh\n# shellcheck disable=SC2034\nDRACUT_VERSION=%s\n" "$NEW_VERSION" > dracut-version.sh
 
-make dracut.html
+DRACUT_FULL_VERSION=$NEW_VERSION DRACUT_MAIN_VERSION=$NEW_VERSION make dracut.html
 
 if [ -z "$(git config --get user.name)" ]; then
     git config user.name "dracutng[bot]"

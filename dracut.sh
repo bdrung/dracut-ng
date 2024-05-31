@@ -891,8 +891,6 @@ export LC_ALL=C
 export LANG=C
 unset LC_MESSAGES
 unset LC_CTYPE
-unset LD_LIBRARY_PATH
-unset LD_PRELOAD
 unset GREP_OPTIONS
 
 export DRACUT_LOG_LEVEL=warning
@@ -1140,6 +1138,9 @@ if ! [[ $outfile ]]; then
         mkdir -p "$dracutsysrootdir$efidir/Linux"
         outfile="$dracutsysrootdir$efidir/Linux/linux-$kernel${MACHINE_ID:+-${MACHINE_ID}}${BUILD_ID:+-${BUILD_ID}}.efi"
     else
+        if ! [[ $initrdname ]]; then
+            initrdname="initramfs-${kernel}.img"
+        fi
         if [[ -d "$dracutsysrootdir"/efi/loader/entries || -L "$dracutsysrootdir"/efi/loader/entries ]] \
             && [[ $MACHINE_ID ]] \
             && [[ -d "$dracutsysrootdir"/efi/${MACHINE_ID} || -L "$dracutsysrootdir"/efi/${MACHINE_ID} ]]; then
@@ -1155,7 +1156,7 @@ if ! [[ $outfile ]]; then
         elif [[ -f "$dracutsysrootdir"/lib/modules/${kernel}/initrd ]]; then
             outfile="$dracutsysrootdir/lib/modules/${kernel}/initrd"
         elif [[ -e $dracutsysrootdir/boot/vmlinuz-${kernel} || -e $dracutsysrootdir/boot/vmlinux-${kernel} ]]; then
-            outfile="$dracutsysrootdir/boot/initramfs-${kernel}.img"
+            outfile="$dracutsysrootdir/boot/$initrdname"
         elif [[ -z $dracutsysrootdir ]] \
             && [[ $MACHINE_ID ]] \
             && mountpoint -q /efi; then
@@ -1165,7 +1166,7 @@ if ! [[ $outfile ]]; then
             && mountpoint -q /boot/efi; then
             outfile="/boot/efi/${MACHINE_ID}/${kernel}/initrd"
         else
-            outfile="$dracutsysrootdir/boot/initramfs-${kernel}.img"
+            outfile="$dracutsysrootdir/boot/$initrdname"
         fi
     fi
 fi
@@ -1527,6 +1528,9 @@ if [[ ! $print_cmdline ]]; then
             aarch64)
                 EFI_MACHINE_TYPE_NAME=aa64
                 ;;
+            riscv64)
+                EFI_MACHINE_TYPE_NAME=riscv64
+                ;;
             *)
                 dfatal "Architecture '${DRACUT_ARCH:-$(uname -m)}' not supported to create a UEFI executable"
                 exit 1
@@ -1664,14 +1668,18 @@ if [[ $hostonly ]] && [[ $hostonly_default_device != "no" ]]; then
         "/usr/lib64" \
         "/boot" \
         "/boot/efi" \
-        "/boot/zipl"; do
+        "/boot/zipl" \
+        "/efi"; do
         mp=$(readlink -f "$dracutsysrootdir$mp")
         mountpoint "$mp" > /dev/null 2>&1 || continue
         _dev=$(find_block_device "$mp")
-        _bdev=$(readlink -f "/dev/block/$_dev")
-        [[ -b $_bdev ]] && _dev=$_bdev
-        [[ $mp == "/" ]] && root_devs+=("$_dev")
-        push_host_devs "$_dev"
+        # shellcheck disable=SC2181
+        if [[ $? -eq 0 ]]; then
+            _bdev=$(readlink -f "/dev/block/$_dev")
+            [[ -b $_bdev ]] && _dev=$_bdev
+            [[ $mp == "/" ]] && root_devs+=("$_dev")
+            push_host_devs "$_dev"
+        fi
         if [[ $(find_mp_fstype "$mp") == btrfs ]]; then
             for i in $(btrfs_devs "$mp"); do
                 [[ $mp == "/" ]] && root_devs+=("$i")
@@ -1883,7 +1891,11 @@ mkdir -p "${initdir}"/lib/dracut
 
 if [[ $kernel_only != yes ]]; then
     mkdir -p "${initdir}/etc/cmdline.d"
-    mkdir -m 0755 "${initdir}"/lib/dracut/hooks
+    mkdir -m 0755 -p "${initdir}"/var/lib/dracut/hooks
+
+    # symlink to old hooks location for compatibility
+    ln_r /var/lib/dracut/hooks /lib/dracut/hooks
+
     for _d in $hookdirs; do
         # shellcheck disable=SC2174
         mkdir -m 0755 -p "${initdir}/lib/dracut/hooks/$_d"
@@ -2146,6 +2158,7 @@ if [[ $early_microcode == yes ]]; then
                     _src=$(get_ucode_file)
                     [[ $_src ]] || break
                     [[ -r $_fwdir/$_fw/$_src ]] || _src="${_src}.early"
+                    [[ -r $_fwdir/$_fw/$_src ]] || _src="${_src}.initramfs"
                     [[ -r $_fwdir/$_fw/$_src ]] || break
                 fi
 
@@ -2339,9 +2352,9 @@ if [[ $create_early_cpio == yes ]]; then
         if ! (
             umask 077
             cd "$early_cpio_dir/d"
-            find . -print0 | sort -z \
-                | cpio ${CPIO_REPRODUCIBLE:+--reproducible} --null \
-                    ${cpio_owner:+-R "$cpio_owner"} -H newc -o --quiet > "${DRACUT_TMPDIR}/initramfs.img"
+            find . -print0 | sed -e 's,\./,,g' | sort -z \
+                | cpio -o ${CPIO_REPRODUCIBLE:+--reproducible} --null \
+                    ${cpio_owner:+-R "$cpio_owner"} -H newc --quiet > "${DRACUT_TMPDIR}/initramfs.img"
         ); then
             dfatal "Creation of $outfile failed"
             exit 1
@@ -2445,8 +2458,8 @@ else
     if ! (
         umask 077
         cd "$initdir"
-        find . -print0 | sort -z \
-            | cpio ${CPIO_REPRODUCIBLE:+--reproducible} --null ${cpio_owner:+-R "$cpio_owner"} -H newc -o --quiet \
+        find . -print0 | sed -e 's,\./,,g' | sort -z \
+            | cpio -o ${CPIO_REPRODUCIBLE:+--reproducible} --null ${cpio_owner:+-R "$cpio_owner"} -H newc --quiet \
             | $compress >> "${DRACUT_TMPDIR}/initramfs.img"
     ); then
         dfatal "Creation of $outfile failed"
@@ -2562,6 +2575,7 @@ if [[ $uefi == yes ]]; then
     objcopy --remove-section .sbat "$tmp_uefi_stub" &> /dev/null
 
     if objcopy \
+        ${DRACUT_REPRODUCIBLE:+--enable-deterministic-archives --preserve-dates} \
         ${uefi_osrelease:+--add-section .osrel="$uefi_osrelease" --change-section-vma .osrel=$(printf 0x%x "$uefi_osrelease_offs")} \
         ${uefi_cmdline:+--add-section .cmdline="$uefi_cmdline" --change-section-vma .cmdline=$(printf 0x%x "$uefi_cmdline_offs")} \
         ${uefi_splash_image:+--add-section .splash="$uefi_splash_image" --change-section-vma .splash=$(printf 0x%x "$uefi_splash_offs")} \

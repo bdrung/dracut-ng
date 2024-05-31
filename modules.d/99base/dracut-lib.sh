@@ -985,13 +985,13 @@ emergency_shell() {
 
     case "$_emergency_action" in
         reboot)
-            reboot || exit 1
+            reboot -f || exit 1
             ;;
         poweroff)
-            poweroff || exit 1
+            poweroff -f || exit 1
             ;;
         halt)
-            halt || exit 1
+            halt -f || exit 1
             ;;
     esac
 }
@@ -1143,7 +1143,7 @@ check_meminfo() {
 }
 
 remove_hostonly_files() {
-    rm -fr /etc/cmdline /etc/cmdline.d/*.conf "$hookdir/initqueue/finished"
+    rm -fr /etc/cmdline /etc/cmdline.d/*.conf "$hookdir"/initqueue/finished/*.sh
     if [ -f /lib/dracut/hostonly-files ]; then
         while read -r line || [ -n "$line" ]; do
             [ -e "$line" ] || [ -h "$line" ] || continue

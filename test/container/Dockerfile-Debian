@@ -7,10 +7,12 @@ RUN apt-get update -y -qq && apt-get upgrade -y -qq && apt-get install -y -qq --
     DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends -o Dpkg::Use-Pty=0 \
     asciidoc \
     astyle \
+    bluez \
     btrfs-progs \
     busybox-static \
     bzip2 \
     ca-certificates \
+    cargo \
     console-setup \
     cpio \
     cryptsetup \
@@ -27,6 +29,7 @@ RUN apt-get update -y -qq && apt-get upgrade -y -qq && apt-get install -y -qq --
     iputils-ping \
     isc-dhcp-client \
     isc-dhcp-server \
+    iscsiuio \
     kmod \
     less \
     libdmraid-dev \
@@ -48,13 +51,16 @@ RUN apt-get update -y -qq && apt-get upgrade -y -qq && apt-get install -y -qq --
     pkg-config \
     procps \
     qemu-kvm \
+    rng-tools5 \
     shellcheck \
+    sbsigntool \
     squashfs-tools \
     strace \
     systemd-boot-efi \
     tcpdump \
     tgt \
     thin-provisioning-tools \
+    tpm2-tools \
     vim \
     wget \
     && apt-get clean && dpkg -P --force-depends dracut dracut-core initramfs-tools-core

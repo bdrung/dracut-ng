@@ -10,7 +10,7 @@ check() {
 
 # called by dracut
 depends() {
-    echo dbus bash net-lib
+    echo dbus bash net-lib kernel-network-modules
     return 0
 }
 
@@ -72,7 +72,9 @@ install() {
     elif ! [[ -e "$initdir/etc/machine-id" ]]; then
         # The internal DHCP client silently fails if we
         # have no machine-id
-        systemd-machine-id-setup --root="$initdir"
+        local UUID
+        UUID=$(< /proc/sys/kernel/random/uuid)
+        echo "${UUID//-/}" > "$initdir/etc/machine-id"
     fi
 
     # We don't install the ifcfg files from the host automatically.
