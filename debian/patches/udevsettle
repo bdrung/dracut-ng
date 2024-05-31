@@ -1,6 +1,6 @@
 --- a/modules.d/99base/init.sh
 +++ b/modules.d/99base/init.sh
-@@ -155,6 +155,7 @@
+@@ -157,6 +157,7 @@
  # then the rest
  udevadm trigger --type=subsystems --action=add > /dev/null 2>&1
  udevadm trigger --type=devices --action=add > /dev/null 2>&1
