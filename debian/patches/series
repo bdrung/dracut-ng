@@ -1,8 +1,6 @@
-04b362d713235459cff1f370efb4cd5e36e4a358.patch
 rpc-user
 udevsettle
 nm-path
 fido-libz
 vconsole
-microcode
 initrd-not-initramfs.patch
