@@ -6,7 +6,7 @@ Build-Depends: debhelper-compat (= 12), debhelper, asciidoc-base, xsltproc, docb
 Standards-Version: 4.6.2
 Vcs-Browser: https://salsa.debian.org/debian/dracut
 Vcs-Git: https://salsa.debian.org/debian/dracut.git
-Homepage: https://github.com/dracutdevs/dracut/wiki/
+Homepage: https://github.com/dracut-ng/dracut-ng/wiki
 
 Package: dracut
 Architecture: all
