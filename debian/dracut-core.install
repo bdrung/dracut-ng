@@ -85,13 +85,11 @@ usr/lib/dracut/modules.d/91tpm2-tss
 usr/lib/dracut/modules.d/91zipl
 usr/lib/dracut/modules.d/95dasd
 usr/lib/dracut/modules.d/95dasd_mod
-usr/lib/dracut/modules.d/95dasd_rules
 usr/lib/dracut/modules.d/95dcssblk
 usr/lib/dracut/modules.d/95debug
 usr/lib/dracut/modules.d/95fstab-sys
 usr/lib/dracut/modules.d/95lunmask
 usr/lib/dracut/modules.d/95nvmf
-usr/lib/dracut/modules.d/95qeth_rules
 usr/lib/dracut/modules.d/95resume
 usr/lib/dracut/modules.d/95rootfs-block
 usr/lib/dracut/modules.d/95terminfo
