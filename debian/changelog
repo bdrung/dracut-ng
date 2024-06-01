@@ -1,3 +1,12 @@
+dracut (102-1) UNRELEASED; urgency=low
+
+  * new upstream:
+    Closes: 1029324, 1022129, 1071592, 1072174, 1068250, 1071182
+  * change to new dracut-ng upstream repository, the package name remains
+    unchanged
+
+ -- Thomas Lange <lange@debian.org>  Sat, 01 Jun 2024 11:35:27 +0200
+
 dracut (060+5-8) unstable; urgency=low
 
   * control: adjust breaks, replaces, Closes: #1071208, #1071244
