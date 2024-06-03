@@ -1,11 +1,14 @@
-dracut (102-1) UNRELEASED; urgency=low
+dracut (102-1) unstable; urgency=low
 
   * new upstream:
-    Closes: 1029324, 1022129, 1071592, 1072174, 1068250, 1071182
+    Closes: 1029324, 1041614, 1022129, 1071592, 1072174, 1068250
+    Closes: 1071182, 1059501
   * change to new dracut-ng upstream repository, the package name remains
     unchanged
+  * apply salsa MR #11, Closes: 753752
+  * move kpartx from depends to recommends, Closes: 1033158
 
- -- Thomas Lange <lange@debian.org>  Sat, 01 Jun 2024 11:35:27 +0200
+ -- Thomas Lange <lange@debian.org>  Mon, 03 Jun 2024 14:14:11 +0200
 
 dracut (060+5-8) unstable; urgency=low
 
