@@ -7,11 +7,9 @@ Bug-Debian: https://bugs.debian.org/753752
 Forwarded: not-needed
 Last-Update: 2022-11-17
 
-diff --git a/dracut.sh b/dracut.sh
-index 1edcb97..a320130 100755
 --- a/dracut.sh
 +++ b/dracut.sh
-@@ -2733,4 +2733,10 @@ if [[ -d $dracutsysrootdir/run/systemd/system ]]; then
+@@ -2685,4 +2685,10 @@
      fi
  fi
  
@@ -22,18 +20,3 @@ index 1edcb97..a320130 100755
 +fi
 +
  exit 0
-diff --git a/man/dracut.8.asc b/man/dracut.8.asc
-index 1aea4d6..ef9d718 100644
---- a/man/dracut.8.asc
-+++ b/man/dracut.8.asc
-@@ -707,6 +707,10 @@ _DRACUT_INSTALL_LOG_LEVEL_::
- Default:
-     _DRACUT_LOG_LEVEL_
- 
-+_NO_POST_UPDATE_HOOKS_::
-+    do not run bootloader hooks residing in _/etc/initramfs/post-update.d_
-+    on the resulting image
-+
- FILES
- -----
- _/var/log/dracut.log_::
