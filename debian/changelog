@@ -1,3 +1,9 @@
+dracut (102-2) unstable; urgency=medium
+
+  * add 90systemd-cryptsetup module, Closes: 1072538
+
+ -- Thomas Lange <lange@debian.org>  Tue, 04 Jun 2024 11:38:08 +0200
+
 dracut (102-1) unstable; urgency=low
 
   * new upstream:
