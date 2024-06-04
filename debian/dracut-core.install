@@ -65,6 +65,7 @@ usr/lib/dracut/modules.d/80test-makeroot
 usr/lib/dracut/modules.d/80test-root
 usr/lib/dracut/modules.d/90btrfs
 usr/lib/dracut/modules.d/90crypt
+usr/lib/dracut/modules.d/90systemd-cryptsetup
 usr/lib/dracut/modules.d/90dm
 usr/lib/dracut/modules.d/90dmraid
 usr/lib/dracut/modules.d/90kernel-modules
