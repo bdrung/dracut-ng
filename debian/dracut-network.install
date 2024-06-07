@@ -4,6 +4,7 @@ usr/lib/dracut/modules.d/35connman
 usr/lib/dracut/modules.d/35network-manager
 usr/lib/dracut/modules.d/35network-legacy
 usr/lib/dracut/modules.d/40network
+usr/lib/dracut/modules.d/45net-lib
 usr/lib/dracut/modules.d/45url-lib
 usr/lib/dracut/modules.d/80cms
 usr/lib/dracut/modules.d/90kernel-network-modules
