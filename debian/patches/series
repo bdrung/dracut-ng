@@ -1,4 +1,3 @@
-udevsettle
 debian-initramfs-post-update.patch
 fix-systemd-networkd-install-and-enable-systemd-networkd-.patch
 test-exit-with-code-77-if-test-is-skipped.patch
