@@ -15,4 +15,4 @@ export PKGLIBDIR=/usr/lib/dracut
 TESTDIR="$(mktemp -d -t dracut-test.XXXXXXXXXX)"
 cp -r test/* "$TESTDIR"
 
-make -C "$TESTDIR" V=1 check "$@"
+make -C "$TESTDIR" V=2 check "$@"
