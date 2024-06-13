@@ -1,4 +1,3 @@
-udevsettle
 fix-systemd-networkd-install-and-enable-systemd-networkd-.patch
 test-exit-with-code-77-if-test-is-skipped.patch
 test-run-qemu-do-not-expect-initrd-as-first-parameter.patch
