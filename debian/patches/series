@@ -1,4 +1,3 @@
-udevsettle
 debian-initramfs-post-update.patch
 fix-dracut-do-not-call-uname-r-in-chroot-environments.patch
 feat-debian.conf-default-to-initrd.img-kernel-on-Debian-U.patch
