@@ -5,13 +5,15 @@ if test -n "${AUTOPKGTEST_TMP-}"; then
 	export TMPDIR="${AUTOPKGTEST_TMP}"
 fi
 
+ARCH=$(dpkg --print-architecture)
 # shellcheck disable=SC2012
 KVERSION=$(cd /lib/modules; ls -1 | tail -1)
+export ARCH
 export KVERSION
 export DRACUT=dracut
 export PKGLIBDIR=/usr/lib/dracut
 
-if test "$(dpkg --print-architecture)" = "ppc64el"; then
+if test "$ARCH" = "ppc64el"; then
 	# KVM fails on the Ubuntu ppc64el autopkgtest runners:
 	# $ /usr/bin/qemu-system-ppc64el -enable-kvm -cpu host [...]
 	# ioctl(KVM_CREATE_VM) failed: 22 Invalid argument
