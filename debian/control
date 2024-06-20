@@ -28,8 +28,15 @@ Depends: cpio,
          udev,
          ${misc:Depends},
          ${shlibs:Depends}
-Recommends: binutils, console-setup, systemd, systemd-sysv, zstd
-Suggests: cryptsetup, dmraid, dmsetup, kpartx, lvm2, mdadm, systemd-cryptsetup
+Recommends: console-setup, systemd, systemd-sysv, zstd
+Suggests: binutils,
+          cryptsetup,
+          dmraid,
+          dmsetup,
+          kpartx,
+          lvm2,
+          mdadm,
+          systemd-cryptsetup
 Breaks: dracut-live (<< 059-2), dracut-network (<< 057+157-2)
 Replaces: dracut-live (<< 059-2), dracut-network (<< 057+157-2)
 Description: dracut is an event driven initramfs infrastructure (core tools)
