@@ -23,7 +23,7 @@ Description: Initramfs generator using udev
 Package: dracut-core
 Architecture: any
 Multi-Arch: foreign
-Recommends: cryptsetup, dmsetup, dmraid, kpartx, lvm2, mdadm, console-setup, binutils, systemd, pigz, pkgconf
+Recommends: cryptsetup, dmsetup, dmraid, kpartx, lvm2, mdadm, console-setup, binutils, systemd, pigz
 Depends: cpio, dracut-install, kmod, udev, libkmod2, e2fsprogs, gawk, init, ${shlibs:Depends}, ${misc:Depends}
 Breaks: dracut-network (<< 057+157-2), dracut-live (<< 059-2)
 Replaces: dracut-network (<< 057+157-2), dracut-live (<< 059-2)
