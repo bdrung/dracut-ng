@@ -81,13 +81,6 @@ Description: dracut is an event driven initramfs infrastructure (live image modu
  This package requires everything which is needed to build an
  initramfs with dracut, with live image capabilities, like Live CDs.
 
-Package: dracut-config-generic
-Architecture: all
-Depends: dracut-core, ${misc:Depends}
-Multi-Arch: foreign
-Description: dracut is an event driven initramfs infrastructure
- This is the dracut configuration to turn off hostonly image generation
-
 Package: dracut-config-rescue
 Architecture: all
 Depends: dracut-core, ${misc:Depends}
