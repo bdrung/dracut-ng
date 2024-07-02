@@ -1,0 +1,55 @@
+From: Benjamin Drung <benjamin.drung@canonical.com>
+Date: Tue, 2 Jul 2024 22:26:44 +0200
+Subject: Default initrdname to initrd.img-${kernel}
+
+The initrd is named `initrd.img-${kernel}` in Debian and Ubuntu.
+
+Forwarded: not-needed
+Signed-off-by: Benjamin Drung <benjamin.drung@canonical.com>
+---
+ dracut-initramfs-restore.sh | 4 ++--
+ dracut.sh                   | 2 +-
+ man/dracut.conf.5.asc       | 2 +-
+ 3 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/dracut-initramfs-restore.sh b/dracut-initramfs-restore.sh
+index 7472530..cf80907 100755
+--- a/dracut-initramfs-restore.sh
++++ b/dracut-initramfs-restore.sh
+@@ -56,8 +56,8 @@ mount -o ro /boot &> /dev/null || true
+ 
+ IMG=$(find_initrd_for_kernel_version "$KERNEL_VERSION")
+ if [ -z "$IMG" ]; then
+-    if [[ -f /boot/initramfs-linux.img ]]; then
+-        IMG="/boot/initramfs-linux.img"
++    if [[ -f /boot/initrd.img ]]; then
++        IMG="/boot/initrd.img"
+     else
+         echo "No initramfs image found to restore!"
+         exit 1
+diff --git a/dracut.sh b/dracut.sh
+index 291e813..562be90 100755
+--- a/dracut.sh
++++ b/dracut.sh
+@@ -1122,7 +1122,7 @@ if ! [[ $outfile ]]; then
+         outfile="$dracutsysrootdir$efidir/Linux/linux-$kernel${MACHINE_ID:+-${MACHINE_ID}}${BUILD_ID:+-${BUILD_ID}}.efi"
+     else
+         if ! [[ $initrdname ]]; then
+-            initrdname="initramfs-${kernel}.img"
++            initrdname="initrd.img-${kernel}"
+         fi
+         if [[ -d "$dracutsysrootdir"/efi/loader/entries || -L "$dracutsysrootdir"/efi/loader/entries ]] \
+             && [[ $MACHINE_ID ]] \
+diff --git a/man/dracut.conf.5.asc b/man/dracut.conf.5.asc
+index 5ca07a0..51cc312 100644
+--- a/man/dracut.conf.5.asc
++++ b/man/dracut.conf.5.asc
+@@ -325,7 +325,7 @@ Logging levels:
+     Specifies the file name for the generated initramfs if it is not set otherwise.
+     The initrdname configuration option is required to match the _initr*${kernel}*_
+     file pattern and only one file with this pattern should exists in the
+-    directory where initramfs is loaded from. Defaults to _initramfs-${kernel}.img_.
++    directory where initramfs is loaded from. Defaults to _initrd.img-${kernel}_.
+ 
+ Files
+ -----
