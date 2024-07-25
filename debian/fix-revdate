@@ -1,10 +1,10 @@
-sed -i -e '3i:revdate: 2022-08-26' man/dracut-catimages.8.asc
-sed -i -e '3i:revdate: 2023-08-21' man/dracut.8.asc
+sed -i -e '3i:revdate: 2024-06-28' man/dracut-catimages.8.asc
+sed -i -e '3i:revdate: 2024-06-22' man/dracut.8.asc
 sed -i -e '3i:revdate: 2023-07-24' man/dracut.bootup.7.asc
-sed -i -e '3i:revdate: 2023-08-21' man/dracut.cmdline.7.asc
-sed -i -e '3i:revdate: 2023-08-21' man/dracut.conf.5.asc
-sed -i -e '3i:revdate: 2023-08-21' man/dracut.modules.7.asc
-sed -i -e '3i:revdate: 2022-08-26' man/lsinitrd.1.asc
+sed -i -e '3i:revdate: 2024-06-01' man/dracut.cmdline.7.asc
+sed -i -e '3i:revdate: 2024-06-28' man/dracut.conf.5.asc
+sed -i -e '3i:revdate: 2024-06-01' man/dracut.modules.7.asc
+sed -i -e '3i:revdate: 2024-04-18' man/lsinitrd.1.asc
 sed -i -e '3i:revdate: 2015-03-19' modules.d/98dracut-systemd/dracut-cmdline.service.8.asc
 sed -i -e '3i:revdate: 2015-03-19' modules.d/98dracut-systemd/dracut-initqueue.service.8.asc
 sed -i -e '3i:revdate: 2015-03-19' modules.d/98dracut-systemd/dracut-mount.service.8.asc
@@ -12,4 +12,4 @@ sed -i -e '3i:revdate: 2015-03-19' modules.d/98dracut-systemd/dracut-pre-mount.s
 sed -i -e '3i:revdate: 2015-03-19' modules.d/98dracut-systemd/dracut-pre-pivot.service.8.asc
 sed -i -e '3i:revdate: 2015-03-19' modules.d/98dracut-systemd/dracut-pre-trigger.service.8.asc
 sed -i -e '3i:revdate: 2015-03-19' modules.d/98dracut-systemd/dracut-pre-udev.service.8.asc
-sed -i -e '3i:revdate: 2022-02-02' modules.d/98dracut-systemd/dracut-shutdown.service.8.asc
+sed -i -e '3i:revdate: 2024-07-07' modules.d/98dracut-systemd/dracut-shutdown.service.8.asc
