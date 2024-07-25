@@ -1,5 +1,3 @@
-rpc-user
 udevsettle
 nm-path
-vconsole
 debian-initramfs-post-update.patch
