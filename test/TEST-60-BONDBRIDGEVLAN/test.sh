@@ -49,7 +49,7 @@ run_server() {
         -device virtio-net-pci,netdev=n3,mac=52:54:01:12:34:59 \
         -hda "$TESTDIR"/server.ext4 \
         -serial "${SERIAL:-"file:$TESTDIR/server.log"}" \
-        -append "panic=1 oops=panic softlockup_panic=1 root=LABEL=dracut rootfstype=ext4 rw console=ttyS0,115200n81 selinux=0" \
+        -append "panic=1 oops=panic softlockup_panic=1 root=LABEL=dracut rootfstype=ext4 rw console=ttyS0,115200n81" \
         -initrd "$TESTDIR"/initramfs.server \
         -pidfile "$TESTDIR"/server.pid -daemonize || return 1
     chmod 644 -- "$TESTDIR"/server.pid || return 1
@@ -92,6 +92,7 @@ client_test() {
         -netdev hubport,id=n5,hubid=1 -device virtio-net-pci,mac=52:54:00:12:34:05,netdev=n5 \
         -hda "$TESTDIR"/client.img \
         -append "
+        $TEST_KERNEL_CMDLINE
         ifname=net1:52:54:00:12:34:01
         ifname=net2:52:54:00:12:34:02
         ifname=net3:52:54:00:12:34:03
@@ -246,7 +247,6 @@ test_setup() {
         instmods nfsd sunrpc ipv6 lockd af_packet 8021q bonding
         inst_simple /etc/os-release
         inst ./server-init.sh /sbin/init
-        inst ./hosts /etc/hosts
         inst ./exports /etc/exports
         inst ./dhcpd.conf /etc/dhcpd.conf
         inst_multiple -o {,/usr}/etc/nsswitch.conf {,/usr}/etc/rpc {,/usr}/etc/protocols
@@ -348,7 +348,7 @@ test_setup() {
     # Invoke KVM and/or QEMU to actually create the target filesystem.
     "$testdir"/run-qemu \
         "${disk_args[@]}" \
-        -append "root=/dev/dracut/root rw rootfstype=ext4 quiet console=ttyS0,115200n81 selinux=0" \
+        -append "root=/dev/dracut/root rw rootfstype=ext4 quiet console=ttyS0,115200n81" \
         -initrd "$TESTDIR"/initramfs.makeroot || return 1
     test_marker_check dracut-root-block-created || return 1
     rm -- "$TESTDIR"/marker.img

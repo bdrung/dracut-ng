@@ -25,7 +25,7 @@ run_server() {
         -net socket,listen=127.0.0.1:12320 \
         -net nic,macaddr=52:54:00:12:34:56,model=e1000 \
         -serial "${SERIAL:-"file:$TESTDIR/server.log"}" \
-        -append "panic=1 oops=panic softlockup_panic=1 root=LABEL=dracut rootfstype=ext4 rw console=ttyS0,115200n81 selinux=0 $SERVER_DEBUG" \
+        -append "panic=1 oops=panic softlockup_panic=1 root=LABEL=dracut rootfstype=ext4 rw console=ttyS0,115200n81 $SERVER_DEBUG" \
         -initrd "$TESTDIR"/initramfs.server \
         -pidfile "$TESTDIR"/server.pid -daemonize || return 1
     chmod 644 "$TESTDIR"/server.pid || return 1
@@ -66,7 +66,7 @@ client_test() {
         "${disk_args[@]}" \
         -net nic,macaddr="$mac",model=e1000 \
         -net socket,connect=127.0.0.1:12320 \
-        -append "$cmdline ro" \
+        -append "$TEST_KERNEL_CMDLINE $cmdline ro" \
         -initrd "$TESTDIR"/initramfs.testing
 
     # shellcheck disable=SC2181
@@ -267,7 +267,6 @@ test_setup() {
         instmods nfsd sunrpc ipv6 lockd af_packet
         inst ./server-init.sh /sbin/init
         inst_simple /etc/os-release
-        inst ./hosts /etc/hosts
         inst ./exports /etc/exports
         inst ./dhcpd.conf /etc/dhcpd.conf
         inst_multiple -o {,/usr}/etc/nsswitch.conf {,/usr}/etc/rpc \
@@ -366,7 +365,7 @@ test_setup() {
     # We do it this way so that we do not risk trashing the host mdraid
     # devices, volume groups, encrypted partitions, etc.
     "$DRACUT" -l -i "$TESTDIR"/server/overlay / \
-        -m "bash rootfs-block kernel-modules qemu" \
+        -a "bash rootfs-block kernel-modules qemu" \
         -d "piix ide-gd_mod ata_piix ext4 sd_mod" \
         --nomdadmconf \
         --no-hostonly-cmdline -N \
@@ -382,7 +381,7 @@ test_setup() {
     # Invoke KVM and/or QEMU to actually create the target filesystem.
     "$testdir"/run-qemu \
         "${disk_args[@]}" \
-        -append "root=/dev/dracut/root rw rootfstype=ext4 quiet console=ttyS0,115200n81 selinux=0" \
+        -append "root=/dev/dracut/root rw rootfstype=ext4 quiet console=ttyS0,115200n81" \
         -initrd "$TESTDIR"/initramfs.makeroot || return 1
     test_marker_check dracut-root-block-created || return 1
 
@@ -416,7 +415,7 @@ test_setup() {
     )
     # Make server's dracut image
     "$DRACUT" -l -i "$TESTDIR"/overlay / \
-        -m "bash rootfs-block debug kernel-modules watchdog qemu network-legacy" \
+        -a "bash rootfs-block debug kernel-modules watchdog qemu ${USE_NETWORK}" \
         -d "af_packet piix ide-gd_mod ata_piix ext4 sd_mod e1000 i6300esb" \
         --no-hostonly-cmdline -N \
         -f "$TESTDIR"/initramfs.server "$KVERSION" || return 1

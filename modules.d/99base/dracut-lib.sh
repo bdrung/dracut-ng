@@ -37,7 +37,7 @@ strstr() {
 # matches; as it would match anything, it's not an interesting case.
 strglob() {
     # shellcheck disable=SC2295
-    [ -n "$1" -a -z "${1##$2}" ]
+    [ -n "$1" ] && [ -z "${1##$2}" ]
 }
 
 # returns OK if $1 contains (anywhere) a match of glob pattern $2
@@ -45,7 +45,7 @@ strglob() {
 # matches; as it would match anything, it's not an interesting case.
 strglobin() {
     # shellcheck disable=SC2295
-    [ -n "$1" -a -z "${1##*$2*}" ]
+    [ -n "$1" ] && [ -z "${1##*$2*}" ]
 }
 
 # returns OK if $1 contains literal string $2 at the beginning, and isn't empty
@@ -266,7 +266,7 @@ getargnum() {
     _b=$(getarg "$1") || _b=${_b:-"$_default"}
     if [ -n "$_b" ]; then
         isdigit "$_b" && _b=$((_b)) \
-            && [ $_b -ge "$_min" ] && [ $_b -le "$_max" ] && echo $_b && return
+            && [ "$_b" -ge "$_min" ] && [ "$_b" -le "$_max" ] && echo "$_b" && return
     fi
     echo "$_default"
 }
@@ -354,14 +354,14 @@ splitsep() {
     shift 2
     local tmp
 
-    while [ -n "$str" -a "$#" -gt 1 ]; do
+    while [ -n "$str" ] && [ "$#" -gt 1 ]; do
         tmp="${str%%"$sep"*}"
         eval "$1='${tmp}'"
         str="${str#"$tmp"}"
         str="${str#"$sep"}"
         shift
     done
-    [ -n "$str" -a -n "$1" ] && eval "$1='$str'"
+    [ -n "$str" ] && [ -n "$1" ] && eval "$1='$str'"
     debug_on
     return 0
 }
@@ -937,15 +937,15 @@ _emergency_shell() {
         _ctty="$(RD_DEBUG='' getarg rd.ctty=)" && _ctty="/dev/${_ctty##*/}"
         if [ -z "$_ctty" ]; then
             _ctty=console
-            while [ -f /sys/class/tty/$_ctty/active ]; do
-                read -r _ctty < /sys/class/tty/$_ctty/active
+            while [ -f "/sys/class/tty/$_ctty/active" ]; do
+                read -r _ctty < "/sys/class/tty/$_ctty/active"
                 _ctty=${_ctty##* } # last one in the list
             done
             _ctty=/dev/$_ctty
         fi
         [ -c "$_ctty" ] || _ctty=/dev/tty1
         case "$(/usr/bin/setsid --help 2>&1)" in *--ctty*) CTTY="--ctty" ;; esac
-        setsid $CTTY /bin/sh -i -l 0<> $_ctty 1<> $_ctty 2<> $_ctty
+        setsid ${CTTY:+"${CTTY}"} /bin/sh -i -l 0<> "$_ctty" 1<> "$_ctty" 2<> "$_ctty"
     fi
 }
 
@@ -1002,8 +1002,8 @@ export_n() {
     local var
     local val
     for var in "$@"; do
-        eval val=\$$var
-        unset $var
+        eval "val=\$$var"
+        unset "$var"
         [ -n "$val" ] && eval "$var=\"$val\""
     done
 }

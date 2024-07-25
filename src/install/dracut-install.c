@@ -42,6 +42,7 @@
 #include <fts.h>
 #include <regex.h>
 #include <sys/utsname.h>
+#include <sys/xattr.h>
 
 #include "log.h"
 #include "hashmap.h"
@@ -84,6 +85,7 @@ static Hashmap *items_failed = NULL;
 static Hashmap *modules_loaded = NULL;
 static Hashmap *modules_suppliers = NULL;
 static Hashmap *processed_suppliers = NULL;
+static Hashmap *modalias_to_kmod = NULL;
 static regex_t mod_filter_path;
 static regex_t mod_filter_nopath;
 static regex_t mod_filter_symbol;
@@ -291,6 +293,56 @@ static inline int clone_file(int dest_fd, int src_fd)
         return ioctl(dest_fd, BTRFS_IOC_CLONE, src_fd);
 }
 
+static int copy_xattr(int dest_fd, int src_fd)
+{
+        int ret = 0;
+        ssize_t name_len = 0, value_len = 0;
+        char *name_buf = NULL, *name = NULL, *value = NULL, *value_save = NULL;
+
+        name_len = flistxattr(src_fd, NULL, 0);
+        if (name_len < 0)
+                return -1;
+
+        name_buf = calloc(1, name_len + 1);
+        if (name_buf == NULL)
+                return -1;
+
+        name_len = flistxattr(src_fd, name_buf, name_len);
+        if (name_len < 0)
+                goto out;
+
+        for (name = name_buf; name != name_buf + name_len; name = strchr(name, '\0') + 1) {
+                value_len = fgetxattr(src_fd, name, NULL, 0);
+                if (value_len < 0) {
+                        ret = -1;
+                        continue;
+                }
+
+                value_save = value;
+                value = realloc(value, value_len);
+                if (value == NULL) {
+                        value = value_save;
+                        ret = -1;
+                        goto out;
+                }
+
+                value_len = fgetxattr(src_fd, name, value, value_len);
+                if (value_len < 0) {
+                        ret = -1;
+                        continue;
+                }
+
+                value_len = fsetxattr(dest_fd, name, value, value_len, 0);
+                if (value_len < 0)
+                        ret = -1;
+        }
+
+out:
+        free(name_buf);
+        free(value);
+        return ret;
+}
+
 static bool use_clone = true;
 
 static int cp(const char *src, const char *dst)
@@ -331,6 +383,11 @@ static int cp(const char *src, const char *dst)
                                         else
                                                 log_info("Failed to chown %s: %m", dst);
                                 }
+
+                        if (geteuid() == 0 && no_xattr == false) {
+                                if (copy_xattr(dest_desc, source_desc) != 0)
+                                        log_error("Failed to copy xattr %s: %m", dst);
+                        }
 
                         tv[0].tv_sec = sb.st_atime;
                         tv[0].tv_usec = 0;
@@ -1507,8 +1564,26 @@ static bool check_module_path(const char *path)
         return true;
 }
 
-static int find_kmod_module_from_sysfs_node(struct kmod_ctx *ctx, const char *sysfs_node, int sysfs_node_len,
-                                            struct kmod_list **modules)
+static int find_kmod_module_from_sysfs_driver(struct kmod_ctx *ctx, const char *sysfs_node, int sysfs_node_len,
+                                              struct kmod_module **module)
+{
+        char mod_path[PATH_MAX], mod_realpath[PATH_MAX];
+        const char *mod_name;
+        if (snprintf(mod_path, sizeof(mod_path), "%.*s/driver/module",
+                     sysfs_node_len, sysfs_node) >= sizeof(mod_path))
+                return -1;
+
+        if (realpath(mod_path, mod_realpath) == NULL)
+                return -1;
+
+        if ((mod_name = basename(mod_realpath)) == NULL)
+                return -1;
+
+        return kmod_module_new_from_name(ctx, mod_name, module);
+}
+
+static int find_kmod_module_from_sysfs_modalias(struct kmod_ctx *ctx, const char *sysfs_node, int sysfs_node_len,
+                                                struct kmod_list **modules)
 {
         char modalias_path[PATH_MAX];
         if (snprintf(modalias_path, sizeof(modalias_path), "%.*s/modalias", sysfs_node_len,
@@ -1523,15 +1598,35 @@ static int find_kmod_module_from_sysfs_node(struct kmod_ctx *ctx, const char *sy
         ssize_t len = read(modalias_file, alias, sizeof(alias));
         alias[len - 1] = '\0';
 
-        return kmod_module_new_from_lookup(ctx, alias, modules);
+        void *list;
+
+        if (hashmap_get_exists(modalias_to_kmod, alias, &list) == 1) {
+                *modules = list;
+                return 0;
+        }
+
+        int ret = kmod_module_new_from_lookup(ctx, alias, modules);
+        if (!ret) {
+                hashmap_put(modalias_to_kmod, strdup(alias), *modules);
+        }
+
+        return ret;
 }
 
 static int find_modules_from_sysfs_node(struct kmod_ctx *ctx, const char *sysfs_node, Hashmap *modules)
 {
-        _cleanup_kmod_module_unref_list_ struct kmod_list *list = NULL;
+        _cleanup_kmod_module_unref_ struct kmod_module *drv = NULL;
+        struct kmod_list *list = NULL;
         struct kmod_list *l = NULL;
 
-        if (find_kmod_module_from_sysfs_node(ctx, sysfs_node, strlen(sysfs_node), &list) >= 0) {
+        if (find_kmod_module_from_sysfs_driver(ctx, sysfs_node, strlen(sysfs_node), &drv) >= 0) {
+                char *module = strdup(kmod_module_get_name(drv));
+                if (hashmap_put(modules, module, module) < 0)
+                        free(module);
+                return 0;
+        }
+
+        if (find_kmod_module_from_sysfs_modalias(ctx, sysfs_node, strlen(sysfs_node), &list) >= 0) {
                 kmod_list_foreach(l, list) {
                         struct kmod_module *mod = kmod_module_get_module(l);
                         char *module = strdup(kmod_module_get_name(mod));
@@ -1585,10 +1680,25 @@ static void find_suppliers(struct kmod_ctx *ctx)
 
         for (FTSENT *ftsent = fts_read(fts); ftsent != NULL; ftsent = fts_read(fts)) {
                 if (strcmp(ftsent->fts_name, "modalias") == 0) {
-                        _cleanup_kmod_module_unref_list_ struct kmod_list *list = NULL;
+                        _cleanup_kmod_module_unref_ struct kmod_module *drv = NULL;
+                        struct kmod_list *list = NULL;
                         struct kmod_list *l;
 
-                        if (find_kmod_module_from_sysfs_node(ctx, ftsent->fts_parent->fts_path, ftsent->fts_parent->fts_pathlen, &list) < 0)
+                        if (find_kmod_module_from_sysfs_driver(ctx, ftsent->fts_parent->fts_path, ftsent->fts_parent->fts_pathlen, &drv) >= 0) {
+                                const char *name = kmod_module_get_name(drv);
+                                Hashmap *suppliers = hashmap_get(modules_suppliers, name);
+                                if (suppliers == NULL) {
+                                        suppliers = hashmap_new(string_hash_func, string_compare_func);
+                                        hashmap_put(modules_suppliers, strdup(name), suppliers);
+                                }
+
+                                find_suppliers_for_sys_node(ctx, suppliers, ftsent->fts_parent->fts_path, ftsent->fts_parent->fts_pathlen);
+
+                                /* Skip modalias check */
+                                continue;
+                        }
+
+                        if (find_kmod_module_from_sysfs_modalias(ctx, ftsent->fts_parent->fts_path, ftsent->fts_parent->fts_pathlen, &list) < 0)
                                 continue;
 
                         kmod_list_foreach(l, list) {
@@ -1639,6 +1749,9 @@ static int install_dependent_module(struct kmod_ctx *ctx, struct kmod_module *mo
                 _cleanup_kmod_module_unref_list_ struct kmod_list *modlist = NULL;
                 _cleanup_kmod_module_unref_list_ struct kmod_list *modpre = NULL;
                 _cleanup_kmod_module_unref_list_ struct kmod_list *modpost = NULL;
+#ifdef CONFIG_WEAKDEP
+                _cleanup_kmod_module_unref_list_ struct kmod_list *modweak = NULL;
+#endif
                 log_debug("dracut_install '%s' '%s' OK", path, &path[kerneldirlen]);
                 install_firmware(mod);
                 modlist = kmod_module_get_dependencies(mod);
@@ -1652,6 +1765,13 @@ static int install_dependent_module(struct kmod_ctx *ctx, struct kmod_module *mo
                                 *err = *err ? : r;
                         }
                 }
+#ifdef CONFIG_WEAKDEP
+                if (*err == 0) {
+                        *err = kmod_module_get_weakdeps(mod, &modweak);
+                        if (*err == 0)
+                                *err = install_dependent_modules(ctx, modweak, NULL);
+                }
+#endif
         } else {
                 log_error("dracut_install '%s' '%s' ERROR", path, &path[kerneldirlen]);
         }
@@ -1710,6 +1830,9 @@ static int install_module(struct kmod_ctx *ctx, struct kmod_module *mod)
         _cleanup_kmod_module_unref_list_ struct kmod_list *modlist = NULL;
         _cleanup_kmod_module_unref_list_ struct kmod_list *modpre = NULL;
         _cleanup_kmod_module_unref_list_ struct kmod_list *modpost = NULL;
+#ifdef CONFIG_WEAKDEP
+        _cleanup_kmod_module_unref_list_ struct kmod_list *modweak = NULL;
+#endif
         const char *path = NULL;
         const char *name = NULL;
 
@@ -1767,6 +1890,13 @@ static int install_module(struct kmod_ctx *ctx, struct kmod_module *mod)
                         ret = ret ? : r;
                 }
         }
+#ifdef CONFIG_WEAKDEP
+        if (ret == 0) {
+                ret = kmod_module_get_weakdeps(mod, &modweak);
+                if (ret == 0)
+                        ret = install_dependent_modules(ctx, modweak, NULL);
+        }
+#endif
 
         return ret;
 }
@@ -1868,6 +1998,7 @@ static int install_modules(int argc, char **argv)
         int modinst = 0;
 
         ctx = kmod_new(kerneldir, NULL);
+        kmod_load_resources(ctx);
         abskpath = kmod_get_dirname(ctx);
 
         p = strstr(abskpath, "/lib/modules/");
@@ -2196,6 +2327,7 @@ int main(int argc, char **argv)
         items = hashmap_new(string_hash_func, string_compare_func);
         items_failed = hashmap_new(string_hash_func, string_compare_func);
         processed_suppliers = hashmap_new(string_hash_func, string_compare_func);
+        modalias_to_kmod = hashmap_new(string_hash_func, string_compare_func);
 
         if (!items || !items_failed || !processed_suppliers || !modules_loaded) {
                 log_error("Out of memory");
@@ -2269,11 +2401,17 @@ finish2:
         while ((i = hashmap_steal_first(processed_suppliers)))
                 item_free(i);
 
+        /*
+         * Note: modalias_to_kmod's values are freed implicitly by the kmod context destruction
+         * in kmod_unref().
+         */
+
         hashmap_free(items);
         hashmap_free(items_failed);
         hashmap_free(modules_loaded);
         hashmap_free(modules_suppliers);
         hashmap_free(processed_suppliers);
+        hashmap_free(modalias_to_kmod);
 
         if (arg_mod_filter_path)
                 regfree(&mod_filter_path);

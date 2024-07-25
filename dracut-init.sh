@@ -35,7 +35,7 @@ if ! [[ $dracutbasedir ]]; then
     dracutbasedir=${BASH_SOURCE[0]%/*}
     [[ $dracutbasedir == dracut-functions* ]] && dracutbasedir="."
     [[ $dracutbasedir ]] || dracutbasedir="."
-    dracutbasedir="$(readlink -f $dracutbasedir)"
+    dracutbasedir="$(readlink -f "$dracutbasedir")"
 fi
 
 if ! is_func dinfo > /dev/null 2>&1; then
@@ -515,7 +515,7 @@ inst_rules() {
     inst_dir "$_target"
     for _rule in "$@"; do
         if [ "${_rule#/}" = "$_rule" ]; then
-            for r in "$dracutsysrootdir${udevdir}/rules.d" ${hostonly:+"$dracutsysrootdir"/etc/udev/rules.d}; do
+            for r in ${hostonly:+"$dracutsysrootdir"/etc/udev/rules.d} "$dracutsysrootdir${udevdir}/rules.d"; do
                 [[ -e $r/$_rule ]] || continue
                 _found="$r/$_rule"
                 inst_rule_programs "$_found"
@@ -610,7 +610,7 @@ prepare_udev_rules() {
                     printf '%sIMPORT{builtin}="blkid"\n' "${line%%IMPORT BLKID}"
                 else
                     # shellcheck disable=SC2016
-                    printf '%sIMPORT{program}="/sbin/blkid -o udev -p $tempnode"\n' "${line%%IMPORT BLKID}"
+                    printf '%sIMPORT{program}="/sbin/blkid -o udev -p $devnode"\n' "${line%%IMPORT BLKID}"
                 fi
             else
                 echo "$line"
@@ -707,6 +707,15 @@ inst_libdir_file() {
         done
     fi
     [[ ${#_files[@]} -gt 0 ]] && inst_multiple "${_files[@]}"
+}
+
+# install sysusers files
+inst_sysusers() {
+    inst_multiple -o "$sysusers/$*"
+
+    if [[ $hostonly ]]; then
+        inst_multiple -H -o "$sysusersconfdir/$*"
+    fi
 }
 
 # get a command to decompress the given file
@@ -923,7 +932,7 @@ check_mount() {
             && force_add_dracutmodules+=" $_moddep "
         # if a module we depend on fail, fail also
         if ! check_module "$_moddep"; then
-            derror "Module '$_mod' depends on '$_moddep', which can't be installed"
+            derror "Module '$_mod' depends on module '$_moddep', which can't be installed"
             return 1
         fi
     done
@@ -998,7 +1007,7 @@ check_module() {
             && force_add_dracutmodules+=" $_moddep "
         # if a module we depend on fail, fail also
         if ! check_module "$_moddep"; then
-            derror "Module '$_mod' depends on '$_moddep', which can't be installed"
+            derror "Module '$_mod' depends on module '$_moddep', which can't be installed"
             return 1
         fi
     done

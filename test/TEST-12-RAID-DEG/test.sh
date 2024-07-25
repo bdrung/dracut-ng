@@ -21,7 +21,7 @@ client_run() {
     test_marker_reset
     "$testdir"/run-qemu \
         "${disk_args[@]}" \
-        -append "$* systemd.log_target=kmsg root=LABEL=root rw log_buf_len=2M" \
+        -append "$TEST_KERNEL_CMDLINE $* systemd.log_target=kmsg root=LABEL=root rw log_buf_len=2M systemd.mask=systemd-vconsole-setup" \
         -initrd "$TESTDIR"/initramfs.testing
 
     if ! test_marker_check; then
@@ -55,7 +55,7 @@ test_run() {
 }
 
 test_setup() {
-    "$basedir"/dracut.sh -N -l --keep --tmpdir "$TESTDIR" \
+    "$DRACUT" -N -l --keep --tmpdir "$TESTDIR" \
         -m "test-root" \
         -f "$TESTDIR"/initramfs.root "$KVERSION" || return 1
     mkdir -p "$TESTDIR"/overlay/source && mv "$TESTDIR"/dracut.*/initramfs/* "$TESTDIR"/overlay/source && rm -rf "$TESTDIR"/dracut.*
@@ -65,8 +65,8 @@ test_setup() {
     # We do it this way so that we do not risk trashing the host mdraid
     # devices, volume groups, encrypted partitions, etc.
     "$DRACUT" -N -l -i "$TESTDIR"/overlay / \
-        -m "test-makeroot bash crypt lvm mdraid kernel-modules" \
-        -I "grep" \
+        -a "test-makeroot bash crypt lvm mdraid kernel-modules" \
+        -I "grep cryptsetup" \
         -i ./create-root.sh /lib/dracut/hooks/initqueue/01-create-root.sh \
         -f "$TESTDIR"/initramfs.makeroot "$KVERSION" || return 1
     rm -rf -- "$TESTDIR"/overlay
@@ -75,13 +75,13 @@ test_setup() {
     declare -a disk_args=()
     declare -i disk_index=0
     qemu_add_drive disk_index disk_args "$TESTDIR"/marker.img marker 1
-    qemu_add_drive disk_index disk_args "$TESTDIR"/raid-1.img raid1 40
-    qemu_add_drive disk_index disk_args "$TESTDIR"/raid-2.img raid2 40
-    qemu_add_drive disk_index disk_args "$TESTDIR"/raid-3.img raid3 40
+    qemu_add_drive disk_index disk_args "$TESTDIR"/raid-1.img raid1 80
+    qemu_add_drive disk_index disk_args "$TESTDIR"/raid-2.img raid2 80
+    qemu_add_drive disk_index disk_args "$TESTDIR"/raid-3.img raid3 80
 
     "$testdir"/run-qemu \
         "${disk_args[@]}" \
-        -append "root=/dev/fakeroot rw rootfstype=ext4 quiet console=ttyS0,115200n81 selinux=0" \
+        -append "root=/dev/fakeroot rw rootfstype=ext4 quiet console=ttyS0,115200n81" \
         -initrd "$TESTDIR"/initramfs.makeroot || return 1
 
     test_marker_check dracut-root-block-created || return 1
@@ -97,7 +97,8 @@ test_setup() {
     chmod 0600 /tmp/key
 
     test_dracut \
-        -m "crypt lvm mdraid" \
+        -a "crypt lvm mdraid" \
+        -o "systemd" \
         -i "./cryptroot-ask.sh" "/sbin/cryptroot-ask" \
         -i "/tmp/mdadm.conf" "/etc/mdadm.conf" \
         -i "/tmp/crypttab" "/etc/crypttab" \

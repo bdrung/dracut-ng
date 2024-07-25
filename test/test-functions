@@ -12,12 +12,17 @@ export TESTDIR
 
 KVERSION=${KVERSION-$(uname -r)}
 
-[ -z "$USE_NETWORK" ] && USE_NETWORK="network-legacy"
+[ -z "$USE_NETWORK" ] && USE_NETWORK="network"
 
 if [[ -z $basedir ]]; then basedir="$(realpath ../..)"; fi
 
 DRACUT=${DRACUT-${basedir}/dracut.sh}
 PKGLIBDIR=${PKGLIBDIR-$basedir}
+
+TEST_KERNEL_CMDLINE+=" panic=1 oops=panic softlockup_panic=1 systemd.crash_reboot console=ttyS0,115200n81 $DEBUGFAIL "
+if [[ $V != "1" && $V != "2" ]]; then
+    TEST_KERNEL_CMDLINE+="quiet "
+fi
 
 test_dracut() {
     TEST_DRACUT_ARGS+=" --local --no-hostonly --no-hostonly-cmdline --no-early-microcode --add test --force --kver $KVERSION"
@@ -31,7 +36,7 @@ test_dracut() {
     IFS=' ' read -a TEST_DRACUT_ARGS_ARRAY <<< "$TEST_DRACUT_ARGS"
 
     "$DRACUT" \
-        --kernel-cmdline "panic=1 oops=panic softlockup_panic=1 systemd.crash_reboot quiet rd.retry=10 rd.info rd.shell=0 selinux=0 console=ttyS0,115200n81 $DEBUGFAIL" \
+        --kernel-cmdline "rd.retry=10 rd.info rd.shell=0" \
         "${TEST_DRACUT_ARGS_ARRAY[@]}" \
         "$@" || return 1
 }
@@ -143,7 +148,11 @@ while (($# > 0)); do
             else
                 echo -e "TEST: $TEST_DESCRIPTION " "$COLOR_SUCCESS" "[STARTED]" "$COLOR_NORMAL"
             fi
-            if [[ $V == "1" ]]; then
+            if [[ $V == "1" || $V == "2" ]]; then
+                tee_command="tee"
+                if [[ $V == "2" && -x "$basedir/logtee" ]]; then
+                    tee_command="$basedir/logtee"
+                fi
                 set -o pipefail
                 (
                     test_setup && test_run
@@ -155,20 +164,7 @@ while (($# > 0)); do
                     rm -fr -- "$TESTDIR"
                     rm -f -- .testdir${TEST_RUN_ID:+-$TEST_RUN_ID}
                     exit $ret
-                ) < /dev/null 2>&1 | tee "test${TEST_RUN_ID:+-$TEST_RUN_ID}.log"
-            elif [[ $V == "2" ]]; then
-                set -o pipefail
-                (
-                    test_setup && test_run
-                    ret=$?
-                    test_cleanup
-                    if ((ret != 0)) && [[ -f "$TESTDIR"/server.log ]]; then
-                        mv "$TESTDIR"/server.log ./server${TEST_RUN_ID:+-$TEST_RUN_ID}.log
-                    fi
-                    rm -fr -- "$TESTDIR"
-                    rm -f -- .testdir${TEST_RUN_ID:+-$TEST_RUN_ID}
-                    exit $ret
-                ) < /dev/null 2>&1 | "$basedir/logtee" "test${TEST_RUN_ID:+-$TEST_RUN_ID}.log"
+                ) < /dev/null 2>&1 | "$tee_command" "test${TEST_RUN_ID:+-$TEST_RUN_ID}.log"
             else
                 (
                     test_setup && test_run

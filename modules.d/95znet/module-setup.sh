@@ -3,7 +3,7 @@
 # called by dracut
 check() {
     arch=${DRACUT_ARCH:-$(uname -m)}
-    [ "$arch" = "s390" -o "$arch" = "s390x" ] || return 1
+    [ "$arch" = "s390" ] || [ "$arch" = "s390x" ] || return 1
 
     require_binaries grep sed seq readlink chzdev || return 1
 
@@ -45,14 +45,12 @@ install() {
         # shellcheck disable=SC2155
         local _nullglob=$(shopt -p nullglob)
         shopt -u nullglob
-        # shellcheck disable=SC2086
         readarray -t _array < <(
-            ls -1 $initdir/etc/udev/rules.d/41-*.rules 2> /dev/null
+            ls -1 "$initdir"/etc/udev/rules.d/41-*.rules 2> /dev/null
         )
         [[ ${#_array[@]} -gt 0 ]] && mark_hostonly "${_array[@]#$initdir}"
-        # shellcheck disable=SC2086
         readarray -t _array < <(
-            ls -1 $initdir/etc/modprobe.d/s390x-*.conf 2> /dev/null
+            ls -1 "$initdir"/etc/modprobe.d/s390x-*.conf 2> /dev/null
         )
         [[ ${#_array[@]} -gt 0 ]] && mark_hostonly "${_array[@]#$initdir}"
         $_nullglob

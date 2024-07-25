@@ -22,7 +22,7 @@ client_run() {
     test_marker_reset
     "$testdir"/run-qemu \
         "${disk_args[@]}" \
-        -append "root=LABEL=dracut $client_opts rd.retry=3" \
+        -append "$TEST_KERNEL_CMDLINE root=LABEL=dracut $client_opts rd.retry=3" \
         -initrd "$TESTDIR"/initramfs.testing || return 1
 
     if ! test_marker_check; then
@@ -51,7 +51,7 @@ test_setup() {
     # We do it this way so that we do not risk trashing the host mdraid
     # devices, volume groups, encrypted partitions, etc.
     "$DRACUT" -N -l -i "$TESTDIR"/overlay / \
-        -m "test-makeroot" \
+        -a "test-makeroot" \
         -I "mkfs.btrfs" \
         -i ./create-root.sh /lib/dracut/hooks/initqueue/01-create-root.sh \
         -f "$TESTDIR"/initramfs.makeroot "$KVERSION" || return 1
@@ -67,7 +67,7 @@ test_setup() {
     # Invoke KVM and/or QEMU to actually create the target filesystem.
     "$testdir"/run-qemu \
         "${disk_args[@]}" \
-        -append "root=/dev/dracut/root rw rootfstype=btrfs quiet console=ttyS0,115200n81 selinux=0" \
+        -append "root=/dev/dracut/root rw rootfstype=btrfs quiet console=ttyS0,115200n81" \
         -initrd "$TESTDIR"/initramfs.makeroot || return 1
 
     if ! test_marker_check dracut-root-block-created; then

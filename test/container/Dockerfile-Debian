@@ -21,6 +21,7 @@ RUN apt-get update -y -qq && apt-get upgrade -y -qq && apt-get install -y -qq --
     docbook \
     docbook-xml \
     docbook-xsl \
+    erofs-utils \
     fdisk \
     g++ \
     gawk \
@@ -57,6 +58,7 @@ RUN apt-get update -y -qq && apt-get upgrade -y -qq && apt-get install -y -qq --
     squashfs-tools \
     strace \
     systemd-boot-efi \
+    systemd-coredump \
     tcpdump \
     tgt \
     thin-provisioning-tools \

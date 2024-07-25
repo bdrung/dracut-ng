@@ -18,9 +18,9 @@ grep -q '^tmpfs /run tmpfs' /proc/self/mounts \
 
 exec > /dev/console 2>&1
 
-if [ -s /failed ]; then
+if [ -s /run/failed ]; then
     echo "**************************FAILED**************************"
-    cat /failed
+    cat /run/failed
     echo "**************************FAILED**************************"
 else
     echo "dracut-root-block-success" | dd oflag=direct,dsync status=none of=/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_marker
@@ -29,8 +29,6 @@ fi
 
 export TERM=linux
 export PS1='initramfs-test:\w\$ '
-[ -f /etc/mtab ] || ln -sfn /proc/mounts /etc/mtab
-[ -f /etc/fstab ] || ln -sfn /proc/mounts /etc/fstab
 stty sane
 echo "made it to the rootfs!"
 
@@ -38,12 +36,10 @@ echo "made it to the rootfs!"
 
 if getargbool 0 rd.shell; then
     strstr "$(setsid --help)" "control" && CTTY="-c"
-    # shellcheck disable=SC2086
-    setsid $CTTY sh -i
+    setsid ${CTTY:+"${CTTY}"} sh -i
 fi
 
 echo "Powering down."
-mount -n -o remount,ro /
 if [ -d /run/initramfs/etc ]; then
     echo " rd.debug=0 " >> /run/initramfs/etc/cmdline
 fi

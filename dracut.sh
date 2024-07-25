@@ -122,7 +122,8 @@ Creates initial ramdisk images for preloading modules
   --early-microcode     Combine early microcode with ramdisk.
   --no-early-microcode  Do not combine early microcode with ramdisk.
   --kernel-cmdline [PARAMETERS]
-                        Specify default kernel command line parameters.
+                        Specify default kernel command line parameters. Despite
+                         its name, this command only sets initrd parameters.
   --strip               Strip binaries in the initramfs.
   --aggressive-strip     Strip more than just debug symbol and sections,
                          for a smaller initramfs build. The --strip option must
@@ -309,24 +310,6 @@ push_host_devs() {
         [[ " ${host_devs[*]} " == *" $_dev "* ]] && return
         host_devs+=("$_dev")
     done
-}
-
-# Little helper function for reading args from the commandline.
-# it automatically handles -a b and -a=b variants, and returns 1 if
-# we need to shift $3.
-read_arg() {
-    # $1 = arg name
-    # $2 = arg value
-    # $3 = arg parameter
-    local rematch='^[^=]*=(.*)$'
-    if [[ $2 =~ $rematch ]]; then
-        read -r "$1" <<< "${BASH_REMATCH[1]}"
-    else
-        read -r "$1" <<< "$3"
-        # There is no way to shift our callers args, so
-        # return 1 to indicate they should do it instead.
-        return 1
-    fi
 }
 
 check_conf_file() {
@@ -1378,8 +1361,8 @@ unset omit_drivers_corrected
 
 # prepare args for logging
 for ((i = 0; i < ${#dracut_args[@]}; i++)); do
-    [[ ${dracut_args[$i]} == *\ * ]] \
-        && dracut_args[$i]="\"${dracut_args[$i]}\""
+    [[ ${dracut_args[i]} == *\ * ]] \
+        && dracut_args[i]="\"${dracut_args[i]}\""
     #" keep vim happy
 done
 
@@ -2042,6 +2025,7 @@ if [[ $kernel_only != yes ]]; then
                 printf "%s\n" "systemdutildir=\"$systemdutildir\""
                 printf "%s\n" "systemdsystemunitdir=\"$systemdsystemunitdir\""
                 printf "%s\n" "systemdsystemconfdir=\"$systemdsystemconfdir\""
+                printf "%s\n" "systemdnetworkconfdir=\"$systemdnetworkconfdir\""
             } > "${initdir}"/etc/conf.d/systemd.conf
         fi
     fi
@@ -2117,8 +2101,8 @@ if [[ $do_strip == yes ]]; then
     strip_cmd=$(command -v eu-strip)
     [ -z "$strip_cmd" ] && strip_cmd="strip"
 
-    for p in $strip_cmd xargs find; do
-        if ! type -P $p > /dev/null; then
+    for p in "$strip_cmd" xargs find; do
+        if ! type -P "$p" > /dev/null; then
             dinfo "Could not find '$p'. Not stripping the initramfs."
             do_strip=no
         fi
@@ -2157,9 +2141,13 @@ if [[ $early_microcode == yes ]]; then
                 if [[ $hostonly ]]; then
                     _src=$(get_ucode_file)
                     [[ $_src ]] || break
-                    [[ -r $_fwdir/$_fw/$_src ]] || _src="${_src}.early"
-                    [[ -r $_fwdir/$_fw/$_src ]] || _src="${_src}.initramfs"
-                    [[ -r $_fwdir/$_fw/$_src ]] || break
+                    if [[ -r "$_fwdir/$_fw/${_src}.early" ]]; then
+                        _src="${_src}.early"
+                    elif [[ -r "$_fwdir/$_fw/${_src}.initramfs" ]]; then
+                        _src="${_src}.initramfs"
+                    else
+                        [[ -r $_fwdir/$_fw/$_src ]] || break
+                    fi
                 fi
 
                 for i in $_fwdir/$_fw/$_src; do
@@ -2269,14 +2257,14 @@ if [[ $do_strip == yes ]] && ! [[ $DRACUT_FIPS_MODE ]]; then
     dinfo "*** Stripping files ***"
     find "$initdir" -type f \
         -executable -not -path '*/lib/modules/*.ko*' -print0 \
-        | xargs -r -0 $strip_cmd "${strip_args[@]}" 2> /dev/null
+        | xargs -r -0 "$strip_cmd" "${strip_args[@]}" 2> /dev/null
 
     # strip kernel modules, but do not touch signed modules
     find "$initdir" -type f -path '*/lib/modules/*.ko' -print0 \
         | while read -r -d $'\0' f || [ -n "$f" ]; do
             SIG=$(tail -c 28 "$f" | tr -d '\000')
             [[ $SIG == '~Module signature appended~' ]] || { printf "%s\000" "$f"; }
-        done | xargs -r -0 $strip_cmd "${strip_args[@]}"
+        done | xargs -r -0 "$strip_cmd" "${strip_args[@]}"
     dinfo "*** Stripping files done ***"
 fi
 
@@ -2382,7 +2370,7 @@ fi
 
 if ! [[ $compress ]]; then
     # check all known compressors, if none specified
-    for i in $DRACUT_COMPRESS_PIGZ $DRACUT_COMPRESS_GZIP $DRACUT_COMPRESS_LZ4 $DRACUT_COMPRESS_LZOP $DRACUT_COMPRESS_ZSTD $DRACUT_COMPRESS_LZMA $DRACUT_COMPRESS_XZ $DRACUT_COMPRESS_LBZIP2 $DRACUT_COMPRESS_BZIP2 $DRACUT_COMPRESS_CAT; do
+    for i in $DRACUT_COMPRESS_ZSTD $DRACUT_COMPRESS_PIGZ $DRACUT_COMPRESS_GZIP $DRACUT_COMPRESS_LZ4 $DRACUT_COMPRESS_LZOP $DRACUT_COMPRESS_LZMA $DRACUT_COMPRESS_XZ $DRACUT_COMPRESS_LBZIP2 $DRACUT_COMPRESS_BZIP2 $DRACUT_COMPRESS_CAT; do
         [[ $i != "$DRACUT_COMPRESS_ZSTD" || $DRACUT_KERNEL_RD_ZSTD ]] || continue
         command -v "$i" &> /dev/null || continue
         compress="$i"

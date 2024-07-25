@@ -26,7 +26,7 @@ run_server() {
         -net socket,listen=127.0.0.1:12350 \
         -net nic,macaddr=52:54:01:12:34:56,model=e1000 \
         -serial "${SERIAL:-"file:$TESTDIR/server.log"}" \
-        -append "panic=1 oops=panic softlockup_panic=1 systemd.crash_reboot root=LABEL=dracut rootfstype=ext4 rw console=ttyS0,115200n81 selinux=0" \
+        -append "panic=1 oops=panic softlockup_panic=1 systemd.crash_reboot root=LABEL=dracut rootfstype=ext4 rw console=ttyS0,115200n81" \
         -initrd "$TESTDIR"/initramfs.server \
         -pidfile "$TESTDIR"/server.pid -daemonize || return 1
 
@@ -76,7 +76,7 @@ client_test() {
         -netdev hubport,id=n2,hubid=2 \
         -device e1000,netdev=n1,mac=52:54:00:12:34:98 \
         -device e1000,netdev=n2,mac=52:54:00:12:34:99 \
-        -append "$cmdline rd.retry=5 ro init=/sbin/init systemd.log_target=console" \
+        -append "$TEST_KERNEL_CMDLINE $cmdline rd.retry=5 ro init=/sbin/init systemd.log_target=console" \
         -initrd "$TESTDIR"/initramfs.testing || return 1
 
     {
@@ -208,7 +208,6 @@ test_setup() {
         instmods nfsd sunrpc ipv6 lockd af_packet
         inst ./server-init.sh /sbin/init
         inst_simple /etc/os-release
-        inst ./hosts /etc/hosts
         inst ./exports /etc/exports
         inst ./dhcpd.conf /etc/dhcpd.conf
         inst_multiple -o {,/usr}/etc/nsswitch.conf {,/usr}/etc/rpc \
@@ -319,7 +318,7 @@ test_setup() {
     # Invoke KVM and/or QEMU to actually create the target filesystem.
     "$testdir"/run-qemu \
         "${disk_args[@]}" \
-        -append "root=/dev/dracut/root rw rootfstype=ext4 quiet console=ttyS0,115200n81 selinux=0" \
+        -append "root=/dev/dracut/root rw rootfstype=ext4 quiet console=ttyS0,115200n81" \
         -initrd "$TESTDIR"/initramfs.makeroot || return 1
     test_marker_check dracut-root-block-created || return 1
 
@@ -355,7 +354,7 @@ test_setup() {
     )
     # Make server's dracut image
     "$DRACUT" -l -i "$TESTDIR"/overlay / \
-        -m "bash rootfs-block debug kernel-modules watchdog qemu network-legacy" \
+        -m "bash rootfs-block debug kernel-modules watchdog qemu ${USE_NETWORK}" \
         -d "af_packet piix ide-gd_mod ata_piix ext4 sd_mod nfsv2 nfsv3 nfsv4 nfs_acl nfs_layout_nfsv41_files nfsd e1000 i6300esb" \
         --no-hostonly-cmdline -N \
         -f "$TESTDIR"/initramfs.server "$KVERSION" || return 1

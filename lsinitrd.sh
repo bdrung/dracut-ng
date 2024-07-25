@@ -98,6 +98,43 @@ done
 
 [[ $KERNEL_VERSION ]] || KERNEL_VERSION="$(uname -r)"
 
+find_initrd_for_kernel_version() {
+    local kernel_version="$1"
+    local base_path files initrd machine_id
+
+    if [[ -d /efi/Default ]] || [[ -d /boot/Default ]] || [[ -d /boot/efi/Default ]]; then
+        machine_id="Default"
+    elif [[ -s /etc/machine-id ]]; then
+        read -r machine_id < /etc/machine-id
+        [[ $machine_id == "uninitialized" ]] && machine_id="Default"
+    else
+        machine_id="Default"
+    fi
+
+    if [ -n "$machine_id" ]; then
+        for base_path in /efi /boot /boot/efi; do
+            initrd="${base_path}/${machine_id}/${kernel_version}/initrd"
+            if [ -f "$initrd" ]; then
+                echo "$initrd"
+                return
+            fi
+        done
+    fi
+
+    if [[ -f /lib/modules/${kernel_version}/initrd ]]; then
+        echo "/lib/modules/${kernel_version}/initrd"
+    elif [[ -f /lib/modules/${kernel_version}/initramfs.img ]]; then
+        echo "/lib/modules/${kernel_version}/initramfs.img"
+    elif [[ -f /boot/initramfs-${kernel_version}.img ]]; then
+        echo "/boot/initramfs-${kernel_version}.img"
+    else
+        files=(/boot/initr*"${kernel_version}"*)
+        if [ "${#files[@]}" -ge 1 ] && [ -e "${files[0]}" ]; then
+            echo "${files[0]}"
+        fi
+    fi
+}
+
 if [[ $1 ]]; then
     image="$1"
     if ! [[ -f $image ]]; then
@@ -109,42 +146,7 @@ if [[ $1 ]]; then
         exit 1
     fi
 else
-    if [[ -d /efi/Default ]] || [[ -d /boot/Default ]] || [[ -d /boot/efi/Default ]]; then
-        MACHINE_ID="Default"
-    elif [[ -s /etc/machine-id ]]; then
-        read -r MACHINE_ID < /etc/machine-id
-        [[ $MACHINE_ID == "uninitialized" ]] && MACHINE_ID="Default"
-    else
-        MACHINE_ID="Default"
-    fi
-
-    if [[ -d /efi/loader/entries || -L /efi/loader/entries ]] \
-        && [[ $MACHINE_ID ]] \
-        && [[ -d /efi/${MACHINE_ID} || -L /efi/${MACHINE_ID} ]]; then
-        image="/efi/${MACHINE_ID}/${KERNEL_VERSION}/initrd"
-    elif [[ -d /boot/loader/entries || -L /boot/loader/entries ]] \
-        && [[ $MACHINE_ID ]] \
-        && [[ -d /boot/${MACHINE_ID} || -L /boot/${MACHINE_ID} ]]; then
-        image="/boot/${MACHINE_ID}/${KERNEL_VERSION}/initrd"
-    elif [[ -d /boot/efi/loader/entries || -L /boot/efi/loader/entries ]] \
-        && [[ $MACHINE_ID ]] \
-        && [[ -d /boot/efi/${MACHINE_ID} || -L /boot/efi/${MACHINE_ID} ]]; then
-        image="/boot/efi/${MACHINE_ID}/${KERNEL_VERSION}/initrd"
-    elif [[ -f /lib/modules/${KERNEL_VERSION}/initrd ]]; then
-        image="/lib/modules/${KERNEL_VERSION}/initrd"
-    elif [[ -f /lib/modules/${KERNEL_VERSION}/initramfs.img ]]; then
-        image="/lib/modules/${KERNEL_VERSION}/initramfs.img"
-    elif [[ -f /boot/initramfs-${KERNEL_VERSION}.img ]]; then
-        image="/boot/initramfs-${KERNEL_VERSION}.img"
-    elif [[ $MACHINE_ID ]] \
-        && mountpoint -q /efi; then
-        image="/efi/${MACHINE_ID}/${KERNEL_VERSION}/initrd"
-    elif [[ $MACHINE_ID ]] \
-        && mountpoint -q /boot/efi; then
-        image="/boot/efi/${MACHINE_ID}/${KERNEL_VERSION}/initrd"
-    else
-        image=""
-    fi
+    image=$(find_initrd_for_kernel_version "$KERNEL_VERSION")
 fi
 
 shift
@@ -398,6 +400,7 @@ type "${CAT%% *}" > /dev/null 2>&1 || {
     exit 1
 }
 
+# shellcheck disable=SC2317  # assigned to CAT and $CAT called later
 skipcpio() {
     $SKIP "$@" | $ORIG_CAT
 }
@@ -410,6 +413,7 @@ fi
 if ((${#filenames[@]} > 1)); then
     TMPFILE="$TMPDIR/initrd.cpio"
     $CAT "$image" 2> /dev/null > "$TMPFILE"
+    # shellcheck disable=SC2317  # assigned to CAT and $CAT called later
     pre_decompress() {
         cat "$TMPFILE"
     }

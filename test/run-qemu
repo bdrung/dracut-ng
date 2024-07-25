@@ -4,13 +4,6 @@
 
 export PATH=/usr/sbin:/usr/bin:/sbin:/bin
 ARCH="${ARCH-$(uname -m)}"
-
-case "$ARCH" in
-    amd64 | i?86 | x86_64)
-        QEMU_CPU="IvyBridge-v2"
-        ;;
-esac
-
 QEMU_CPU="${QEMU_CPU:-max}"
 
 [[ -x /usr/bin/qemu ]] && BIN=/usr/bin/qemu && ARGS=(-cpu "$QEMU_CPU")
@@ -43,10 +36,15 @@ case "$ARCH" in
 esac
 
 # Provide rng device sourcing the hosts /dev/urandom and other standard parameters
-ARGS+=(-smp 2 -m 1024 -nodefaults -vga none -display none -no-reboot -device i6300esb -watchdog-action poweroff -device virtio-rng-pci)
+ARGS+=(-smp 2 -m 2048 -nodefaults -vga none -display none -no-reboot -watchdog-action poweroff -device virtio-rng-pci)
 
 if ! [[ $* == *-daemonize* ]] && ! [[ $* == *-daemonize* ]]; then
     ARGS+=(-serial stdio)
+fi
+
+# virtual hardware watchdog not available on s390x
+if [[ $ARCH != "s390x" ]]; then
+    ARGS+=(-device i6300esb)
 fi
 
 KVERSION=${KVERSION-$(uname -r)}

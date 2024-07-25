@@ -30,31 +30,6 @@ depends() {
 install() {
 
     inst_multiple -o \
-        /etc/udev/udev.hwdb \
-        "$udevdir"/hwdb.bin \
-        "$udevdir"/dmi_memory_id \
-        "$udevdir"/fido_id \
-        "$udevdir"/mtd_probe \
-        "$udevdir"/mtp-probe \
-        "$udevdir"/v4l_id \
-        "$udevrulesdir"/60-autosuspend.rules \
-        "$udevrulesdir"/60-drm.rules \
-        "$udevrulesdir"/60-evdev.rules \
-        "$udevrulesdir"/60-fido-id.rules \
-        "$udevrulesdir"/60-input-id.rules \
-        "$udevrulesdir"/60-persistent-alsa.rules \
-        "$udevrulesdir"/60-persistent-input.rules \
-        "$udevrulesdir"/60-persistent-storage-tape.rules \
-        "$udevrulesdir"/60-persistent-v4l.rules \
-        "$udevrulesdir"/60-sensor.rules \
-        "$udevrulesdir"/60-serial.rules \
-        "$udevrulesdir"/70-joystick.rules \
-        "$udevrulesdir"/70-memory.rules \
-        "$udevrulesdir"/70-mouse.rules \
-        "$udevrulesdir"/70-touchpad.rules \
-        "$udevrulesdir"/75-probe_mtd.rules \
-        "$udevrulesdir"/78-sound-card.rules \
-        "$udevrulesdir"/81-net-dhcp.rules \
         "$udevrulesdir"/99-systemd.rules \
         "$systemdutildir"/systemd-udevd \
         "$systemdsystemunitdir"/systemd-udevd.service \
@@ -73,9 +48,6 @@ install() {
     # Install the hosts local user configurations if enabled.
     if [[ $hostonly ]]; then
         inst_multiple -H -o \
-            "$udevconfdir"/hwdb.bin \
-            "$udevrulesconfdir/*.rules" \
-            "$systemdutilconfdir"/hwdb/hwdb.bin \
             "$systemdsystemconfdir"/systemd-udevd.service \
             "$systemdsystemconfdir/systemd-udevd.service.d/*.conf" \
             "$systemdsystemconfdir"/systemd-udev-trigger.service \
@@ -90,6 +62,11 @@ install() {
             "$systemdsystemconfdir"/sockets.target.wants/systemd-udevd-kernel.socket \
             "$systemdsystemconfdir"/sysinit.target.wants/systemd-udevd.service \
             "$systemdsystemconfdir"/sysinit.target.wants/systemd-udev-trigger.service
+
+        if dracut_module_included "hwdb"; then
+            inst_multiple -H -o \
+                "$systemdutilconfdir"/hwdb/hwdb.bin
+        fi
     fi
 
     # Install required libraries.

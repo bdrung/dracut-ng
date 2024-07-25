@@ -30,7 +30,7 @@ numtries=${4:-10}
 if [ -f /etc/crypttab ] && getargbool 1 rd.luks.crypttab -d -n rd_NO_CRYPTTAB; then
     while read -r name dev luksfile luksoptions || [ -n "$name" ]; do
         # ignore blank lines and comments
-        if [ -z "$name" -o "${name#\#}" != "$name" ]; then
+        if [ -z "$name" ] || [ "${name#\#}" != "$name" ]; then
             continue
         fi
 
@@ -137,7 +137,7 @@ unset allowdiscards
 # fallback to passphrase
 ask_passphrase=1
 
-if [ -n "$luksfile" -a "$luksfile" != "none" -a -e "$luksfile" ]; then
+if [ -n "$luksfile" ] && [ "$luksfile" != "none" ] && [ -e "$luksfile" ]; then
     # shellcheck disable=SC2086
     if readkey "$luksfile" / "$device" \
         | cryptsetup -d - $cryptsetupopts luksOpen "$device" "$luksname"; then
@@ -176,7 +176,7 @@ fi
 
 if [ $ask_passphrase -ne 0 ]; then
     luks_open="$(command -v cryptsetup) $cryptsetupopts luksOpen"
-    _timeout=$(getargs "rd.luks.timeout")
+    _timeout=$(getarg "rd.luks.timeout")
     _timeout=${_timeout:-0}
     ask_for_password --ply-tries 5 \
         --ply-cmd "$luks_open -T1 $device $luksname" \
@@ -187,7 +187,7 @@ if [ $ask_passphrase -ne 0 ]; then
     unset _timeout
 fi
 
-if [ "$is_keysource" -ne 0 -a "${luksname##luks-}" != "$luksname" ]; then
+if [ "$is_keysource" -ne 0 ] && [ "${luksname##luks-}" != "$luksname" ]; then
     luks_close="$(command -v cryptsetup) close"
     {
         printf -- '[ -e /dev/mapper/%s ] && ' "$luksname"

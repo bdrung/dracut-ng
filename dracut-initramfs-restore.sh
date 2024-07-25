@@ -17,39 +17,46 @@ KERNEL_VERSION="$(uname -r)"
 SKIP="$dracutbasedir/skipcpio"
 [[ -x $SKIP ]] || SKIP="cat"
 
-if [[ -d /efi/Default ]] || [[ -d /boot/Default ]] || [[ -d /boot/efi/Default ]]; then
-    MACHINE_ID="Default"
-elif [[ -s /etc/machine-id ]]; then
-    read -r MACHINE_ID < /etc/machine-id
-    [[ $MACHINE_ID == "uninitialized" ]] && MACHINE_ID="Default"
-else
-    MACHINE_ID="Default"
-fi
+find_initrd_for_kernel_version() {
+    local kernel_version="$1"
+    local base_path files initrd machine_id
+
+    if [[ -d /efi/Default ]] || [[ -d /boot/Default ]] || [[ -d /boot/efi/Default ]]; then
+        machine_id="Default"
+    elif [[ -s /etc/machine-id ]]; then
+        read -r machine_id < /etc/machine-id
+        [[ $machine_id == "uninitialized" ]] && machine_id="Default"
+    else
+        machine_id="Default"
+    fi
+
+    if [ -n "$machine_id" ]; then
+        for base_path in /efi /boot /boot/efi; do
+            initrd="${base_path}/${machine_id}/${kernel_version}/initrd"
+            if [ -f "$initrd" ]; then
+                echo "$initrd"
+                return
+            fi
+        done
+    fi
+
+    if [[ -f /lib/modules/${kernel_version}/initrd ]]; then
+        echo "/lib/modules/${kernel_version}/initrd"
+    elif [[ -f /boot/initramfs-${kernel_version}.img ]]; then
+        echo "/boot/initramfs-${kernel_version}.img"
+    else
+        files=(/boot/initr*"${kernel_version}"*)
+        if [ "${#files[@]}" -ge 1 ] && [ -e "${files[0]}" ]; then
+            echo "${files[0]}"
+        fi
+    fi
+}
 
 mount -o ro /boot &> /dev/null || true
 
-if [[ -d /efi/loader/entries || -L /efi/loader/entries ]] \
-    && [[ -d /efi/$MACHINE_ID || -L /efi/$MACHINE_ID ]]; then
-    IMG="/efi/${MACHINE_ID}/${KERNEL_VERSION}/initrd"
-elif [[ -d /boot/loader/entries || -L /boot/loader/entries ]] \
-    && [[ -d /boot/$MACHINE_ID || -L /boot/$MACHINE_ID ]]; then
-    IMG="/boot/${MACHINE_ID}/${KERNEL_VERSION}/initrd"
-elif [[ -d /boot/efi/loader/entries || -L /boot/efi/loader/entries ]] \
-    && [[ -d /boot/efi/$MACHINE_ID || -L /boot/efi/$MACHINE_ID ]]; then
-    IMG="/boot/efi/$MACHINE_ID/$KERNEL_VERSION/initrd"
-elif [[ -f /lib/modules/${KERNEL_VERSION}/initrd ]]; then
-    IMG="/lib/modules/${KERNEL_VERSION}/initrd"
-elif [[ -f /boot/initramfs-${KERNEL_VERSION}.img ]]; then
-    IMG="/boot/initramfs-${KERNEL_VERSION}.img"
-elif mountpoint -q /efi; then
-    IMG="/efi/$MACHINE_ID/$KERNEL_VERSION/initrd"
-elif mountpoint -q /boot/efi; then
-    IMG="/boot/efi/$MACHINE_ID/$KERNEL_VERSION/initrd"
-else
-    files=("/boot/initr*${KERNEL_VERSION}*")
-    if [ "${#files[@]}" -ge 1 ] && [ -e "${files[0]}" ]; then
-        IMG="${files[0]}"
-    elif [[ -f /boot/initramfs-linux.img ]]; then
+IMG=$(find_initrd_for_kernel_version "$KERNEL_VERSION")
+if [ -z "$IMG" ]; then
+    if [[ -f /boot/initramfs-linux.img ]]; then
         IMG="/boot/initramfs-linux.img"
     else
         echo "No initramfs image found to restore!"
@@ -83,7 +90,7 @@ if [[ -d squash ]]; then
 fi
 
 if grep -q -w selinux /sys/kernel/security/lsm 2> /dev/null \
-    && [ -e /etc/selinux/config -a -x /usr/sbin/setfiles ]; then
+    && [ -e /etc/selinux/config ] && [ -x /usr/sbin/setfiles ]; then
     . /etc/selinux/config
     if [[ $SELINUX != "disabled" && -n $SELINUXTYPE ]]; then
         /usr/sbin/setfiles -v -r /run/initramfs /etc/selinux/"${SELINUXTYPE}"/contexts/files/file_contexts /run/initramfs > /dev/null

@@ -21,13 +21,13 @@ while [[ $ROOT != "${ROOT%/}" ]]; do
     ROOT=${ROOT%/}
 done
 
-if [ ! -L "$ROOT"/var/run -a -e "$ROOT"/var/run ]; then
+if [ ! -L "$ROOT"/var/run ] && [ -e "$ROOT"/var/run ]; then
     echo "Converting /var/run to symlink"
     mv -f "$ROOT"/var/run "$ROOT"/var/run.runmove~
     ln -sfn ../run "$ROOT"/var/run
 fi
 
-if [ ! -L "$ROOT"/var/lock -a -e "$ROOT"/var/lock ]; then
+if [ ! -L "$ROOT"/var/lock ] && [ -e "$ROOT"/var/lock ]; then
     echo "Converting /var/lock to symlink"
     mv -f "$ROOT"/var/lock "$ROOT"/var/lock.lockmove~
     ln -sfn ../run/lock "$ROOT"/var/lock
@@ -72,16 +72,8 @@ if [[ ! -e $testfile ]]; then
 fi
 rm -f -- "$testfile"
 
-find_mount() {
-    local dev wanted_dev
-    wanted_dev="$(readlink -e -q "$1")"
-    while read -r dev _ || [ -n "$dev" ]; do
-        [ "$dev" = "$wanted_dev" ] && echo "$dev" && return 0
-    done < /proc/mounts
-    return 1
-}
-
 # clean up after ourselves no matter how we die.
+# shellcheck disable=SC2317  # called via EXIT trap
 cleanup() {
     echo "Something failed. Move back to the original state"
     for dir in "$ROOT/bin" "$ROOT/sbin" "$ROOT/lib" "$ROOT/lib64" \
@@ -114,7 +106,7 @@ for dir in bin sbin lib lib64; do
     echo "Merge the copy with \`$ROOT/$dir'."
     [[ -d "$ROOT/usr/${dir}.usrmove-new" ]] \
         || mkdir -p "$ROOT/usr/${dir}.usrmove-new"
-    cp -axT $CP_HARDLINK --backup --suffix=.usrmove~ "$ROOT/$dir" "$ROOT/usr/${dir}.usrmove-new"
+    cp -axT ${CP_HARDLINK:+"$CP_HARDLINK"} --backup --suffix=.usrmove~ "$ROOT/$dir" "$ROOT/usr/${dir}.usrmove-new"
     echo "Clean up duplicates in \`$ROOT/usr/$dir'."
     # delete all symlinks that have been backed up
     find "$ROOT/usr/${dir}.usrmove-new" -type l -name '*.usrmove~' -delete || :

@@ -109,11 +109,11 @@ install_iscsiroot() {
     [ -z "$iscsi_address" ] && return
     ip_params_for_remote_addr "$iscsi_address"
 
-    if [ -n "$iscsi_address" -a -n "$iscsi_targetname" ]; then
-        if [ -n "$iscsi_port" -a "$iscsi_port" -eq 3260 ]; then
+    if [ -n "$iscsi_address" ] && [ -n "$iscsi_targetname" ]; then
+        if [ -n "$iscsi_port" ] && [ "$iscsi_port" -eq 3260 ]; then
             iscsi_port=
         fi
-        if [ -n "$iscsi_lun" -a "$iscsi_lun" -eq 0 ]; then
+        if [ -n "$iscsi_lun" ] && [ "$iscsi_lun" -eq 0 ]; then
             iscsi_lun=
         fi
         # In IPv6 case rd.iscsi.initatior= must pass address in [] brackets
@@ -134,6 +134,7 @@ install_iscsiroot() {
 install_softiscsi() {
     [ -d /sys/firmware/ibft ] && return 0
 
+    # shellcheck disable=SC2317  # called later by for_each_host_dev_and_slaves
     is_softiscsi() {
         local _dev=$1
         local iscsi_dev
@@ -163,7 +164,7 @@ installkernel() {
     instmods bnx2i qla4xxx cxgb3i cxgb4i be2iscsi qedi
     hostonly="" instmods iscsi_tcp iscsi_ibft crc32c iscsi_boot_sysfs 8021q
 
-    if [ "$_arch" = "s390" -o "$_arch" = "s390x" ]; then
+    if [ "$_arch" = "s390" ] || [ "$_arch" = "s390x" ]; then
         _s390drivers="=drivers/s390/scsi"
     fi
 

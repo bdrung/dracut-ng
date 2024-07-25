@@ -10,7 +10,6 @@ test_check() {
 # Uncomment this to debug failures
 #DEBUGFAIL="rd.shell rd.break"
 #DEBUGOUT="quiet systemd.log_level=debug systemd.log_target=console loglevel=77  rd.info rd.debug"
-DEBUGOUT="loglevel=0 "
 client_run() {
     local test_name="$1"
     shift
@@ -22,12 +21,13 @@ client_run() {
     declare -i disk_index=0
     qemu_add_drive disk_index disk_args "$TESTDIR"/marker.img marker
     qemu_add_drive disk_index disk_args "$TESTDIR"/root.btrfs root
+    qemu_add_drive disk_index disk_args "$TESTDIR"/root_crypt.btrfs root_crypt
     qemu_add_drive disk_index disk_args "$TESTDIR"/usr.btrfs usr
 
     test_marker_reset
     "$testdir"/run-qemu \
         "${disk_args[@]}" \
-        -append "systemd.unit=testsuite.target systemd.mask=systemd-firstboot rd.multipath=0 root=LABEL=dracut $client_opts rd.retry=3 $DEBUGOUT" \
+        -append "$TEST_KERNEL_CMDLINE systemd.unit=testsuite.target systemd.mask=systemd-firstboot systemd.mask=systemd-vconsole-setup root=LABEL=dracut mount.usr=LABEL=dracutusr mount.usrfstype=btrfs mount.usrflags=subvol=usr,ro $client_opts rd.retry=3 $DEBUGOUT" \
         -initrd "$TESTDIR"/initramfs.testing || return 1
 
     if ! test_marker_check; then
@@ -35,13 +35,23 @@ client_run() {
         return 1
     fi
     echo "CLIENT TEST END: $test_name [OK]"
-
 }
 
 test_run() {
     client_run "no option specified" || return 1
     client_run "readonly root" "ro" || return 1
     client_run "writeable root" "rw" || return 1
+
+    # volatile mode
+    client_run "volatile=overlayfs root" "systemd.volatile=overlayfs" || return 1
+    client_run "volatile=state root" "systemd.volatile=state" || return 1
+
+    # shellcheck source=$TESTDIR/luks.uuid
+    . "$TESTDIR"/luks.uuid
+
+    # luks
+    client_run "encrypted root with rd.luks.uuid" "root=LABEL=dracut_crypt rd.luks.uuid=$ID_FS_UUID rd.luks.key=/etc/key" || return 1
+    client_run "encrypted root with rd.luks.name" "root=/dev/mapper/crypt rd.luks.name=$ID_FS_UUID=crypt rd.luks.key=/etc/key" || return 1
     return 0
 }
 
@@ -55,8 +65,6 @@ test_setup() {
         -m "test-root systemd-ldconfig" \
         -i "${PKGLIBDIR}/modules.d/80test-root/test-init.sh" "/sbin/test-init.sh" \
         -i ./test-init.sh /sbin/test-init \
-        -I "findmnt" \
-        -i ./fstab /etc/fstab \
         -f "$TESTDIR"/initramfs.root "$KVERSION" || return 1
 
     mkdir -p "$TESTDIR"/overlay/source && cp -a "$TESTDIR"/dracut.*/initramfs/* "$TESTDIR"/overlay/source && rm -rf "$TESTDIR"/dracut.* && export initdir=$TESTDIR/overlay/source
@@ -117,8 +125,8 @@ EOF
     # We do it this way so that we do not risk trashing the host mdraid
     # devices, volume groups, encrypted partitions, etc.
     "$DRACUT" -N -l -i "$TESTDIR"/overlay / \
-        -m "test-makeroot bash btrfs" \
-        -I "mkfs.btrfs" \
+        -a "test-makeroot btrfs" \
+        -I "mkfs.btrfs cryptsetup" \
         -i ./create-root.sh /lib/dracut/hooks/initqueue/01-create-root.sh \
         -f "$TESTDIR"/initramfs.makeroot "$KVERSION" || return 1
     rm -rf -- "$TESTDIR"/overlay/*
@@ -129,26 +137,22 @@ EOF
     declare -i disk_index=0
     qemu_add_drive disk_index disk_args "$TESTDIR"/marker.img marker 1
     qemu_add_drive disk_index disk_args "$TESTDIR"/root.btrfs root 160
+    qemu_add_drive disk_index disk_args "$TESTDIR"/root_crypt.btrfs root_crypt 160
     qemu_add_drive disk_index disk_args "$TESTDIR"/usr.btrfs usr 160
 
     # Invoke KVM and/or QEMU to actually create the target filesystem.
     "$testdir"/run-qemu \
         "${disk_args[@]}" \
-        -append "root=/dev/fakeroot rw rootfstype=btrfs quiet console=ttyS0,115200n81 selinux=0" \
+        -append "root=/dev/fakeroot rw rootfstype=btrfs quiet console=ttyS0,115200n81" \
         -initrd "$TESTDIR"/initramfs.makeroot || return 1
+    test_marker_check dracut-root-block-created || return 1
 
-    if ! test_marker_check dracut-root-block-created; then
-        echo "Could not create root filesystem"
-        return 1
-    fi
-
-    [ -e /etc/machine-id ] && EXTRA_MACHINE="/etc/machine-id"
-    [ -e /etc/machine-info ] && EXTRA_MACHINE+=" /etc/machine-info"
+    grep -F -a -m 1 ID_FS_UUID "$TESTDIR"/marker.img > "$TESTDIR"/luks.uuid
+    echo -n test > /tmp/key
 
     test_dracut \
-        -a "systemd i18n qemu" \
-        -d "btrfs" \
-        ${EXTRA_MACHINE:+-I "$EXTRA_MACHINE"} \
+        -m "btrfs dracut-systemd i18n systemd-ac-power systemd-coredump systemd-creds systemd-cryptsetup systemd-integritysetup systemd-ldconfig systemd-pcrphase systemd-pstore systemd-repart systemd-sysext systemd-veritysetup" \
+        -i "/tmp/key" "/etc/key" \
         "$TESTDIR"/initramfs.testing
 
     rm -rf -- "$TESTDIR"/overlay

@@ -18,7 +18,7 @@ client_run() {
     test_marker_reset
     "$testdir"/run-qemu \
         "${disk_args[@]}" \
-        -append "$* root=LABEL=root rw rd.retry=5" \
+        -append "$TEST_KERNEL_CMDLINE $* root=LABEL=root rw rd.retry=5" \
         -initrd "$TESTDIR"/initramfs.testing || return 1
 
     if ! test_marker_check; then
@@ -60,7 +60,7 @@ test_setup() {
     # We do it this way so that we do not risk trashing the host mdraid
     # devices, volume groups, encrypted partitions, etc.
     "$DRACUT" -N -l -i "$TESTDIR"/overlay / \
-        -m "test-makeroot bash lvm mdraid dmraid kernel-modules" \
+        -a "test-makeroot bash lvm mdraid dmraid kernel-modules" \
         -d "piix ide-gd_mod ata_piix ext4 sd_mod dm-multipath dm-crypt dm-round-robin faulty linear multipath raid0 raid10 raid1 raid456" \
         -I "grep sfdisk realpath" \
         -i ./create-root.sh /lib/dracut/hooks/initqueue/01-create-root.sh \
@@ -77,7 +77,7 @@ test_setup() {
     # Invoke KVM and/or QEMU to actually create the target filesystem.
     "$testdir"/run-qemu \
         "${disk_args[@]}" \
-        -append "root=/dev/dracut/root rw rootfstype=ext4 quiet console=ttyS0,115200n81 selinux=0" \
+        -append "root=/dev/dracut/root rw rootfstype=ext4 quiet console=ttyS0,115200n81" \
         -initrd "$TESTDIR"/initramfs.makeroot || return 1
     test_marker_check dracut-root-block-created || return 1
     eval "$(grep -F --binary-files=text -m 1 MD_UUID "$TESTDIR"/marker.img)"

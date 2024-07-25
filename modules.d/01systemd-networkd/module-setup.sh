@@ -22,7 +22,7 @@ check() {
 depends() {
 
     # This module has external dependency on other module(s).
-    echo kernel-network-modules systemd-sysusers
+    echo kernel-network-modules systemd-sysusers systemd
     # Return 0 to include the dependent module(s) in the initramfs.
     return 0
 
@@ -30,6 +30,8 @@ depends() {
 
 # Install the required file(s) and directories for the module in the initramfs.
 install() {
+
+    inst_sysusers systemd-network.conf
 
     inst_multiple -o \
         "$tmpfilesdir"/systemd-network.conf \
@@ -55,8 +57,16 @@ install() {
         "$systemdsystemunitdir"/systemd-networkd-wait-online.service \
         "$systemdsystemunitdir"/systemd-networkd-wait-online@.service \
         "$systemdsystemunitdir"/systemd-network-generator.service \
-        "$sysusers"/systemd-network.conf \
-        ip
+        ip sed grep
+
+    inst_simple "$moddir"/99-wait-online-dracut.conf \
+        "$systemdsystemunitdir"/systemd-networkd-wait-online.service.d/99-dracut.conf
+
+    inst_simple "$moddir"/99-default.network \
+        "$systemdnetworkconfdir"/99-dracut-default.network
+
+    inst_hook cmdline 99 "$moddir"/networkd-config.sh
+    inst_hook initqueue/settled 99 "$moddir"/networkd-run.sh
 
     # Enable systemd type units
     for i in \
@@ -82,7 +92,6 @@ install() {
             "$systemdsystemconfdir"/systemd-networkd-wait-online.service \
             "$systemdsystemconfdir/systemd-networkd-wait-online.service.d/*.conf" \
             "$systemdsystemconfdir"/systemd-networkd-wait-online@.service \
-            "$systemdsystemconfdir/systemd-networkd-wait-online@.service.d/*.conf" \
-            "$sysusersconfdir"/systemd-network.conf
+            "$systemdsystemconfdir/systemd-networkd-wait-online@.service.d/*.conf"
     fi
 }

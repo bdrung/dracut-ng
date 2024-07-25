@@ -14,8 +14,10 @@ RUN dnf -y install --setopt=install_weak_deps=False \
     dhcp-server \
     dmraid \
     e2fsprogs \
+    erofs-utils \
     gcc \
     git \
+    hmaccalc \
     iproute \
     iputils \
     iscsiuio \
