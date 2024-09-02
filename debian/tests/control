@@ -1,5 +1,6 @@
 # Note: These tests need root on Ubuntu, because the kernel is only readable by root. See https://launchpad.net/bugs/759725
 # Skip following test cases:
+# * TEST-14-IMSM: dmraid was removed from Debian
 # * TEST-20-NFS: https://github.com/dracutdevs/dracut/issues/1901
 # * TEST-30-ISCSI: https://github.com/dracutdevs/dracut/issues/2497
 # * TEST-35-ISCSI-MULTI: https://github.com/dracutdevs/dracut/issues/2498
@@ -7,11 +8,10 @@
 # * TEST-60-BONDBRIDGEVLAN: https://github.com/dracutdevs/dracut/issues/2328
 # arm64, armhf, ppc64el, and s390x need upstream support: https://github.com/dracutdevs/dracut/issues/2493
 Architecture: amd64 arm64 armhf ppc64el riscv64 s390x
-Test-Command: debian/tests/run-upstream-tests SKIP="16 20 30 35 40 50 60"
+Test-Command: debian/tests/run-upstream-tests SKIP="14 16 20 30 35 40 50 60"
 Depends: btrfs-progs,
          busybox,
          cryptsetup,
-         dmraid,
          dracut-core,
          fdisk,
          gawk,
