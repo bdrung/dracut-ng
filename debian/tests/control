@@ -22,6 +22,9 @@ Depends: btrfs-progs,
          mount,
          qemu-kvm,
          systemd-boot-efi,
+         systemd-coredump,
+         systemd-cryptsetup,
+         systemd-repart,
          systemd-sysv,
          util-linux
 Restrictions: allow-stderr
