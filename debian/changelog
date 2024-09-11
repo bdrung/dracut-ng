@@ -1,3 +1,10 @@
+dracut (103-1.1) unstable; urgency=medium
+
+  * no changes non-maintainer upload to rebuild the package with a newer
+    libkmod2 (see #1079022)
+
+ -- Marco d'Itri <md@linux.it>  Tue, 20 Aug 2024 23:36:24 +0200
+
 dracut (103-1) unstable; urgency=low
 
   * new upstream version 103
