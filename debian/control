@@ -12,7 +12,7 @@ Package: dracut
 Architecture: all
 Multi-Arch: foreign
 Suggests: dracut-network
-Depends: dracut-core (>= ${binary:Version}), dracut-core (<< ${binary:Version}+b+~), ${misc:Depends}
+Depends: dracut-core (>= ${binary:Version}), dracut-core (<< ${binary:Version}+b+~), linux-base, ${misc:Depends}
 Provides: linux-initramfs-tool
 Conflicts: initramfs-tools, live-tools
 Description: Initramfs generator using udev

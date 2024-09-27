@@ -4,14 +4,13 @@ set -e
 
 
 mk_initrd() {
-
-    if ls /boot/vmlinu[zx]-* >/dev/null 2>&1; then
-
-    # Regenerate initramfs for all kernel that are installed
-    for kversion in `ls /boot/vmlinu[zx]-* | sed -e 's#/boot/vmlinu.-##'`; do
-        /etc/kernel/postinst.d/dracut $kversion
+    local latest_version
+    latest_version=$(linux-version list | linux-version sort | tail -n 1)
+    linux-version list | while read -r kversion; do
+        if test "$kversion" = "$latest_version" || ! test -e "/boot/initrd.img-$kversion"; then
+            /etc/kernel/postinst.d/dracut "$kversion"
+        fi
     done
-    fi
 }
 
 if [ "x$1" != xtriggered ]; then
