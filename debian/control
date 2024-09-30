@@ -4,6 +4,7 @@ Priority: optional
 Maintainer: Thomas Lange <lange@debian.org>
 Uploaders: Benjamin Drung <bdrung@debian.org>
 Build-Depends: debhelper-compat (= 13),
+               dh-apport,
                3cpio [!alpha !hppa !m68k !sh4] <!nocheck>,
                asciidoctor,
                bash-completion,
