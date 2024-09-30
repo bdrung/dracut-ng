@@ -5,6 +5,7 @@ Maintainer: Thomas Lange <lange@debian.org>
 Uploaders: Benjamin Drung <bdrung@debian.org>
 Build-Depends: asciidoc-base,
                debhelper-compat (= 13),
+               dh-apport,
                docbook-xml,
                docbook-xsl,
                libkmod-dev,
