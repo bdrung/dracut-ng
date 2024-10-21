@@ -1,0 +1,63 @@
+FROM registry.opensuse.org/opensuse/tumbleweed-dnf:latest
+
+# prefer running tests with btrfs
+ENV TEST_FSTYPE=btrfs
+
+# Install needed packages for the dracut CI container
+RUN dnf -y install --setopt=install_weak_deps=False \
+    asciidoc \
+    bash-completion \
+    btrfsprogs \
+    bzip2 \
+    cargo \
+    cryptsetup \
+    dash \
+    dbus-broker \
+    dhcp-client \
+    dhcp-server \
+    dmraid \
+    e2fsprogs \
+    erofs-utils \
+    gcc \
+    git \
+    hmaccalc \
+    iproute \
+    iputils \
+    iscsiuio \
+    kbd \
+    kernel \
+    libkmod-devel \
+    lvm2 \
+    make \
+    mdadm \
+    mkosi \
+    nbd \
+    NetworkManager \
+    nfs-utils \
+    open-iscsi \
+    parted \
+    pigz \
+    procps \
+    python3-pefile \
+    qemu-kvm \
+    rng-tools \
+    rpm-build \
+    sbsigntools \
+    ShellCheck \
+    shfmt \
+    squashfs \
+    swtpm \
+    systemd-boot \
+    systemd-experimental \
+    tar \
+    tgt \
+    tpm2.0-tools \
+    /usr/bin/qemu-system-$(uname -m) \
+    util-linux-systemd \
+    xz \
+    && dnf -y update && dnf clean all
+
+# configuration in the package is not compatible
+# with the upstream CI, lets remove it
+RUN \
+  rm -rf /usr/lib/dracut/dracut.conf.d

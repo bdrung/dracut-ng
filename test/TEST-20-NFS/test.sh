@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # shellcheck disable=SC2034
 TEST_DESCRIPTION="root filesystem on NFS with $USE_NETWORK"
@@ -251,7 +251,7 @@ test_setup() {
 
         inst_multiple sh ls shutdown poweroff stty cat ps ln ip \
             dmesg mkdir cp exportfs \
-            modprobe rpc.nfsd rpc.mountd showmount tcpdump \
+            modprobe rpc.nfsd rpc.mountd \
             sleep mount chmod rm
         for _terminfodir in /lib/terminfo /etc/terminfo /usr/share/terminfo; do
             if [ -f "${_terminfodir}"/l/linux ]; then
@@ -309,7 +309,7 @@ test_setup() {
         )
 
         inst_multiple sh shutdown poweroff stty cat ps ln ip dd \
-            mount dmesg mkdir cp grep setsid ls vi less cat sync
+            mount dmesg mkdir cp grep setsid ls vi cat sync
         for _terminfodir in /lib/terminfo /etc/terminfo /usr/share/terminfo; do
             if [ -f "${_terminfodir}"/l/linux ]; then
                 inst_multiple -o "${_terminfodir}"/l/linux
@@ -401,6 +401,7 @@ test_setup() {
 
     # Make client's dracut image
     test_dracut \
+        --no-hostonly --no-hostonly-cmdline \
         -a "dmsquash-live ${USE_NETWORK}" \
         "$TESTDIR"/initramfs.testing
 
@@ -415,12 +416,10 @@ test_setup() {
     )
     # Make server's dracut image
     "$DRACUT" -l -i "$TESTDIR"/overlay / \
-        -a "bash rootfs-block debug kernel-modules watchdog qemu ${USE_NETWORK}" \
+        -a "bash rootfs-block debug kernel-modules watchdog qemu network-legacy" \
         -d "af_packet piix ide-gd_mod ata_piix ext4 sd_mod e1000 i6300esb" \
         --no-hostonly-cmdline -N \
         -f "$TESTDIR"/initramfs.server "$KVERSION" || return 1
-
-    rm -rf -- "$TESTDIR"/overlay
 }
 
 test_cleanup() {

@@ -13,12 +13,13 @@ depends() {
     echo systemd-udevd systemd-journald systemd-tmpfiles
 }
 
-installkernel() {
-    return 0
-}
-
 # called by dracut
 install() {
+    # The existence of this file is required
+    if ! [[ -e "$initdir/etc/initrd-release" ]]; then
+        : > "$initdir/etc/initrd-release"
+    fi
+
     inst_multiple -o \
         "$systemdsystemunitdir"/initrd.target \
         "$systemdsystemunitdir"/initrd-fs.target \
@@ -30,6 +31,4 @@ install() {
         "$systemdsystemunitdir"/initrd-cleanup.service \
         "$systemdsystemunitdir"/initrd-udevadm-cleanup-db.service \
         "$systemdsystemunitdir"/initrd-parse-etc.service
-
-    $SYSTEMCTL -q --root "$initdir" set-default initrd.target
 }

@@ -101,6 +101,14 @@ if ! [[ $libdirs ]]; then
     export libdirs
 fi
 
+# ldd needs LD_LIBRARY_PATH pointing to the libraries within the sysroot directory
+if [[ -n $dracutsysrootdir ]]; then
+    for lib in $libdirs; do
+        LD_LIBRARY_PATH="${LD_LIBRARY_PATH:+"$LD_LIBRARY_PATH":}$dracutsysrootdir$lib"
+    done
+    export LD_LIBRARY_PATH
+fi
+
 # helper function for check() in module-setup.sh
 # to check for required installed binaries
 # issues a standardized warning message
@@ -240,34 +248,36 @@ inst_dir() {
 }
 
 inst() {
+    local dstdir="${dstdir:-"$initdir"}"
     local _ret _hostonly_install
     if [[ $1 == "-H" ]]; then
         _hostonly_install="-H"
         shift
     fi
-    [[ -e ${initdir}/"${2:-$1}" ]] && return 0 # already there
-    if $DRACUT_INSTALL ${dracutsysrootdir:+-r "$dracutsysrootdir"} ${initdir:+-D "$initdir"} ${loginstall:+-L "$loginstall"} ${DRACUT_RESOLVE_DEPS:+-l} ${DRACUT_FIPS_MODE:+-f} ${_hostonly_install:+-H} "$@"; then
+    [[ -e ${dstdir}/"${2:-$1}" ]] && return 0 # already there
+    if $DRACUT_INSTALL ${dracutsysrootdir:+-r "$dracutsysrootdir"} ${dstdir:+-D "$dstdir"} ${loginstall:+-L "$loginstall"} ${DRACUT_RESOLVE_DEPS:+-l} ${DRACUT_FIPS_MODE:+-f} ${_hostonly_install:+-H} "$@"; then
         return 0
     else
         _ret=$?
-        derror FAILED: "$DRACUT_INSTALL" ${dracutsysrootdir:+-r "$dracutsysrootdir"} ${initdir:+-D "$initdir"} ${loginstall:+-L "$loginstall"} ${DRACUT_RESOLVE_DEPS:+-l} ${DRACUT_FIPS_MODE:+-f} ${_hostonly_install:+-H} "$@"
+        derror FAILED: "$DRACUT_INSTALL" ${dracutsysrootdir:+-r "$dracutsysrootdir"} ${dstdir:+-D "$dstdir"} ${loginstall:+-L "$loginstall"} ${DRACUT_RESOLVE_DEPS:+-l} ${DRACUT_FIPS_MODE:+-f} ${_hostonly_install:+-H} "$@"
         return $_ret
     fi
 }
 
 inst_simple() {
+    local dstdir="${dstdir:-"$initdir"}"
     local _ret _hostonly_install
     if [[ $1 == "-H" ]]; then
         _hostonly_install="-H"
         shift
     fi
-    [[ -e ${initdir}/"${2:-$1}" ]] && return 0 # already there
-    [[ -e $1 ]] || return 1                    # no source
-    if $DRACUT_INSTALL ${dracutsysrootdir:+-r "$dracutsysrootdir"} ${initdir:+-D "$initdir"} ${loginstall:+-L "$loginstall"} ${_hostonly_install:+-H} "$@"; then
+    [[ -e ${dstdir}/"${2:-$1}" ]] && return 0 # already there
+    [[ -e $1 ]] || return 1                   # no source
+    if $DRACUT_INSTALL ${dracutsysrootdir:+-r "$dracutsysrootdir"} ${dstdir:+-D "$dstdir"} ${loginstall:+-L "$loginstall"} ${_hostonly_install:+-H} "$@"; then
         return 0
     else
         _ret=$?
-        derror FAILED: "$DRACUT_INSTALL" ${dracutsysrootdir:+-r "$dracutsysrootdir"} ${initdir:+-D "$initdir"} ${loginstall:+-L "$loginstall"} ${_hostonly_install:+-H} "$@"
+        derror FAILED: "$DRACUT_INSTALL" ${dracutsysrootdir:+-r "$dracutsysrootdir"} ${dstdir:+-D "$dstdir"} ${loginstall:+-L "$loginstall"} ${_hostonly_install:+-H} "$@"
         return $_ret
     fi
 }
@@ -290,16 +300,17 @@ inst_symlink() {
 }
 
 inst_multiple() {
+    local dstdir="${dstdir:-"$initdir"}"
     local _ret _hostonly_install
     if [[ $1 == "-H" ]]; then
         _hostonly_install="-H"
         shift
     fi
-    if $DRACUT_INSTALL ${dracutsysrootdir:+-r "$dracutsysrootdir"} ${initdir:+-D "$initdir"} -a ${loginstall:+-L "$loginstall"} ${DRACUT_RESOLVE_DEPS:+-l} ${DRACUT_FIPS_MODE:+-f} ${_hostonly_install:+-H} "$@"; then
+    if $DRACUT_INSTALL ${dracutsysrootdir:+-r "$dracutsysrootdir"} ${dstdir:+-D "$dstdir"} -a ${loginstall:+-L "$loginstall"} ${DRACUT_RESOLVE_DEPS:+-l} ${DRACUT_FIPS_MODE:+-f} ${_hostonly_install:+-H} "$@"; then
         return 0
     else
         _ret=$?
-        derror FAILED: "$DRACUT_INSTALL" ${dracutsysrootdir:+-r "$dracutsysrootdir"} ${initdir:+-D "$initdir"} -a ${loginstall:+-L "$loginstall"} ${DRACUT_RESOLVE_DEPS:+-l} ${DRACUT_FIPS_MODE:+-f} ${_hostonly_install:+-H} "$@"
+        derror FAILED: "$DRACUT_INSTALL" ${dracutsysrootdir:+-r "$dracutsysrootdir"} ${dstdir:+-D "$dstdir"} -a ${loginstall:+-L "$loginstall"} ${DRACUT_RESOLVE_DEPS:+-l} ${DRACUT_FIPS_MODE:+-f} ${_hostonly_install:+-H} "$@"
         return $_ret
     fi
 }
@@ -566,6 +577,8 @@ inst_rules_wildcard() {
 
 # make sure that library links are correct and up to date
 build_ld_cache() {
+    local dstdir="${dstdir:-"$initdir"}"
+
     for f in "$dracutsysrootdir"/etc/ld.so.conf "$dracutsysrootdir"/etc/ld.so.conf.d/*; do
         [[ -f $f ]] && inst_simple "${f#"$dracutsysrootdir"}"
     done
@@ -576,48 +589,6 @@ build_ld_cache() {
             derror "ldconfig might need uid=0 (root) for chroot()"
         fi
     fi
-}
-
-prepare_udev_rules() {
-    dwarn "prepare_udev_rules: deprecated and will be removed"
-
-    if [ -z "$UDEVVERSION" ]; then
-        UDEVVERSION=$(udevadm --version)
-        export UDEVVERSION
-    fi
-
-    if [ -z "$UDEVVERSION" ]; then
-        derror "Failed to detect udev version!"
-        return 1
-    fi
-    if [ -z "${UDEVVERSION##*[!0-9]*}" ]; then
-        derror "udevadm --version did not report an integer, udev version cannot be determined!"
-        return 1
-    fi
-
-    for f in "$@"; do
-        f="${initdir}/etc/udev/rules.d/$f"
-        [ -e "$f" ] || continue
-        while read -r line || [ -n "$line" ]; do
-            if [ "${line%%IMPORT PATH_ID}" != "$line" ]; then
-                if ((UDEVVERSION >= 174)); then
-                    printf '%sIMPORT{builtin}="path_id"\n' "${line%%IMPORT PATH_ID}"
-                else
-                    printf '%sIMPORT{program}="path_id %%p"\n' "${line%%IMPORT PATH_ID}"
-                fi
-            elif [ "${line%%IMPORT BLKID}" != "$line" ]; then
-                if ((UDEVVERSION >= 176)); then
-                    printf '%sIMPORT{builtin}="blkid"\n' "${line%%IMPORT BLKID}"
-                else
-                    # shellcheck disable=SC2016
-                    printf '%sIMPORT{program}="/sbin/blkid -o udev -p $devnode"\n' "${line%%IMPORT BLKID}"
-                fi
-            else
-                echo "$line"
-            fi
-        done < "${f}" > "${f}.new"
-        mv "${f}.new" "$f"
-    done
 }
 
 # install function specialized for hooks
@@ -1056,13 +1027,15 @@ for_each_module_dir() {
 }
 
 dracut_kernel_post() {
+    local dstdir="${dstdir:-"$initdir"}"
+
     for _f in modules.builtin modules.builtin.alias modules.builtin.modinfo modules.order; do
         [[ -e $srcmods/$_f ]] && inst_simple "$srcmods/$_f" "/lib/modules/$kernel/$_f"
     done
 
     # generate module dependencies for the initrd
-    if [[ -d $initdir/lib/modules/$kernel ]] \
-        && ! depmod -a -b "$initdir" "$kernel"; then
+    if [[ -d $dstdir/lib/modules/$kernel ]] \
+        && ! depmod -a -b "$dstdir" "$kernel"; then
         dfatal "\"depmod -a $kernel\" failed."
         exit 1
     fi
@@ -1076,6 +1049,7 @@ instmods() {
     # <kernel subsystem> can be e.g. "=block" or "=drivers/usb/storage"
     # -c check
     # -s silent
+    local dstdir="${dstdir:-"$initdir"}"
     local _optional="-o"
     local _silent
     local _ret
@@ -1101,7 +1075,7 @@ instmods() {
     fi
 
     $DRACUT_INSTALL \
-        ${initdir:+-D "$initdir"} \
+        ${dstdir:+-D "$dstdir"} \
         ${dracutsysrootdir:+-r "$dracutsysrootdir"} \
         ${loginstall:+-L "$loginstall"} \
         ${hostonly:+-H} \
@@ -1115,7 +1089,7 @@ instmods() {
     if ((_ret != 0)) && [[ -z $_silent ]]; then
         derror "FAILED: " \
             "$DRACUT_INSTALL" \
-            ${initdir:+-D "$initdir"} \
+            ${dstdir:+-D "$dstdir"} \
             ${dracutsysrootdir:+-r "$dracutsysrootdir"} \
             ${loginstall:+-L "$loginstall"} \
             ${hostonly:+-H} \
@@ -1132,14 +1106,16 @@ instmods() {
 
 if [[ "$(ln --help)" == *--relative* ]]; then
     ln_r() {
-        ln -sfnr "${initdir}/$1" "${initdir}/$2"
+        local dstdir="${dstdir:-"$initdir"}"
+        ln -sfnr "${dstdir}/$1" "${dstdir}/$2"
     }
 else
     ln_r() {
+        local dstdir="${dstdir:-"$initdir"}"
         local _source=$1
         local _dest=$2
         [[ -d ${_dest%/*} ]] && _dest=$(readlink -f "${_dest%/*}")/${_dest##*/}
-        ln -sfn -- "$(convert_abs_rel "${_dest}" "${_source}")" "${initdir}/${_dest}"
+        ln -sfn -- "$(convert_abs_rel "${_dest}" "${_source}")" "${dstdir}/${_dest}"
     }
 fi
 

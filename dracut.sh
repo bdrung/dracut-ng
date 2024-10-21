@@ -157,6 +157,9 @@ Creates initial ramdisk images for preloading modules
                          Default: /etc/dracut.conf
   --confdir [DIR]       Specify configuration directory to use *.conf files
                          from. Default: /etc/dracut.conf.d
+  --add-confdir [DIR]   Add an extra configuration directory to use *.conf
+                         files from. If the directory is not existed, will
+                         look for subdirectory under confdir.
   --tmpdir [DIR]        Temporary directory to be used instead of default
                          ${TMPDIR:-/var/tmp}.
   -r, --sysroot [DIR]   Specify sysroot directory to collect files from.
@@ -385,6 +388,7 @@ rearrange_params() {
             --long kmoddir: \
             --long conf: \
             --long confdir: \
+            --long add-confdir: \
             --long tmpdir: \
             --long sysroot: \
             --long stdlog: \
@@ -661,6 +665,11 @@ while :; do
             PARMS_TO_STORE+=" '$2'"
             shift
             ;;
+        --add-confdir)
+            add_confdir="$2"
+            PARMS_TO_STORE+=" '$2'"
+            shift
+            ;;
         --tmpdir)
             tmpdir_l="$2"
             PARMS_TO_STORE+=" '$2'"
@@ -801,7 +810,11 @@ while :; do
         --no-compress) _no_compress_l="cat" ;;
         --gzip) compress_l="gzip" ;;
         --enhanced-cpio) enhanced_cpio_l="yes" ;;
-        --list-modules) do_list="yes" ;;
+        --list-modules)
+            do_list="yes"
+            kernel_only="no"
+            no_kernel="yes"
+            ;;
         -M | --show-modules)
             show_modules_l="yes"
             ;;
@@ -914,6 +927,20 @@ elif [[ ! -d $confdir ]]; then
     exit 1
 fi
 
+if [[ -n $add_confdir ]]; then
+    if [[ -d $add_confdir ]]; then
+        :
+    # Check if it exists under $confdir.
+    elif [[ -d $confdir/$add_confdir ]]; then
+        add_confdir="$confdir/$add_confdir"
+    elif [[ -d $dracutbasedir/dracut.conf.d/$add_confdir ]]; then
+        add_confdir="$dracutbasedir/dracut.conf.d/$add_confdir"
+    else
+        printf "%s\n" "dracut[F]: Configuration directory '$add_confdir' not found." >&2
+        exit 1
+    fi
+fi
+
 # source our config file
 if [[ -f $conffile ]]; then
     check_conf_file "$conffile"
@@ -922,7 +949,7 @@ if [[ -f $conffile ]]; then
 fi
 
 # source our config dir
-for f in $(dropindirs_sort ".conf" "$confdir" "$dracutbasedir/dracut.conf.d"); do
+for f in $(dropindirs_sort ".conf" "$confdir" "$add_confdir" "$dracutbasedir/dracut.conf.d"); do
     check_conf_file "$f"
     # shellcheck disable=SC1090
     [[ -e $f ]] && . "$f"
@@ -1138,7 +1165,9 @@ if ! [[ $outfile ]]; then
             outfile="$dracutsysrootdir/boot/efi/${MACHINE_ID}/${kernel}/initrd"
         elif [[ -f "$dracutsysrootdir"/lib/modules/${kernel}/initrd ]]; then
             outfile="$dracutsysrootdir/lib/modules/${kernel}/initrd"
-        elif [[ -e $dracutsysrootdir/boot/vmlinuz-${kernel} || -e $dracutsysrootdir/boot/vmlinux-${kernel} ]]; then
+        elif [[ -e $dracutsysrootdir/boot/vmlinuz-${kernel} ||
+            -e $dracutsysrootdir/boot/vmlinux-${kernel} ||
+            -e $dracutsysrootdir/boot/kernel-${kernel} ]]; then
             outfile="$dracutsysrootdir/boot/$initrdname"
         elif [[ -z $dracutsysrootdir ]] \
             && [[ $MACHINE_ID ]] \
@@ -1182,6 +1211,43 @@ DRACUT_COMPRESS_CAT=${DRACUT_COMPRESS_CAT:-cat}
 if [[ $_no_compress_l == "$DRACUT_COMPRESS_CAT" ]]; then
     compress="$DRACUT_COMPRESS_CAT"
 fi
+
+check_kernel_compress_support() {
+    local kern_compress_config
+    case $1 in
+        "$DRACUT_COMPRESS_LBZIP2" | "$DRACUT_COMPRESS_BZIP2" | lbzip2 | bzip2 | */lbzip2 | */bzip2)
+            kern_compress_config=CONFIG_RD_BZIP2
+            ;;
+        "$DRACUT_COMPRESS_LZMA" | lzma | */lzma)
+            kern_compress_config=CONFIG_RD_LZMA
+            ;;
+        "$DRACUT_COMPRESS_XZ" | xz | */xz)
+            kern_compress_config=CONFIG_RD_XZ
+            ;;
+        "$DRACUT_COMPRESS_PIGZ" | "$DRACUT_COMPRESS_GZIP" | pigz | gzip | */pigz | */gzip)
+            kern_compress_config=CONFIG_RD_GZIP
+            ;;
+        "$DRACUT_COMPRESS_LZOP" | lzop | */lzop)
+            kern_compress_config=CONFIG_RD_LZO
+            ;;
+        "$DRACUT_COMPRESS_ZSTD" | zstd | */zstd)
+            kern_compress_config=CONFIG_RD_ZSTD
+            ;;
+        "$DRACUT_COMPRESS_LZ4" | lz4 | */lz4)
+            kern_compress_config=CONFIG_RD_LZ4
+            ;;
+        "$DRACUT_COMPRESS_CAT" | cat | */cat)
+            return 0
+            ;;
+        *)
+            derror "unknown kernel config option for compressor $1"
+            return 0
+            ;;
+    esac
+
+    check_kernel_config $kern_compress_config
+    return $?
+}
 
 [[ $hostonly == yes ]] && hostonly="-h"
 [[ $hostonly != "-h" ]] && unset hostonly
@@ -1260,6 +1326,7 @@ trap '
 trap 'exit 1;' SIGINT
 
 readonly initdir="${DRACUT_TMPDIR}/initramfs"
+readonly squashdir="$initdir/squash_root"
 mkdir -p "$initdir"
 
 if [[ $early_microcode == yes ]] || { [[ $acpi_override == yes ]] && [[ -d $acpi_table_dir ]]; }; then
@@ -1282,7 +1349,7 @@ if [[ -f $dracutbasedir/dracut-version.sh ]]; then
 fi
 
 if systemd-detect-virt -c &> /dev/null; then
-    export DRACUT_NO_MKNOD=1 DRACUT_NO_XATTR=1
+    export DRACUT_NO_MKNOD=1
     if [[ $hostonly ]]; then
         printf "%s\n" "dracut[W]: Running in hostonly mode in a container!" >&2
     fi
@@ -1331,6 +1398,11 @@ if ! [[ $print_cmdline ]]; then
         export DRACUT_RESOLVE_DEPS=1
     fi
     rm -fr -- "${initdir:?}"/*
+fi
+
+if ! check_kernel_config CONFIG_BLK_DEV_INITRD; then
+    echo "This kernel doesn't support initramfs, skipping generation"
+    exit 0
 fi
 
 dracutfunctions=$dracutbasedir/dracut-functions.sh
@@ -1762,11 +1834,9 @@ for dev in "${host_devs[@]}"; do
 done
 
 for dev in "${!host_fs_types[@]}"; do
-    [[ ${host_fs_types[$dev]} == "reiserfs" ]] || [[ ${host_fs_types[$dev]} == "xfs" ]] || continue
+    [[ ${host_fs_types[$dev]} == "xfs" ]] || continue
     rootopts=$(find_dev_fsopts "$dev")
-    if [[ ${host_fs_types[$dev]} == "reiserfs" ]]; then
-        journaldev=$(fs_get_option "$rootopts" "jdev")
-    elif [[ ${host_fs_types[$dev]} == "xfs" ]]; then
+    if [[ ${host_fs_types[$dev]} == "xfs" ]]; then
         journaldev=$(fs_get_option "$rootopts" "logdev")
     fi
     if [[ $journaldev ]]; then
@@ -1787,7 +1857,8 @@ export initdir dracutbasedir \
     host_fs_types host_devs swap_devs sshkey add_fstab \
     DRACUT_VERSION \
     prefix filesystems drivers \
-    hostonly_cmdline loginstall
+    hostonly_cmdline loginstall \
+    squashdir squash_compress
 
 mods_to_load=""
 # check all our modules to see if they should be sourced.
@@ -1891,6 +1962,8 @@ if [[ $kernel_only != yes ]]; then
         [[ -c ${initdir}/dev/urandom ]] || mknod "${initdir}"/dev/urandom c 1 9
     fi
 fi
+
+dracut_module_included "squash-lib" && mkdir -p "$squashdir"
 
 _isize=0 #initramfs size
 modules_loaded=" "
@@ -2108,6 +2181,7 @@ if [[ $do_strip == yes ]]; then
         fi
     done
 
+    kstrip_args=(-g)
     if [[ $aggressive_strip == yes ]]; then
         # `eu-strip` and `strip` both strips all unneeded parts by default
         strip_args=(-p)
@@ -2243,14 +2317,6 @@ if [[ $kernel_only != yes ]]; then
     build_ld_cache
 fi
 
-if dracut_module_included "squash"; then
-    readonly squash_dir="$initdir/squash/root"
-    readonly squash_img="$initdir/squash-root.img"
-    mkdir -p "$squash_dir"
-    dinfo "*** Install squash loader ***"
-    DRACUT_SQUASH_POST_INST=1 module_install "squash"
-fi
-
 if [[ $do_strip == yes ]] && ! [[ $DRACUT_FIPS_MODE ]]; then
     # stripping files negates (dedup) benefits of using reflink
     [[ -n $enhanced_cpio ]] && ddebug "strip is enabled alongside cpio reflink"
@@ -2264,31 +2330,14 @@ if [[ $do_strip == yes ]] && ! [[ $DRACUT_FIPS_MODE ]]; then
         | while read -r -d $'\0' f || [ -n "$f" ]; do
             SIG=$(tail -c 28 "$f" | tr -d '\000')
             [[ $SIG == '~Module signature appended~' ]] || { printf "%s\000" "$f"; }
-        done | xargs -r -0 "$strip_cmd" "${strip_args[@]}"
+        done | xargs -r -0 "$strip_cmd" "${kstrip_args[@]}"
     dinfo "*** Stripping files done ***"
 fi
 
-if dracut_module_included "squash"; then
+if dracut_module_included "squash-lib"; then
     dinfo "*** Squashing the files inside the initramfs ***"
-    declare squash_compress_arg
-    # shellcheck disable=SC2086
-    if [[ $squash_compress ]]; then
-        if ! mksquashfs /dev/null "$DRACUT_TMPDIR"/.squash-test.img -no-progress -comp $squash_compress &> /dev/null; then
-            dwarn "mksquashfs doesn't support compressor '$squash_compress', failing back to default compressor."
-        else
-            squash_compress_arg="$squash_compress"
-        fi
-    fi
-
-    # shellcheck disable=SC2086
-    if ! mksquashfs "$squash_dir" "$squash_img" \
-        -no-xattrs -no-exports -noappend -no-recovery -always-use-fragments \
-        -no-progress ${squash_compress_arg:+-comp $squash_compress_arg} 1> /dev/null; then
-        dfatal "Failed making squash image"
-        exit 1
-    fi
-
-    rm -rf "$squash_dir"
+    DRACUT_SQUASH_POST_INST=1 module_install "squash-lib" || exit 1
+    rm -rf "$squashdir"
     dinfo "*** Squashing the files inside the initramfs done ***"
 
     # Skip initramfs compress
@@ -2350,20 +2399,12 @@ if [[ $create_early_cpio == yes ]]; then
     fi
 fi
 
-if check_kernel_config CONFIG_RD_ZSTD; then
-    DRACUT_KERNEL_RD_ZSTD=yes
-else
-    DRACUT_KERNEL_RD_ZSTD=
-fi
-
-if [[ $compress == $DRACUT_COMPRESS_ZSTD* && ! $DRACUT_KERNEL_RD_ZSTD ]]; then
-    dwarn "Kernel has no zstd support compiled in."
-    compress=
-fi
-
 if [[ $compress && $compress != cat ]]; then
     if ! command -v "${compress%% *}" &> /dev/null; then
         derror "Cannot execute compression command '$compress', falling back to default"
+        compress=
+    elif ! check_kernel_compress_support "${compress%% *}"; then
+        derror "The target kernel does not support '$compress', falling back to default"
         compress=
     fi
 fi
@@ -2371,8 +2412,8 @@ fi
 if ! [[ $compress ]]; then
     # check all known compressors, if none specified
     for i in $DRACUT_COMPRESS_ZSTD $DRACUT_COMPRESS_PIGZ $DRACUT_COMPRESS_GZIP $DRACUT_COMPRESS_LZ4 $DRACUT_COMPRESS_LZOP $DRACUT_COMPRESS_LZMA $DRACUT_COMPRESS_XZ $DRACUT_COMPRESS_LBZIP2 $DRACUT_COMPRESS_BZIP2 $DRACUT_COMPRESS_CAT; do
-        [[ $i != "$DRACUT_COMPRESS_ZSTD" || $DRACUT_KERNEL_RD_ZSTD ]] || continue
         command -v "$i" &> /dev/null || continue
+        check_kernel_compress_support "$i" || continue
         compress="$i"
         break
     done

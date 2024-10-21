@@ -6,11 +6,6 @@ check() {
 }
 
 # called by dracut
-depends() {
-    return 0
-}
-
-# called by dracut
 installkernel() {
     local _fipsmodules _mod _bootfstype
     if [[ -f "${srcmods}/modules.fips" ]]; then
@@ -64,7 +59,7 @@ install() {
     inst_hook pre-udev 01 "$moddir/fips-load-crypto.sh"
     inst_script "$moddir/fips.sh" /sbin/fips.sh
 
-    inst_multiple sha512hmac rmmod insmod mount uname umount grep sed cut find sort
+    inst_multiple sha512hmac rmmod insmod mount uname umount grep sed cut find sort cat tail tr
 
     inst_simple /etc/system-fips
 }

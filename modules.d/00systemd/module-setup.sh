@@ -11,11 +11,6 @@ check() {
     return 255
 }
 
-# called by dracut
-depends() {
-    return 0
-}
-
 installkernel() {
     hostonly='' instmods autofs4 ipv6 algif_hash hmac sha256
     instmods -s efivarfs
@@ -36,16 +31,14 @@ install() {
         "$systemdutildir"/systemd-shutdown \
         "$systemdutildir"/systemd-reply-password \
         "$systemdutildir"/systemd-fsck \
-        "$systemdutildir"/systemd-vconsole-setup \
         "$systemdutildir"/systemd-volatile-root \
         "$systemdutildir"/systemd-sysroot-fstab-check \
         "$systemdutildir"/system-generators/systemd-debug-generator \
         "$systemdutildir"/system-generators/systemd-fstab-generator \
         "$systemdutildir"/system-generators/systemd-gpt-auto-generator \
+        "$systemdutildir"/system.conf \
+        "$systemdutildir"/system.conf.d/*.conf \
         "$systemdsystemunitdir"/debug-shell.service \
-        "$systemdsystemunitdir"/cryptsetup.target \
-        "$systemdsystemunitdir"/cryptsetup-pre.target \
-        "$systemdsystemunitdir"/remote-cryptsetup.target \
         "$systemdsystemunitdir"/emergency.target \
         "$systemdsystemunitdir"/sysinit.target \
         "$systemdsystemunitdir"/basic.target \
@@ -79,7 +72,6 @@ install() {
         "$systemdsystemunitdir"/systemd-reboot.service \
         "$systemdsystemunitdir"/systemd-kexec.service \
         "$systemdsystemunitdir"/systemd-fsck@.service \
-        "$systemdsystemunitdir"/systemd-vconsole-setup.service \
         "$systemdsystemunitdir"/systemd-volatile-root.service \
         "$systemdsystemunitdir"/ctrl-alt-del.target \
         "$systemdsystemunitdir"/syslog.socket \
@@ -94,8 +86,8 @@ install() {
 
     if [[ $hostonly ]]; then
         inst_multiple -H -o \
-            /etc/systemd/system.conf \
-            /etc/systemd/system.conf.d/*.conf \
+            "$systemdutilconfdir"/system.conf \
+            "$systemdutilconfdir"/system.conf.d/*.conf \
             /etc/hosts \
             /etc/hostname \
             /etc/nsswitch.conf \
@@ -110,7 +102,7 @@ install() {
         chmod 444 "$initdir/etc/machine-id"
     fi
 
-    inst_multiple nologin
+    inst_multiple -o nologin
     {
         grep '^adm:' "$dracutsysrootdir"/etc/passwd 2> /dev/null
         # we don't use systemd-networkd, but the user is in systemd.conf tmpfiles snippet
@@ -140,7 +132,6 @@ EOF
         unset _wrapper
     fi
     ln_r "$_systemdbinary" "/init"
-    ln_r "$_systemdbinary" "/sbin/init"
 
     unset _systemdbinary
 
@@ -148,29 +139,20 @@ EOF
     ln_r "$(find_binary true)" "/usr/bin/loginctl"
     ln_r "$(find_binary true)" "/bin/loginctl"
     inst_rules \
-        70-uaccess.rules \
-        71-seat.rules \
-        73-seat-late.rules \
         90-vconsole.rules \
         99-systemd.rules
 
-    for i in \
-        emergency.target \
-        rescue.target; do
-        [[ -f "$systemdsystemunitdir"/$i ]] || continue
-        if [ -e "$systemdsystemunitdir"/systemd-vconsole-setup.service ]; then
-            $SYSTEMCTL -q --root "$initdir" add-wants "$i" systemd-vconsole-setup.service
-        fi
-    done
-
-    mkdir -p "$initdir/etc/systemd"
-
-    $SYSTEMCTL -q --root "$initdir" set-default multi-user.target
+    if dracut_module_included "i18n" && [[ -e "$systemdsystemunitdir"/systemd-vconsole-setup.service ]]; then
+        inst_multiple -o \
+            "$systemdutildir"/systemd-vconsole-setup \
+            "$systemdsystemunitdir"/systemd-vconsole-setup.service \
+            "$systemdsystemunitdir"/sysinit.target.wants/systemd-vconsole-setup.service
+    fi
 
     # Install library file(s)
     _arch=${DRACUT_ARCH:-$(uname -m)}
     inst_libdir_file \
         {"tls/$_arch/",tls/,"$_arch/",}"libgcrypt.so*" \
-        {"tls/$_arch/",tls/,"$_arch/",}"libkmod.so*" \
-        {"tls/$_arch/",tls/,"$_arch/",}"libnss_*"
+        {"tls/$_arch/",tls/,"$_arch/",}"libnss_*" \
+        {"tls/$_arch/",tls/,"$_arch/",}"systemd/libsystemd*.so"
 }

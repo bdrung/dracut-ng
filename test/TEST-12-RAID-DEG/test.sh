@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # shellcheck disable=SC2034
 TEST_DESCRIPTION="root filesystem on an encrypted LVM PV on a degraded RAID-5"
 
@@ -21,7 +21,7 @@ client_run() {
     test_marker_reset
     "$testdir"/run-qemu \
         "${disk_args[@]}" \
-        -append "$TEST_KERNEL_CMDLINE $* systemd.log_target=kmsg root=LABEL=root rw log_buf_len=2M systemd.mask=systemd-vconsole-setup" \
+        -append "$TEST_KERNEL_CMDLINE $* systemd.log_target=kmsg root=LABEL=root ro log_buf_len=2M systemd.mask=systemd-vconsole-setup" \
         -initrd "$TESTDIR"/initramfs.testing
 
     if ! test_marker_check; then
@@ -56,7 +56,7 @@ test_run() {
 
 test_setup() {
     "$DRACUT" -N -l --keep --tmpdir "$TESTDIR" \
-        -m "test-root" \
+        --add-confdir test-root \
         -f "$TESTDIR"/initramfs.root "$KVERSION" || return 1
     mkdir -p "$TESTDIR"/overlay/source && mv "$TESTDIR"/dracut.*/initramfs/* "$TESTDIR"/overlay/source && rm -rf "$TESTDIR"/dracut.*
 
@@ -65,11 +65,11 @@ test_setup() {
     # We do it this way so that we do not risk trashing the host mdraid
     # devices, volume groups, encrypted partitions, etc.
     "$DRACUT" -N -l -i "$TESTDIR"/overlay / \
-        -a "test-makeroot bash crypt lvm mdraid kernel-modules" \
+        --add-confdir test-makeroot \
+        -a "bash crypt lvm mdraid" \
         -I "grep cryptsetup" \
         -i ./create-root.sh /lib/dracut/hooks/initqueue/01-create-root.sh \
         -f "$TESTDIR"/initramfs.makeroot "$KVERSION" || return 1
-    rm -rf -- "$TESTDIR"/overlay
 
     # Create the blank files to use as a root filesystem
     declare -a disk_args=()
@@ -81,7 +81,7 @@ test_setup() {
 
     "$testdir"/run-qemu \
         "${disk_args[@]}" \
-        -append "root=/dev/fakeroot rw rootfstype=ext4 quiet console=ttyS0,115200n81" \
+        -append "root=/dev/fakeroot quiet console=ttyS0,115200n81" \
         -initrd "$TESTDIR"/initramfs.makeroot || return 1
 
     test_marker_check dracut-root-block-created || return 1
@@ -97,8 +97,7 @@ test_setup() {
     chmod 0600 /tmp/key
 
     test_dracut \
-        -a "crypt lvm mdraid" \
-        -o "systemd" \
+        -m "crypt lvm mdraid kernel-modules" \
         -i "./cryptroot-ask.sh" "/sbin/cryptroot-ask" \
         -i "/tmp/mdadm.conf" "/etc/mdadm.conf" \
         -i "/tmp/crypttab" "/etc/crypttab" \

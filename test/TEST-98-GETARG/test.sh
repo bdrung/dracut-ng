@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # This file is part of dracut.
 # SPDX-License-Identifier: GPL-2.0-or-later
@@ -103,20 +103,20 @@ test_run() {
 
         # shellcheck disable=SC2317  # called later by getarg in dracut-lib.sh
         getcmdline() {
-            echo "rdbreak=cmdline rd.lvm rd.auto=0 rd.auto rd.retry=10"
+            echo "rd.break=cmdline rd.lvm rd.auto=0 rd.auto rd.retry=10"
         }
-        RDRETRY=$(getarg rd.retry -d 'rd_retry=')
+        RDRETRY=$(getarg rd.retry)
         [[ $RDRETRY == "10" ]] || ret=$((ret + 1))
-        getarg rd.break=cmdline -d rdbreak=cmdline || ret=$((ret + 1))
-        getargbool 1 rd.lvm -d -n rd_NO_LVM || ret=$((ret + 1))
+        getarg rd.break=cmdline || ret=$((ret + 1))
+        getargbool 1 rd.lvm || ret=$((ret + 1))
         getargbool 0 rd.auto || ret=$((ret + 1))
 
         # shellcheck disable=SC2317  # called later by getarg in dracut-lib.sh
         getcmdline() {
             echo "rd.break=cmdlined rd.lvm=0 rd.auto rd.auto=1 rd.auto=0"
         }
-        getarg rd.break=cmdline -d rdbreak=cmdline && ret=$((ret + 1))
-        getargbool 1 rd.lvm -d -n rd_NO_LVM && ret=$((ret + 1))
+        getarg rd.break=cmdline && ret=$((ret + 1))
+        getargbool 1 rd.lvm && ret=$((ret + 1))
         getargbool 0 rd.auto && ret=$((ret + 1))
 
         # shellcheck disable=SC2317  # called later by getarg in dracut-lib.sh

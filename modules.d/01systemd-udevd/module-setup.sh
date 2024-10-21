@@ -4,7 +4,6 @@
 
 # Prerequisite check(s) for module.
 check() {
-
     # If the binary(s) requirements are not fulfilled the module can't be installed.
     require_binaries \
         udevadm \
@@ -13,22 +12,27 @@ check() {
 
     # Return 255 to only include the module, if another module requires it.
     return 255
-
 }
 
 # Module dependency requirements.
 depends() {
+    local deps
+    deps="udev-rules systemd"
 
-    # This module has external dependency on other module(s).
-    echo udev-rules systemd systemd-sysctl
-    # Return 0 to include the dependent module(s) in the initramfs.
+    # install optional dependencies unless they are omitted
+    for module in systemd-sysctl systemd-modules-load; do
+        module_check $module > /dev/null 2>&1
+        if [[ $? == 255 ]] && ! [[ " $omit_dracutmodules " == *\ $module\ * ]]; then
+            deps+=" $module"
+        fi
+    done
+
+    echo "$deps"
     return 0
-
 }
 
 # Install the required file(s) and directories for the module in the initramfs.
 install() {
-
     inst_multiple -o \
         "$udevrulesdir"/99-systemd.rules \
         "$systemdutildir"/systemd-udevd \
@@ -72,5 +76,4 @@ install() {
     # Install required libraries.
     _arch=${DRACUT_ARCH:-$(uname -m)}
     inst_libdir_file {"tls/$_arch/",tls/,"$_arch/",}"libudev.so.*"
-
 }

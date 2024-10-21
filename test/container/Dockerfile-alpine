@@ -1,34 +1,50 @@
 FROM docker.io/alpine:latest
 
+# prefer running tests with clang
+ENV CC=clang
+
+# ovmf is not installed as systemd-boot-efistub is not available
+# see https://gitlab.alpinelinux.org/alpine/aports/-/merge_requests/61369
 RUN apk add --no-cache \
-    alpine-sdk \
     asciidoc \
     bash \
     binutils \
     blkid \
+    bluez \
     btrfs-progs \
     busybox \
     bzip2 \
     cargo \
+    clang \
     coreutils \
     cpio \
     cryptsetup \
     curl \
     dash \
+    device-mapper \
     dhclient \
     dmraid \
     dosfstools \
+    dracut \
     e2fsprogs \
+    elogind \
     erofs-utils \
     eudev \
+    file \
     findmnt \
+    f2fs-tools \
     gawk \
     git \
     gpg \
     grep \
     iputils \
+    jfsutils \
+    jq \
     kbd \
+    keyutils \
+    kmod \
     kmod-dev \
+    libcap-utils \
     linux-virt \
     losetup \
     lvm2 \
@@ -38,12 +54,15 @@ RUN apk add --no-cache \
     multipath-tools \
     musl-fts-dev \
     nbd \
+    ntfs-3g \
     ntfs-3g-progs \
+    nvme-cli \
     open-iscsi \
     openssh \
     parted \
     partx \
     pigz \
+    plymouth \
     procps \
     qemu-img \
     qemu-system-x86_64 \
@@ -52,12 +71,12 @@ RUN apk add --no-cache \
     sfdisk \
     squashfs-tools \
     sudo \
+    swtpm \
     util-linux-misc \
+    xfsprogs \
     xz
 
 RUN \
   cp /usr/lib/udev/rules.d/* /lib/udev/rules.d/ && \
   ln -sf /sbin/poweroff /sbin/shutdown && \
-  ln -sf /usr/bin/dash /bin/dash && \
-  ln -sf /bin/sh /usr/bin/sh && \
   ln -sf /boot/vmlinuz-virt /boot/vmlinuz-$(cd /lib/modules; ls -1 | tail -1)

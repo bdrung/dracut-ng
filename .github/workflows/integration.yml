@@ -5,7 +5,9 @@ on:
         branches: [ main ]
 
 env:
-    DEBUGFAIL: "${{ secrets.ACTIONS_STEP_DEBUG && 'rd.debug' }}"
+    # set V to 2 when re-running jobs with debug logging enabled
+    # see https://docs.github.com/en/actions/monitoring-and-troubleshooting-workflows/troubleshooting-workflows/enabling-debug-logging
+    V: "${{ secrets.ACTIONS_STEP_DEBUG && '2' }}"
 
 jobs:
     basic:
@@ -34,12 +36,12 @@ jobs:
                 ]
         container:
             image: ghcr.io/dracut-ng/${{ matrix.container }}
-            options: "--privileged -v /dev:/dev"
+            options: '--device=/dev/kvm'
         steps:
             -   name: "Checkout Repository"
                 uses: actions/checkout@v4
             -   name: "${{ matrix.container }} TEST-${{ matrix.test }}"
-                run: ./tools/test-github.sh "TEST-${{ matrix.test }}" ${{ matrix.test }}
+                run: ./test/test-github.sh "TEST-${{ matrix.test }}" ${{ matrix.test }}
     extended:
         name: ${{ matrix.test }} on ${{ matrix.container }}
         runs-on: ubuntu-latest
@@ -64,6 +66,7 @@ jobs:
                         "02",
                         "03",
                         "04",
+                        "05",
                         "10",
                         "11",
                         "12",
@@ -78,12 +81,12 @@ jobs:
                 ]
         container:
             image: ghcr.io/dracut-ng/${{ matrix.container }}
-            options: "--privileged -v /dev:/dev"
+            options: '--device=/dev/kvm'
         steps:
             -   name: "Checkout Repository"
                 uses: actions/checkout@v4
             -   name: "${{ matrix.container }} TEST-${{ matrix.test }}"
-                run: ./tools/test-github.sh "TEST-${{ matrix.test }}" ${{ matrix.test }}
+                run: ./test/test-github.sh "TEST-${{ matrix.test }}" ${{ matrix.test }}
     dracut-cpio:
         name: ${{ matrix.test }} on ${{ matrix.container }}
         runs-on: ubuntu-latest
@@ -102,12 +105,12 @@ jobs:
                 ]
         container:
             image: ghcr.io/dracut-ng/${{ matrix.container }}
-            options: "--privileged -v /dev:/dev"
+            options: '--device=/dev/kvm'
         steps:
             -   name: "Checkout Repository"
                 uses: actions/checkout@v4
             -   name: "${{ matrix.container }} TEST-${{ matrix.test }}"
-                run: ./tools/test-github.sh "TEST-${{ matrix.test }}" ${{ matrix.test }}
+                run: ./test/test-github.sh "TEST-${{ matrix.test }}" ${{ matrix.test }}
     arm64:
         name: ${{ matrix.test }} on ${{ matrix.container }} on arm64
         runs-on: ubuntu-latest
@@ -133,7 +136,7 @@ jobs:
             -   name: "Checkout Repository"
                 uses: actions/checkout@v4
             -   name: "${{ matrix.container }} TEST-${{ matrix.test }}"
-                run: docker run --platform linux/arm64 --privileged -v /dev:/dev -v $PWD:/w ghcr.io/dracut-ng/${{ matrix.container }} /w/tools/test-github.sh "TEST-${{ matrix.test }}" ${{ matrix.test }}
+                run: docker run --platform linux/arm64 '--device=/dev/kvm' -v $PWD:/w ghcr.io/dracut-ng/${{ matrix.container }} /w/test/test-github.sh "TEST-${{ matrix.test }}" ${{ matrix.test }}
     network:
         # all nfs based on default networking
         name: ${{ matrix.test }} on ${{ matrix.container }}
@@ -168,12 +171,12 @@ jobs:
                     network: "network-legacy"
         container:
             image: ghcr.io/dracut-ng/${{ matrix.container }}
-            options: "--privileged -v /dev:/dev"
+            options: '--device=/dev/kvm'
         steps:
             -   name: "Checkout Repository"
                 uses: actions/checkout@v4
             -   name: "${{ matrix.container }} TEST-${{ matrix.test }}"
-                run: USE_NETWORK=${{ matrix.network }} ./tools/test-github.sh "TEST-${{ matrix.test }}" ${{ matrix.test }}
+                run: USE_NETWORK=${{ matrix.network }} ./test/test-github.sh "TEST-${{ matrix.test }}" ${{ matrix.test }}
     network-iscsi:
         name: ${{ matrix.test }} on ${{ matrix.container }}
         runs-on: ubuntu-latest
@@ -205,12 +208,12 @@ jobs:
                     network: "network-legacy"
         container:
             image: ghcr.io/dracut-ng/${{ matrix.container }}
-            options: "--privileged -v /dev:/dev"
+            options: '--device=/dev/kvm'
         steps:
             -   name: "Checkout Repository"
                 uses: actions/checkout@v4
             -   name: "${{ matrix.container }} TEST-${{ matrix.test }}"
-                run: USE_NETWORK=${{ matrix.network }} ./tools/test-github.sh "TEST-${{ matrix.test }}" ${{ matrix.test }}
+                run: USE_NETWORK=${{ matrix.network }} ./test/test-github.sh "TEST-${{ matrix.test }}" ${{ matrix.test }}
     network-nbd:
         name: ${{ matrix.test }} on ${{ matrix.container }}
         runs-on: ubuntu-latest
@@ -240,9 +243,9 @@ jobs:
                     network: "network-legacy"
         container:
             image: ghcr.io/dracut-ng/${{ matrix.container }}
-            options: "--privileged -v /dev:/dev"
+            options: '--device=/dev/kvm'
         steps:
             -   name: "Checkout Repository"
                 uses: actions/checkout@v4
             -   name: "${{ matrix.container }} TEST-${{ matrix.test }}"
-                run: USE_NETWORK=${{ matrix.network }} ./tools/test-github.sh "TEST-${{ matrix.test }}" ${{ matrix.test }}
+                run: USE_NETWORK=${{ matrix.network }} ./test/test-github.sh "TEST-${{ matrix.test }}" ${{ matrix.test }}

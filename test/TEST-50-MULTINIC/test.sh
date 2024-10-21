@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # shellcheck disable=SC2034
 TEST_DESCRIPTION="root filesystem on NFS with multiple nics with $USE_NETWORK"
@@ -76,7 +76,7 @@ client_test() {
         -netdev hubport,id=n2,hubid=2 \
         -device e1000,netdev=n1,mac=52:54:00:12:34:98 \
         -device e1000,netdev=n2,mac=52:54:00:12:34:99 \
-        -append "$TEST_KERNEL_CMDLINE $cmdline rd.retry=5 ro init=/sbin/init systemd.log_target=console" \
+        -append "$TEST_KERNEL_CMDLINE $cmdline ro init=/sbin/init systemd.log_target=console" \
         -initrd "$TESTDIR"/initramfs.testing || return 1
 
     {
@@ -193,7 +193,7 @@ test_setup() {
 
         inst_multiple sh ls shutdown poweroff stty cat ps ln ip \
             dmesg mkdir cp exportfs \
-            modprobe rpc.nfsd rpc.mountd showmount tcpdump \
+            modprobe rpc.nfsd rpc.mountd \
             sleep mount chmod rm
         for _terminfodir in /lib/terminfo /etc/terminfo /usr/share/terminfo; do
             if [ -f "${_terminfodir}"/l/linux ]; then
@@ -249,19 +249,13 @@ test_setup() {
         )
 
         inst_multiple sh shutdown poweroff stty cat ps ln ip dd \
-            mount dmesg mkdir cp grep setsid ls vi less cat sync
+            mount dmesg mkdir cp grep setsid ls vi cat sync
         for _terminfodir in /lib/terminfo /etc/terminfo /usr/share/terminfo; do
             if [ -f "${_terminfodir}"/l/linux ]; then
                 inst_multiple -o "${_terminfodir}"/l/linux
                 break
             fi
         done
-
-        inst_simple "${PKGLIBDIR}/modules.d/99base/dracut-lib.sh" "/lib/dracut-lib.sh"
-        inst_simple "${PKGLIBDIR}/modules.d/99base/dracut-dev-lib.sh" "/lib/dracut-dev-lib.sh"
-        inst_binary "${PKGLIBDIR}/dracut-util" "/usr/bin/dracut-util"
-        ln -s dracut-util "${initdir}/usr/bin/dracut-getarg"
-        ln -s dracut-util "${initdir}/usr/bin/dracut-getargs"
 
         inst ./client-init.sh /sbin/init
         inst_simple /etc/os-release
@@ -336,10 +330,10 @@ test_setup() {
         inst_simple ./client.link /etc/systemd/network/01-client.link
 
         inst_binary awk
-        inst_hook pre-pivot 85 "$PKGLIBDIR/modules.d/45ifcfg/write-ifcfg.sh"
     )
     # Make client's dracut image
     test_dracut \
+        --no-hostonly --no-hostonly-cmdline \
         -a "${USE_NETWORK}" \
         "$TESTDIR"/initramfs.testing
 
@@ -354,7 +348,7 @@ test_setup() {
     )
     # Make server's dracut image
     "$DRACUT" -l -i "$TESTDIR"/overlay / \
-        -m "bash rootfs-block debug kernel-modules watchdog qemu ${USE_NETWORK}" \
+        -m "bash rootfs-block debug kernel-modules watchdog qemu network-legacy" \
         -d "af_packet piix ide-gd_mod ata_piix ext4 sd_mod nfsv2 nfsv3 nfsv4 nfs_acl nfs_layout_nfsv41_files nfsd e1000 i6300esb" \
         --no-hostonly-cmdline -N \
         -f "$TESTDIR"/initramfs.server "$KVERSION" || return 1

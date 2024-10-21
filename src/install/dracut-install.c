@@ -347,7 +347,7 @@ static bool use_clone = true;
 
 static int cp(const char *src, const char *dst)
 {
-        int pid;
+        pid_t pid;
         int ret = 0;
 
         if (use_clone) {
@@ -364,13 +364,9 @@ static int cp(const char *src, const char *dst)
                 if (source_desc < 0)
                         goto normal_copy;
 
-                dest_desc =
-                        open(dst, O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC,
-                             (sb.st_mode) & (S_ISUID | S_ISGID | S_ISVTX | S_IRWXU | S_IRWXG | S_IRWXO));
-
-                if (dest_desc < 0) {
+                dest_desc = open(dst, O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC, sb.st_mode & ~S_IFMT);
+                if (dest_desc < 0)
                         goto normal_copy;
-                }
 
                 ret = clone_file(dest_desc, source_desc);
 
@@ -885,7 +881,10 @@ static int dracut_install(const char *orig_src, const char *orig_dst, bool isdir
         if (ret == 0) {
                 if (resolvedeps && S_ISREG(sb.st_mode) && (sb.st_mode & (S_IXUSR | S_IXGRP | S_IXOTH))) {
                         log_debug("'%s' already exists, but checking for any deps", fulldstpath);
-                        ret = resolve_deps(fullsrcpath + sysrootdirlen);
+                        if (sysrootdirlen && (strncmp(fulldstpath, sysrootdir, sysrootdirlen) == 0))
+                                ret = resolve_deps(fulldstpath + sysrootdirlen);
+                        else
+                                ret = resolve_deps(fullsrcpath);
                 } else
                         log_debug("'%s' already exists", fulldstpath);
 
@@ -982,8 +981,13 @@ static int dracut_install(const char *orig_src, const char *orig_dst, bool isdir
                 }
 
                 if (src_mode & (S_IXUSR | S_IXGRP | S_IXOTH)) {
-                        if (resolvedeps)
-                                ret += resolve_deps(fullsrcpath + sysrootdirlen);
+                        if (resolvedeps) {
+                                /* ensure fullsrcpath contains sysrootdir */
+                                if (sysrootdirlen && (strncmp(fullsrcpath, sysrootdir, sysrootdirlen) == 0))
+                                        ret += resolve_deps(fullsrcpath + sysrootdirlen);
+                                else
+                                        ret += resolve_deps(fullsrcpath);
+                        }
                         if (arg_hmac) {
                                 /* copy .hmac files also */
                                 hmac_install(src, dst, NULL);
@@ -1154,6 +1158,9 @@ static int parse_argv(int argc, char *argv[])
                 case 'r':
                         sysrootdir = optarg;
                         sysrootdirlen = strlen(sysrootdir);
+                        /* ignore trailing '/' */
+                        if (sysrootdir[sysrootdirlen-1] == '/')
+                                sysrootdirlen--;
                         break;
                 case 'p':
                         if (regcomp(&mod_filter_path, optarg, REG_NOSUB | REG_EXTENDED) != 0) {
@@ -1569,8 +1576,8 @@ static int find_kmod_module_from_sysfs_driver(struct kmod_ctx *ctx, const char *
 {
         char mod_path[PATH_MAX], mod_realpath[PATH_MAX];
         const char *mod_name;
-        if (snprintf(mod_path, sizeof(mod_path), "%.*s/driver/module",
-                     sysfs_node_len, sysfs_node) >= sizeof(mod_path))
+        if ((size_t)snprintf(mod_path, sizeof(mod_path), "%.*s/driver/module",
+                             sysfs_node_len, sysfs_node) >= sizeof(mod_path))
                 return -1;
 
         if (realpath(mod_path, mod_realpath) == NULL)
@@ -1586,8 +1593,8 @@ static int find_kmod_module_from_sysfs_modalias(struct kmod_ctx *ctx, const char
                                                 struct kmod_list **modules)
 {
         char modalias_path[PATH_MAX];
-        if (snprintf(modalias_path, sizeof(modalias_path), "%.*s/modalias", sysfs_node_len,
-                     sysfs_node) >= sizeof(modalias_path))
+        if ((size_t)snprintf(modalias_path, sizeof(modalias_path), "%.*s/modalias", sysfs_node_len,
+                             sysfs_node) >= sizeof(modalias_path))
                 return -1;
 
         _cleanup_close_ int modalias_file = -1;
@@ -1640,7 +1647,7 @@ static int find_modules_from_sysfs_node(struct kmod_ctx *ctx, const char *sysfs_
         return 0;
 }
 
-static void find_suppliers_for_sys_node(struct kmod_ctx *ctx, Hashmap *suppliers, const char *node_path_raw,
+static void find_suppliers_for_sys_node(Hashmap *suppliers, const char *node_path_raw,
                                         size_t node_path_len)
 {
         char node_path[PATH_MAX];
@@ -1657,8 +1664,8 @@ static void find_suppliers_for_sys_node(struct kmod_ctx *ctx, Hashmap *suppliers
                         size_t real_path_len = strlen(real_path);
                         while ((dir = readdir(d)) != NULL) {
                                 if (strstr(dir->d_name, "supplier:platform") != NULL) {
-                                        if (snprintf(real_path + real_path_len, sizeof(real_path) - real_path_len, "/%s/supplier",
-                                                     dir->d_name) < sizeof(real_path) - real_path_len) {
+                                        if ((size_t)snprintf(real_path + real_path_len, sizeof(real_path) - real_path_len, "/%s/supplier",
+                                                             dir->d_name) < sizeof(real_path) - real_path_len) {
                                                 char *real_supplier_path = realpath(real_path, NULL);
                                                 if (real_supplier_path != NULL)
                                                         if (hashmap_put(suppliers, real_supplier_path, real_supplier_path) < 0)
@@ -1668,7 +1675,7 @@ static void find_suppliers_for_sys_node(struct kmod_ctx *ctx, Hashmap *suppliers
                         }
                         closedir(d);
                 }
-                strncat(node_path, "/..", 3); // Also find suppliers of parents
+                strcat(node_path, "/.."); // Also find suppliers of parents
         }
 }
 
@@ -1692,7 +1699,7 @@ static void find_suppliers(struct kmod_ctx *ctx)
                                         hashmap_put(modules_suppliers, strdup(name), suppliers);
                                 }
 
-                                find_suppliers_for_sys_node(ctx, suppliers, ftsent->fts_parent->fts_path, ftsent->fts_parent->fts_pathlen);
+                                find_suppliers_for_sys_node(suppliers, ftsent->fts_parent->fts_path, ftsent->fts_parent->fts_pathlen);
 
                                 /* Skip modalias check */
                                 continue;
@@ -1710,7 +1717,7 @@ static void find_suppliers(struct kmod_ctx *ctx)
                                         hashmap_put(modules_suppliers, strdup(name), suppliers);
                                 }
 
-                                find_suppliers_for_sys_node(ctx, suppliers, ftsent->fts_parent->fts_path, ftsent->fts_parent->fts_pathlen);
+                                find_suppliers_for_sys_node(suppliers, ftsent->fts_parent->fts_path, ftsent->fts_parent->fts_pathlen);
                         }
                 }
         }
@@ -1804,7 +1811,7 @@ static int install_dependent_modules(struct kmod_ctx *ctx, struct kmod_list *mod
                 find_modules_from_sysfs_node(ctx, supplier_path, modules);
 
                 _cleanup_destroy_hashmap_ Hashmap *suppliers = hashmap_new(string_hash_func, string_compare_func);
-                find_suppliers_for_sys_node(ctx, suppliers, supplier_path, strlen(supplier_path));
+                find_suppliers_for_sys_node(suppliers, supplier_path, strlen(supplier_path));
 
                 if (!hashmap_isempty(modules)) { // Supplier is a module
                         const char *module;
@@ -2292,7 +2299,7 @@ int main(int argc, char **argv)
         log_debug("PATH=%s", path);
 
         ldd = getenv("DRACUT_LDD");
-        if (ldd == NULL)
+        if (isempty(ldd))
                 ldd = "ldd";
         log_debug("LDD=%s", ldd);
 

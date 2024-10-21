@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # shellcheck disable=SC2034
 TEST_DESCRIPTION="root filesystem on NBD with $USE_NETWORK"
@@ -190,10 +190,8 @@ make_encrypted_root() {
     rm -fr "$TESTDIR"/overlay
     # Create what will eventually be our root filesystem onto an overlay
     "$DRACUT" -l --keep --tmpdir "$TESTDIR" \
-        -m "test-root" \
+        --add-confdir test-root \
         -I "ip grep" \
-        -i "${basedir}/modules.d/99base/dracut-lib.sh" "/lib/dracut-lib.sh" \
-        -i "${basedir}/modules.d/99base/dracut-dev-lib.sh" "/lib/dracut-dev-lib.sh" \
         --no-hostonly --no-hostonly-cmdline --nohardlink \
         -f "$TESTDIR"/initramfs.root "$KVERSION" || return 1
     mkdir -p "$TESTDIR"/overlay/source && mv "$TESTDIR"/dracut.*/initramfs/* "$TESTDIR"/overlay/source && rm -rf "$TESTDIR"/dracut.*
@@ -204,7 +202,8 @@ make_encrypted_root() {
     # We do it this way so that we do not risk trashing the host mdraid
     # devices, volume groups, encrypted partitions, etc.
     "$DRACUT" -l -i "$TESTDIR"/overlay / \
-        -a "test-makeroot crypt lvm mdraid" \
+        --add-confdir test-makeroot \
+        -a "crypt lvm mdraid" \
         -I "cryptsetup" \
         -i ./create-encrypted-root.sh /lib/dracut/hooks/initqueue/01-create-encrypted-root.sh \
         --no-hostonly-cmdline -N \
@@ -228,10 +227,8 @@ make_encrypted_root() {
 make_client_root() {
     rm -fr "$TESTDIR"/overlay
     "$DRACUT" -l --keep --tmpdir "$TESTDIR" \
-        -m "test-root" \
+        --add-confdir test-root \
         -I "ip" \
-        -i "${basedir}/modules.d/99base/dracut-lib.sh" "/lib/dracut-lib.sh" \
-        -i "${basedir}/modules.d/99base/dracut-dev-lib.sh" "/lib/dracut-dev-lib.sh" \
         --no-hostonly --no-hostonly-cmdline --nohardlink \
         -f "$TESTDIR"/initramfs.root "$KVERSION" || return 1
     mkdir -p "$TESTDIR"/overlay/source && mv "$TESTDIR"/dracut.*/initramfs/* "$TESTDIR"/overlay/source && rm -rf "$TESTDIR"/dracut.*
@@ -242,7 +239,7 @@ make_client_root() {
     # We do it this way so that we do not risk trashing the host mdraid
     # devices, volume groups, encrypted partitions, etc.
     "$DRACUT" -l -i "$TESTDIR"/overlay / \
-        -a "test-makeroot" \
+        --add-confdir test-makeroot \
         -i ./create-client-root.sh /lib/dracut/hooks/initqueue/01-create-client-root.sh \
         --nomdadmconf \
         --no-hostonly-cmdline -N \
@@ -256,7 +253,7 @@ make_client_root() {
     # Invoke KVM and/or QEMU to actually create the target filesystem.
     "$testdir"/run-qemu \
         "${disk_args[@]}" \
-        -append "root=/dev/dracut/root rw rootfstype=ext4 quiet console=ttyS0,115200n81" \
+        -append "root=/dev/dracut/root rw quiet console=ttyS0,115200n81" \
         -initrd "$TESTDIR"/initramfs.makeroot || return 1
     test_marker_check dracut-root-block-created || return 1
     rm -fr "$TESTDIR"/overlay
@@ -278,10 +275,9 @@ bs = 4096
 EOF
 
     "$DRACUT" -l --keep --tmpdir "$TESTDIR" \
-        -a "test-root ${USE_NETWORK}" \
+        --add-confdir test-root \
+        -a "network-legacy" \
         -I "ip grep sleep nbd-server chmod modprobe vi pidof" \
-        -i "${basedir}/modules.d/99base/dracut-lib.sh" "/lib/dracut-lib.sh" \
-        -i "${basedir}/modules.d/99base/dracut-dev-lib.sh" "/lib/dracut-dev-lib.sh" \
         --install-optional "/etc/netconfig dhcpd /etc/group /etc/nsswitch.conf /etc/rpc /etc/protocols /etc/services /usr/etc/nsswitch.conf /usr/etc/rpc /usr/etc/protocols /usr/etc/services" \
         -i /tmp/config /etc/nbd-server/config \
         -i "./dhcpd.conf" "/etc/dhcpd.conf" \
@@ -297,7 +293,8 @@ EOF
     # We do it this way so that we do not risk trashing the host mdraid
     # devices, volume groups, encrypted partitions, etc.
     "$DRACUT" -N -l -i "$TESTDIR"/overlay / \
-        -a "test-makeroot ${USE_NETWORK}" \
+        --add-confdir test-makeroot \
+        -a "network-legacy" \
         -i ./create-server-root.sh /lib/dracut/hooks/initqueue/01-create-server-root.sh \
         --nomdadmconf \
         --no-hostonly-cmdline -N \
@@ -332,6 +329,7 @@ test_setup() {
     echo -n test > /tmp/key
 
     test_dracut \
+        --no-hostonly --no-hostonly-cmdline \
         -a "${USE_NETWORK}" \
         -i "./cryptroot-ask.sh" "/sbin/cryptroot-ask" \
         -i "./client.link" "/etc/systemd/network/01-client.link" \
@@ -340,13 +338,11 @@ test_setup() {
         "$TESTDIR"/initramfs.testing
 
     "$DRACUT" -N -l -i "$TESTDIR"/overlay / \
-        -a "test rootfs-block debug kernel-modules ${USE_NETWORK}" \
+        -a "test rootfs-block debug kernel-modules network-legacy" \
         -d "af_packet piix ide-gd_mod ata_piix ext4 sd_mod e1000 drbg" \
         -i "./server.link" "/etc/systemd/network/01-server.link" \
         -i "./wait-if-server.sh" "/lib/dracut/hooks/pre-mount/99-wait-if-server.sh" \
         -f "$TESTDIR"/initramfs.server "$KVERSION" || return 1
-
-    rm -rf -- "$TESTDIR"/overlay
 }
 
 kill_server() {

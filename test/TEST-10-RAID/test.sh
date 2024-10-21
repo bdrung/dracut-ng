@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # shellcheck disable=SC2034
 TEST_DESCRIPTION="root filesystem on an encrypted LVM PV on a RAID-5"
 
@@ -16,7 +16,7 @@ test_run() {
     test_marker_reset
     "$testdir"/run-qemu \
         "${disk_args[@]}" \
-        -append "$TEST_KERNEL_CMDLINE root=/dev/dracut/root rd.auto rw" \
+        -append "$TEST_KERNEL_CMDLINE root=/dev/dracut/root rd.auto" \
         -initrd "$TESTDIR"/initramfs.testing || return 1
 
     test_marker_check || return 1
@@ -25,7 +25,7 @@ test_run() {
 test_setup() {
     # Create what will eventually be our root filesystem onto an overlay
     "$DRACUT" -N -l --keep --tmpdir "$TESTDIR" \
-        -m "test-root" \
+        --add-confdir test-root \
         -f "$TESTDIR"/initramfs.root "$KVERSION" || return 1
     mkdir -p "$TESTDIR"/overlay/source && mv "$TESTDIR"/dracut.*/initramfs/* "$TESTDIR"/overlay/source && rm -rf "$TESTDIR"/dracut.*
 
@@ -33,11 +33,11 @@ test_setup() {
     # We do it this way so that we do not risk trashing the host mdraid
     # devices, volume groups, encrypted partitions, etc.
     "$DRACUT" -N -l -i "$TESTDIR"/overlay / \
-        -a "test-makeroot bash crypt lvm mdraid kernel-modules" \
+        --add-confdir test-makeroot \
+        -a "bash crypt lvm mdraid" \
         -I "grep cryptsetup" \
         -i ./create-root.sh /lib/dracut/hooks/initqueue/01-create-root.sh \
         -f "$TESTDIR"/initramfs.makeroot "$KVERSION" || return 1
-    rm -rf -- "$TESTDIR"/overlay
 
     # Create the blank files to use as a root filesystem
     declare -a disk_args=()
@@ -49,7 +49,7 @@ test_setup() {
 
     "$testdir"/run-qemu \
         "${disk_args[@]}" \
-        -append "root=/dev/cannotreach rw rootfstype=ext4 quiet console=ttyS0,115200n81" \
+        -append "root=/dev/cannotreach quiet console=ttyS0,115200n81" \
         -initrd "$TESTDIR"/initramfs.makeroot || return 1
     test_marker_check dracut-root-block-created || return 1
     eval "$(grep -F -a -m 1 ID_FS_UUID "$TESTDIR"/marker.img)"
@@ -58,6 +58,7 @@ test_setup() {
     echo -n "test" > /tmp/key
 
     test_dracut \
+        -a "crypt lvm mdraid" \
         -i "./cryptroot-ask.sh" "/sbin/cryptroot-ask" \
         -i "/tmp/crypttab" "/etc/crypttab" \
         -i "/tmp/key" "/etc/key" \

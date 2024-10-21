@@ -34,10 +34,6 @@ dracut-util:
   - changed-files:
     - any-glob-to-any-file: 'src/util/*'
 
-logtee:
-  - changed-files:
-    - any-glob-to-any-file: 'src/logtee/*'
-
 skipcpio:
   - changed-files:
     - any-glob-to-any-file: 'src/skipcpio/*'
@@ -553,6 +549,10 @@ net-lib:
 pcmcia:
   - changed-files:
     - any-glob-to-any-file: 'modules.d/90pcmcia/*'
+
+shell-interpreter:
+  - changed-files:
+    - any-glob-to-any-file: 'modules.d/00shell-interpreter/*'
 
 test:
   - changed-files:

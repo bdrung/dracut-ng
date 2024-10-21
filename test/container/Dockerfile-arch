@@ -1,0 +1,57 @@
+FROM docker.io/archlinux
+
+# prefer running tests with xfs
+ENV TEST_FSTYPE=xfs
+
+RUN pacman --noconfirm -Syu \
+    asciidoc \
+    astyle \
+    base-devel \
+    bluez \
+    btrfs-progs \
+    busybox \
+    cargo \
+    cifs-utils \
+    connman \
+    cpio \
+    dash \
+    dhclient \
+    dhcp \
+    dmraid \
+    elfutils \
+    erofs-utils \
+    f2fs-tools \
+    git \
+    glibc \
+    jfsutils \
+    jq \
+    linux \
+    lvm2 \
+    lzop \
+    mdadm \
+    mkosi \
+    multipath-tools \
+    nbd \
+    networkmanager \
+    nfsidmap \
+    nfs-utils \
+    ntfs-3g \
+    nvme-cli \
+    open-iscsi \
+    openssh \
+    parted \
+    pigz \
+    plymouth \
+    qemu \
+    qrencode \
+    rng-tools \
+    sbsigntools \
+    shellcheck \
+    shfmt \
+    squashfs-tools \
+    swtpm \
+    systemd-ukify \
+    tgt \
+    tpm2-tools \
+    xfsprogs \
+    && yes | pacman -Scc

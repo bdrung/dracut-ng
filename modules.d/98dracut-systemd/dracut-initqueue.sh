@@ -9,9 +9,9 @@ type getarg > /dev/null 2>&1 || . /lib/dracut-lib.sh
 source_conf /etc/conf.d
 
 make_trace_mem "hook initqueue" '1:shortmem' '2+:mem' '3+:slab'
-getargs 'rd.break=initqueue' -d 'rdbreak=initqueue' && emergency_shell -n initqueue "Break before initqueue"
+getargs 'rd.break=initqueue' && emergency_shell -n initqueue "Break before initqueue"
 
-RDRETRY=$(getarg rd.retry -d 'rd_retry=')
+RDRETRY=$(getarg rd.retry)
 RDRETRY=${RDRETRY:-180}
 RDRETRY=$((RDRETRY * 2))
 export RDRETRY

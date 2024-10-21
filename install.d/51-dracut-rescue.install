@@ -131,8 +131,8 @@ case "$COMMAND" in
 
         if [[ ! -f "$BOOT_DIR_ABS/$INITRD" ]]; then
             # shellcheck disable=SC2046
-            dracut -f --no-hostonly --no-uefi \
-                -a "rescue" \
+            dracut -f \
+                --add-confdir rescue \
                 $([[ $KERNEL_INSTALL_VERBOSE == 1 ]] && echo --verbose) \
                 --kver "$KERNEL_VERSION" \
                 "$BOOT_DIR_ABS/$INITRD"
@@ -145,7 +145,7 @@ case "$COMMAND" in
                 echo "title      $PRETTY_NAME - Rescue Image"
                 echo "version    $KERNEL_VERSION"
                 echo "machine-id $MACHINE_ID"
-                echo "options    ${BOOT_OPTIONS[*]} rd.auto=1"
+                echo "options    ${BOOT_OPTIONS[*]}"
                 echo "linux      $BOOT_DIR/linux"
                 echo "initrd     $BOOT_DIR/initrd"
             } > "$LOADER_ENTRY"

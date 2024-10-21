@@ -6,11 +6,6 @@ check() {
 }
 
 # called by dracut
-depends() {
-    return 0
-}
-
-# called by dracut
 installkernel() {
     # Include wired net drivers, excluding wireless
     local _arch=${DRACUT_ARCH:-$(uname -m)}
@@ -42,9 +37,4 @@ installkernel() {
         '=drivers/net/team' \
         '=drivers/net/ethernet' \
         ecb arc4 bridge stp llc ipv6 bonding 8021q ipvlan macvlan af_packet virtio_net xennet
-}
-
-# called by dracut
-install() {
-    return 0
 }

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # shellcheck disable=SC2034
 TEST_DESCRIPTION="root filesystem over multiple iSCSI with $USE_NETWORK"
@@ -60,7 +60,7 @@ run_client() {
         -net nic,macaddr=52:54:00:12:34:00,model=e1000 \
         -net nic,macaddr=52:54:00:12:34:01,model=e1000 \
         -net socket,connect=127.0.0.1:12331 \
-        -append "$TEST_KERNEL_CMDLINE rw rd.auto rd.retry=50 $*" \
+        -append "$TEST_KERNEL_CMDLINE rw rd.auto $*" \
         -initrd "$TESTDIR"/initramfs.testing
     if ! test_marker_check iscsi-OK; then
         echo "CLIENT TEST END: $test_name [FAILED - BAD EXIT]"
@@ -148,10 +148,8 @@ test_setup() {
     # Create what will eventually be our root filesystem onto an overlay
     rm -rf -- "$TESTDIR"/overlay
     "$DRACUT" -l --keep --tmpdir "$TESTDIR" \
-        -m "test-root" \
+        --add-confdir test-root \
         -I "ip grep setsid" \
-        -i "${basedir}/modules.d/99base/dracut-lib.sh" "/lib/dracut-lib.sh" \
-        -i "${basedir}/modules.d/99base/dracut-dev-lib.sh" "/lib/dracut-dev-lib.sh" \
         --no-hostonly --no-hostonly-cmdline --nohardlink \
         -f "$TESTDIR"/initramfs.root "$KVERSION" || return 1
     mkdir -p "$TESTDIR"/overlay/source && mv "$TESTDIR"/dracut.*/initramfs/* "$TESTDIR"/overlay/source && rm -rf "$TESTDIR"/dracut.*
@@ -163,7 +161,8 @@ test_setup() {
     # We do it this way so that we do not risk trashing the host mdraid
     # devices, volume groups, encrypted partitions, etc.
     "$DRACUT" -l -i "$TESTDIR"/overlay / \
-        -a "test-makeroot crypt lvm mdraid" \
+        --add-confdir test-makeroot \
+        -a "crypt lvm mdraid" \
         -I "setsid blockdev" \
         -i ./create-client-root.sh /lib/dracut/hooks/initqueue/01-create-client-root.sh \
         --no-hostonly-cmdline -N \
@@ -187,11 +186,10 @@ test_setup() {
 
     rm -rf -- "$TESTDIR"/overlay
     "$DRACUT" -N -l --keep --tmpdir "$TESTDIR" \
-        -m "test-root ${USE_NETWORK} iscsi" \
+        --add-confdir test-root \
+        -a "network-legacy iscsi" \
         -d "iscsi_tcp crc32c ipv6 af_packet" \
         -I "ip grep sleep setsid chmod modprobe pidof tgtd tgtadm" \
-        -i "${basedir}/modules.d/99base/dracut-lib.sh" "/lib/dracut-lib.sh" \
-        -i "${basedir}/modules.d/99base/dracut-dev-lib.sh" "/lib/dracut-dev-lib.sh" \
         --install-optional "/etc/netconfig dhcpd /etc/group /etc/nsswitch.conf /etc/rpc /etc/protocols /etc/services /usr/etc/nsswitch.conf /usr/etc/rpc /usr/etc/protocols /usr/etc/services" \
         -i /tmp/config /etc/nbd-server/config \
         -i "./dhcpd.conf" "/etc/dhcpd.conf" \
@@ -206,7 +204,7 @@ test_setup() {
     # We do it this way so that we do not risk trashing the host mdraid
     # devices, volume groups, encrypted partitions, etc.
     "$DRACUT" -N -l -i "$TESTDIR"/overlay / \
-        -a "test-makeroot" \
+        --add-confdir test-makeroot \
         -i ./create-server-root.sh /lib/dracut/hooks/initqueue/01-create-server-root.sh \
         -f "$TESTDIR"/initramfs.makeroot "$KVERSION" || return 1
     rm -rf -- "$TESTDIR"/overlay
@@ -226,20 +224,19 @@ test_setup() {
 
     # Make client's dracut image
     test_dracut \
+        --no-hostonly --no-hostonly-cmdline \
         --add "$USE_NETWORK" \
         -i "./client.link" "/etc/systemd/network/01-client.link" \
         "$TESTDIR"/initramfs.testing
 
     # Make server's dracut image
     "$DRACUT" -l -i "$TESTDIR"/overlay / \
-        -a "test dash rootfs-block debug kernel-modules ${USE_NETWORK}" \
+        -a "test rootfs-block debug kernel-modules network-legacy" \
         -d "af_packet piix ide-gd_mod ata_piix ext4 sd_mod e1000 drbg" \
         -i "./server.link" "/etc/systemd/network/01-server.link" \
         -i "./wait-if-server.sh" "/lib/dracut/hooks/pre-mount/99-wait-if-server.sh" \
         --no-hostonly-cmdline -N \
         -f "$TESTDIR"/initramfs.server "$KVERSION" || return 1
-
-    rm -rf -- "$TESTDIR"/overlay
 }
 
 test_cleanup() {

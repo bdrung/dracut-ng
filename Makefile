@@ -74,9 +74,6 @@ src/install/strv.o: src/install/strv.c src/install/strv.h src/install/util.h src
 src/install/dracut-install: $(DRACUT_INSTALL_OBJECTS)
 	$(CC) $(LDFLAGS) -o $@ $(DRACUT_INSTALL_OBJECTS) $(LDLIBS) $(FTS_LIBS) $(KMOD_LIBS)
 
-logtee: src/logtee/logtee.c
-	$(CC) $(LDFLAGS) -o $@ $<
-
 dracut-install: src/install/dracut-install
 	ln -fs $< $@
 
@@ -121,19 +118,19 @@ endif
 	@rm -f -- "$@"
 	xsltproc -o "$@" -nonet http://docbook.sourceforge.net/release/xsl/current/manpages/docbook.xsl $<
 
-%.xml: %.asc
+%.xml: %.adoc
 	@rm -f -- "$@"
 	asciidoc -a "version=$(DRACUT_FULL_VERSION)" -d manpage -b docbook -o "$@" $<
 
-dracut.8: man/dracut.8.asc \
-	man/dracut.usage.asc
+dracut.8: man/dracut.8.adoc \
+	man/dracut.usage.adoc
 
-dracut.html: man/dracut.asc $(manpages) docs/dracut.css man/dracut.usage.asc
+dracut.html: man/dracut.adoc $(manpages) docs/dracut.css man/dracut.usage.adoc
 	@rm -f -- dracut.xml
 	asciidoc -a "mainversion=$(DRACUT_MAIN_VERSION)" \
 		-a "version=$(DRACUT_FULL_VERSION)" \
 		-a numbered \
-		-d book -b docbook -o dracut.xml man/dracut.asc
+		-d book -b docbook -o dracut.xml man/dracut.adoc
 	@rm -f -- dracut.html
 	xsltproc -o dracut.html --xinclude -nonet \
 		--stringparam custom.css.source docs/dracut.css \
@@ -167,7 +164,12 @@ install: all
 	ln -fs dracut-functions.sh $(DESTDIR)$(pkglibdir)/dracut-functions
 	install -m 0755 dracut-logger.sh $(DESTDIR)$(pkglibdir)/dracut-logger.sh
 	install -m 0755 dracut-initramfs-restore.sh $(DESTDIR)$(pkglibdir)/dracut-initramfs-restore
-	cp -arx modules.d $(DESTDIR)$(pkglibdir)
+	cp -arx modules.d dracut.conf.d $(DESTDIR)$(pkglibdir)
+ifneq ($(enable_test),no)
+	cp -arx test $(DESTDIR)$(pkglibdir)
+else
+	rm -rf $(DESTDIR)$(pkglibdir)/modules.d/80test*
+endif
 ifneq ($(enable_documentation),no)
 	for i in $(man1pages); do install -m 0644 $$i $(DESTDIR)$(mandir)/man1/$${i##*/}; done
 	for i in $(man5pages); do install -m 0644 $$i $(DESTDIR)$(mandir)/man5/$${i##*/}; done

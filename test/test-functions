@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 PATH=/usr/sbin:/usr/bin:/sbin:/bin
 export PATH
 
@@ -14,18 +14,33 @@ KVERSION=${KVERSION-$(uname -r)}
 
 [ -z "$USE_NETWORK" ] && USE_NETWORK="network"
 
+[ -z "$TEST_FSTYPE" ] && TEST_FSTYPE="ext4"
+
 if [[ -z $basedir ]]; then basedir="$(realpath ../..)"; fi
 
 DRACUT=${DRACUT-${basedir}/dracut.sh}
 PKGLIBDIR=${PKGLIBDIR-$basedir}
 
-TEST_KERNEL_CMDLINE+=" panic=1 oops=panic softlockup_panic=1 systemd.crash_reboot console=ttyS0,115200n81 $DEBUGFAIL "
+TEST_KERNEL_CMDLINE+=" rd.retry=10 rd.info rd.shell=0 panic=1 oops=panic softlockup_panic=1 systemd.crash_reboot console=ttyS0,115200n81 $DEBUGFAIL "
 if [[ $V != "1" && $V != "2" ]]; then
     TEST_KERNEL_CMDLINE+="quiet "
 fi
 
+if [[ $V == "2" ]]; then
+    TEST_KERNEL_CMDLINE+="rd.debug "
+fi
+
 test_dracut() {
-    TEST_DRACUT_ARGS+=" --local --no-hostonly --no-hostonly-cmdline --no-early-microcode --add test --force --kver $KVERSION"
+    # directory for test configurations and for the generated initrd (extracted)
+    mkdir -p "$TESTDIR"/dracut.conf.d "$TESTDIR"/initrd
+
+    # grab the distro configuration from the host and make it available for the tests
+    if [ -d /usr/lib/dracut/dracut.conf.d ]; then
+        cp -a /usr/lib/dracut/dracut.conf.d "$TESTDIR"/
+    fi
+
+    # pick up configuration from $TESTDIR/dracut.conf.d when running the tests
+    TEST_DRACUT_ARGS+=" --local --confdir $TESTDIR/dracut.conf.d --add-confdir test --keep --tmpdir $TESTDIR/initrd --kver $KVERSION"
 
     # include $TESTDIR"/overlay if exists
     if [ -d "$TESTDIR"/overlay ]; then
@@ -36,10 +51,45 @@ test_dracut() {
     IFS=' ' read -a TEST_DRACUT_ARGS_ARRAY <<< "$TEST_DRACUT_ARGS"
 
     "$DRACUT" \
-        --kernel-cmdline "rd.retry=10 rd.info rd.shell=0" \
         "${TEST_DRACUT_ARGS_ARRAY[@]}" \
         "$@" || return 1
 }
+
+ovmf_code() {
+    for path in \
+        "/usr/share/OVMF/OVMF_CODE.fd" \
+        "/usr/share/OVMF/OVMF_CODE_4M.fd" \
+        "/usr/share/edk2/x64/OVMF_CODE.fd" \
+        "/usr/share/edk2-ovmf/OVMF_CODE.fd" \
+        "/usr/share/qemu/ovmf-x86_64-4m.bin"; do
+        [[ -s $path ]] && echo -n "$path" && return
+    done
+}
+
+VMLINUZ="/lib/modules/${KVERSION}/vmlinuz"
+if ! [ -f "$VMLINUZ" ]; then
+    VMLINUZ="/lib/modules/${KVERSION}/vmlinux"
+fi
+
+if ! [ -f "$VMLINUZ" ]; then
+    [[ -f /etc/machine-id ]] && read -r MACHINE_ID < /etc/machine-id
+
+    if [[ $MACHINE_ID ]] && { [[ -d /boot/${MACHINE_ID} ]] || [[ -L /boot/${MACHINE_ID} ]]; }; then
+        VMLINUZ="/boot/${MACHINE_ID}/$KVERSION/linux"
+    elif [ -f "/boot/vmlinuz-${KVERSION}" ]; then
+        VMLINUZ="/boot/vmlinuz-${KVERSION}"
+    elif [ -f "/boot/vmlinux-${KVERSION}" ]; then
+        VMLINUZ="/boot/vmlinux-${KVERSION}"
+    elif [ -f "/boot/kernel-${KVERSION}" ]; then
+        VMLINUZ="/boot/kernel-${KVERSION}"
+    else
+        echo "Could not find a Linux kernel version $KVERSION to test with!" >&2
+        echo "Please install linux." >&2
+        exit 1
+    fi
+fi
+
+export VMLINUZ
 
 command -v test_check &> /dev/null || test_check() {
     :
@@ -98,6 +148,7 @@ qemu_add_drive() {
 
     if [ "${size}" -ne 0 ]; then
         dd if=/dev/zero of="${file}" bs=1MiB count="${size}" status=none
+        sync
     fi
 
     eval "${2}"'+=(' \
@@ -112,6 +163,7 @@ qemu_add_drive() {
 
 test_marker_reset() {
     dd if=/dev/zero of="$TESTDIR"/marker.img bs=1MiB count=1 status=none
+    sync
 }
 
 test_marker_check() {
@@ -150,9 +202,6 @@ while (($# > 0)); do
             fi
             if [[ $V == "1" || $V == "2" ]]; then
                 tee_command="tee"
-                if [[ $V == "2" && -x "$basedir/logtee" ]]; then
-                    tee_command="$basedir/logtee"
-                fi
                 set -o pipefail
                 (
                     test_setup && test_run

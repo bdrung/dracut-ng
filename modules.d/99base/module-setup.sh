@@ -1,13 +1,8 @@
 #!/bin/bash
 
 # called by dracut
-check() {
-    return 0
-}
-
-# called by dracut
 depends() {
-    echo udev-rules
+    echo udev-rules shell-interpreter
     return 0
 }
 
@@ -38,7 +33,6 @@ install() {
     [[ $hostonly ]] && grep '^root:' "$dracutsysrootdir"/etc/shadow >> "$initdir/etc/shadow"
 
     # install our scripts and hooks
-    inst_script "$moddir/init.sh" "/init"
     inst_script "$moddir/initqueue.sh" "/sbin/initqueue"
     inst_script "$moddir/loginit.sh" "/sbin/loginit"
     inst_script "$moddir/rdsosreport.sh" "/sbin/rdsosreport"
@@ -58,13 +52,8 @@ install() {
 
     if ! dracut_module_included "systemd"; then
         inst_multiple switch_root || dfatal "Failed to install switch_root"
+        inst_script "$moddir/init.sh" "/init"
         inst_hook cmdline 10 "$moddir/parse-root-opts.sh"
-    fi
-
-    if [[ $realinitpath ]]; then
-        for i in $realinitpath; do
-            echo "rd.distroinit=$i"
-        done > "${initdir}/etc/cmdline.d/distroinit.conf"
     fi
 
     ln -fs /proc/self/mounts "$initdir/etc/mtab"

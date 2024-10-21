@@ -1,11 +1,6 @@
 #!/bin/bash
 
 # called by dracut
-check() {
-    return 0
-}
-
-# called by dracut
 depends() {
     echo base fs-lib
 }
@@ -13,11 +8,9 @@ depends() {
 cmdline_journal() {
     if [[ $hostonly ]]; then
         for dev in "${!host_fs_types[@]}"; do
-            [[ ${host_fs_types[$dev]} == "reiserfs" ]] || [[ ${host_fs_types[$dev]} == "xfs" ]] || continue
+            [[ ${host_fs_types[$dev]} == "xfs" ]] || continue
             rootopts=$(find_dev_fsopts "$dev")
-            if [[ ${host_fs_types[$dev]} == "reiserfs" ]]; then
-                journaldev=$(fs_get_option "$rootopts" "jdev")
-            elif [[ ${host_fs_types[$dev]} == "xfs" ]]; then
+            if [[ ${host_fs_types[$dev]} == "xfs" ]]; then
                 journaldev=$(fs_get_option "$rootopts" "logdev")
             fi
 
@@ -89,4 +82,8 @@ install() {
     fi
 
     inst_hook initqueue/timeout 99 "$moddir/rootfallback.sh"
+
+    inst_rules \
+        "$moddir/59-persistent-storage.rules" \
+        "$moddir/61-persistent-storage.rules"
 }

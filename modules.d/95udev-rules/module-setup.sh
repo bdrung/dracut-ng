@@ -58,9 +58,7 @@ install() {
         80-net-name-slot.rules \
         80-net-setup-link.rules \
         81-net-dhcp.rules \
-        95-udev-late.rules \
-        "$moddir/59-persistent-storage.rules" \
-        "$moddir/61-persistent-storage.rules"
+        95-udev-late.rules
 
     {
         for i in cdrom tape dialout floppy; do
@@ -91,15 +89,22 @@ install() {
         "${udevdir}"/path_id \
         "${udevdir}"/scsi_id \
         "${udevdir}"/usb_id \
-        "${udevdir}"/v4l_id
+        "${udevdir}"/v4l_id \
+        "${udevdir}"/udev.conf \
+        "${udevdir}"/udev.conf.d/*.conf
 
-    inst_libdir_file "libnss_files*"
+    # Install required libraries.
+    _arch=${DRACUT_ARCH:-$(uname -m)}
+    inst_libdir_file \
+        {"tls/$_arch/",tls/,"$_arch/",}"libkmod.so*" \
+        {"tls/$_arch/",tls/,"$_arch/",}"libnss_files*"
 
     # Install the hosts local user configurations if enabled.
     if [[ $hostonly ]]; then
-        inst_dir /etc/udev
+        inst_dir "$udevconfdir"
         inst_multiple -H -o \
-            /etc/udev/udev.conf \
+            "$udevconfdir"/udev.conf \
+            "$udevconfdir/udev.conf.d/*.conf" \
             "$udevrulesconfdir/*.rules"
     fi
 }

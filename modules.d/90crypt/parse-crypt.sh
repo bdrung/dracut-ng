@@ -22,7 +22,7 @@ _cryptgetargsname() {
     return 1
 }
 
-if ! getargbool 1 rd.luks -d -n rd_NO_LUKS; then
+if ! getargbool 1 rd.luks; then
     info "rd.luks=0: removing cryptoluks activation"
     rm -f -- /etc/udev/rules.d/70-luks.rules
 else
@@ -31,9 +31,9 @@ else
         echo 'ACTION!="add|change", GOTO="luks_end"'
     } > /etc/udev/rules.d/70-luks.rules.new
 
-    PARTUUID=$(getargs rd.luks.partuuid -d rd_LUKS_PARTUUID)
-    SERIAL=$(getargs rd.luks.serial -d rd_LUKS_SERIAL)
-    LUKS=$(getargs rd.luks.uuid -d rd_LUKS_UUID)
+    PARTUUID=$(getargs rd.luks.partuuid)
+    SERIAL=$(getargs rd.luks.serial)
+    LUKS=$(getargs rd.luks.uuid)
     tout=$(getarg rd.luks.key.tout)
 
     if [ -e /etc/crypttab ]; then
@@ -174,7 +174,7 @@ else
                 } >> "$hookdir/emergency/90-crypt.sh"
             fi
         done
-    elif getargbool 1 rd.auto && [ -z "$(getargs rd.luks.name)" ]; then
+    elif getargbool 0 rd.auto; then
         if [ -z "$DRACUT_SYSTEMD" ]; then
             {
                 printf -- 'ENV{ID_FS_TYPE}=="crypto_LUKS", RUN+="%s ' "$(command -v initqueue)"

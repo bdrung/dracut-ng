@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
 # ex: ts=8 sw=4 sts=4 et filetype=sh
 
@@ -12,6 +12,7 @@ TEST_DESCRIPTION="root filesystem on NFS with bridging/bonding/vlan with $USE_NE
 # skip the test if ifcfg dracut module can not be installed
 test_check() {
     test -d /etc/sysconfig/network-scripts
+    module_check ifcfg
 }
 
 # Network topology:
@@ -99,7 +100,7 @@ client_test() {
         ifname=net4:52:54:00:12:34:04
         ifname=net5:52:54:00:12:34:05
         $cmdline rd.net.timeout.dhcp=30
-        rd.retry=5 rw init=/sbin/init" \
+        rw init=/sbin/init" \
         -initrd "$TESTDIR"/initramfs.testing || return 1
 
     {
@@ -234,7 +235,7 @@ test_setup() {
 
         inst_multiple sh ls shutdown poweroff stty cat ps ln ip \
             dmesg mkdir cp ping exportfs \
-            modprobe rpc.nfsd rpc.mountd showmount tcpdump \
+            modprobe rpc.nfsd rpc.mountd \
             /etc/services sleep mount chmod
         for _terminfodir in /lib/terminfo /etc/terminfo /usr/share/terminfo; do
             [ -f "${_terminfodir}"/l/linux ] && break
@@ -367,6 +368,7 @@ test_setup() {
     )
     # Make client's dracut image
     test_dracut \
+        --no-hostonly --no-hostonly-cmdline \
         -a "debug ${USE_NETWORK} ifcfg" \
         "$TESTDIR"/initramfs.testing
 

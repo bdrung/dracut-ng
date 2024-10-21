@@ -2,7 +2,10 @@
 
 # called by dracut
 check() {
+    local -A nvmf_trtypes
+
     require_binaries nvme jq || return 1
+    require_kernel_modules nvme_fabrics || return 1
 
     # shellcheck disable=SC2317  # called later by for_each_host_dev_and_slaves
     is_nvmf() {
@@ -21,7 +24,12 @@ check() {
                 break
             fi
         done
-        [[ $trtype == "fc" ]] || [[ $trtype == "tcp" ]] || [[ $trtype == "rdma" ]]
+        if [[ $trtype == "fc" ]] || [[ $trtype == "tcp" ]] || [[ $trtype == "rdma" ]]; then
+            nvmf_trtypes["nvme_${trtype}"]=1
+            return 0
+        else
+            return 1
+        fi
     }
 
     has_nbft() {
@@ -42,6 +50,7 @@ check() {
         local _is_nvmf=$?
         popd > /dev/null || exit
         [[ $_is_nvmf == 0 ]] || return 255
+        require_kernel_modules "${!nvmf_trtypes[@]}" || return 1
         if [ ! -f /sys/class/fc/fc_udev_device/nvme_discovery ] \
             && [ ! -f /etc/nvme/discovery.conf ] \
             && [ ! -f /etc/nvme/config.json ] && ! has_nbft; then
@@ -60,8 +69,9 @@ depends() {
 
 # called by dracut
 installkernel() {
-    instmods nvme_fc lpfc qla2xxx
-    hostonly="" instmods nvme_tcp nvme_fabrics 8021q
+    instmods nvme_fc nvme_tcp nvme_rdma lpfc qla2xxx
+    # 802.1q VLAN may be set up in Firmware later. Include the module always.
+    hostonly="" instmods 8021q
 }
 
 # called by dracut
