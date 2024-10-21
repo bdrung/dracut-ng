@@ -2,6 +2,7 @@ Source: dracut
 Section: utils
 Priority: optional
 Maintainer: Thomas Lange <lange@debian.org>
+Uploaders: Benjamin Drung <bdrung@debian.org>
 Build-Depends: debhelper-compat (= 13), debhelper, asciidoc-base, xsltproc, docbook-xsl, docbook-xml, libkmod-dev, pkgconf, systemd-dev
 Standards-Version: 4.6.2
 Vcs-Browser: https://salsa.debian.org/debian/dracut
