@@ -9,7 +9,7 @@ Signed-off-by: Benjamin Drung <benjamin.drung@canonical.com>
 ---
  dracut-initramfs-restore.sh | 4 ++--
  dracut.sh                   | 2 +-
- man/dracut.conf.5.asc       | 2 +-
+ man/dracut.conf.5.adoc       | 2 +-
  3 files changed, 4 insertions(+), 4 deletions(-)
 
 diff --git a/dracut-initramfs-restore.sh b/dracut-initramfs-restore.sh
@@ -40,10 +40,10 @@ index 291e813..562be90 100755
          fi
          if [[ -d "$dracutsysrootdir"/efi/loader/entries || -L "$dracutsysrootdir"/efi/loader/entries ]] \
              && [[ $MACHINE_ID ]] \
-diff --git a/man/dracut.conf.5.asc b/man/dracut.conf.5.asc
+diff --git a/man/dracut.conf.5.adoc b/man/dracut.conf.5.adoc
 index 5ca07a0..51cc312 100644
---- a/man/dracut.conf.5.asc
-+++ b/man/dracut.conf.5.asc
+--- a/man/dracut.conf.5.adoc
++++ b/man/dracut.conf.5.adoc
 @@ -325,7 +325,7 @@ Logging levels:
      Specifies the file name for the generated initramfs if it is not set otherwise.
      The initrdname configuration option is required to match the _initr*${kernel}*_
