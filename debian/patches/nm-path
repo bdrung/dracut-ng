@@ -1,6 +1,6 @@
 --- a/modules.d/35network-manager/module-setup.sh
 +++ b/modules.d/35network-manager/module-setup.sh
-@@ -30,8 +30,8 @@
+@@ -25,8 +25,8 @@
      inst_multiple ip sed grep
  
      inst NetworkManager
