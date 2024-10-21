@@ -5,6 +5,7 @@ DPKG_EXPORT_BUILDTOOLS=1
 -include /usr/share/dpkg/buildtools.mk
 include /usr/share/dpkg/pkg-info.mk
 
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 DEB_HOST_ARCH ?= $(shell dpkg-architecture -qDEB_HOST_ARCH)
 export DRACUT_MAIN_VERSION=$(DEB_VERSION_UPSTREAM_REVISION)
 export DRACUT_FULL_VERSION=$(DEB_VERSION)
