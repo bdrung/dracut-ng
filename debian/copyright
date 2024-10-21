@@ -13,7 +13,7 @@ License: GPL-2+
 Files: debian/*
 Copyright:
   2009, Philippe Seewer <philippe.seewer@bfh.ch>
-  2011-2020 Thomas Lange <lange@informatik.uni-koeln.de>
+  2011-2024 Thomas Lange <lange@informatik.uni-koeln.de>
 License: GPL-2+
 
 Files: modules.d/97masterkey/masterkey.sh
