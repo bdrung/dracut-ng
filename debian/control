@@ -8,18 +8,6 @@ Vcs-Browser: https://salsa.debian.org/debian/dracut
 Vcs-Git: https://salsa.debian.org/debian/dracut.git
 Homepage: https://github.com/dracut-ng/dracut-ng/wiki
 
-Package: dracut
-Architecture: all
-Multi-Arch: foreign
-Suggests: dracut-network
-Depends: dracut-core (>= ${binary:Version}), dracut-core (<< ${binary:Version}+b+~), linux-base, ${misc:Depends}
-Provides: linux-initramfs-tool
-Conflicts: initramfs-tools, live-tools
-Description: Initramfs generator using udev
- This package builds a bootable initramfs for Linux kernel packages.  The
- initramfs is loaded along with the kernel and is responsible for
- mounting the root filesystem and starting the main init system.
-
 Package: dracut-core
 Architecture: any
 Multi-Arch: foreign
@@ -37,6 +25,18 @@ Description: dracut is an event driven initramfs infrastructure (core tools)
  then when we have the rootfs's device node, we mount and carry on.
  Having the root on MD, LVM2, LUKS is supported as well as NFS, iSCSI,
  NBD and FCOE with dracut-network.
+
+Package: dracut
+Architecture: all
+Multi-Arch: foreign
+Suggests: dracut-network
+Depends: dracut-core (>= ${binary:Version}), dracut-core (<< ${binary:Version}+b+~), linux-base, ${misc:Depends}
+Provides: linux-initramfs-tool
+Conflicts: initramfs-tools, live-tools
+Description: Initramfs generator using udev
+ This package builds a bootable initramfs for Linux kernel packages.  The
+ initramfs is loaded along with the kernel and is responsible for
+ mounting the root filesystem and starting the main init system.
 
 Package: dracut-install
 Architecture: any
