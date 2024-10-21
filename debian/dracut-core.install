@@ -16,9 +16,11 @@ debian/09console-setup          usr/lib/dracut/modules.d
 debian/90overlay-root		usr/lib/dracut/modules.d
 usr/lib/dracut/modules.d/00bash
 usr/lib/dracut/modules.d/00dash
+usr/lib/dracut/modules.d/00shell-interpreter
 usr/lib/dracut/modules.d/00systemd
 usr/lib/dracut/modules.d/00warpclock
 usr/lib/dracut/modules.d/01fips
+usr/lib/dracut/modules.d/01fips-crypto-policies
 usr/lib/dracut/modules.d/01systemd-ac-power
 usr/lib/dracut/modules.d/01systemd-ask-password
 usr/lib/dracut/modules.d/01systemd-bsod
