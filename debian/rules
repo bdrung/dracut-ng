@@ -28,7 +28,7 @@ override_dh_fixperms-arch:
 override_dh_fixperms-indep:
 	dh_fixperms
 	find debian/ -name "*.sh" | grep modules.d | xargs chmod 755
-	rm -f debian/*/usr/lib/dracut/modules.d/98dracut-systemd/*.asc
+	rm -f debian/*/usr/lib/dracut/modules.d/98dracut-systemd/*.adoc
 	rm -f debian/*/usr/lib/dracut/modules.d/98dracut-systemd/*.8
 ifneq ($(DEB_HOST_ARCH), s390x)
 	for m in 80cms 81cio_ignore 91zipl 95dasd 95dasd_mod \
@@ -51,4 +51,4 @@ override_dh_clean:
 	   mv -f dracut-version.sh.orig dracut-version.sh ;\
 	fi
 	dh_clean dracut.pc Makefile.inc src/skipcpio/skipcpio src/util/util
-	git status|grep modified: | awk '/.asc/ {print $$2}' | xargs -r git checkout
+	git status|grep modified: | awk '/.adoc/ {print $$2}' | xargs -r git checkout
