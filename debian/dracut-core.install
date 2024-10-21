@@ -16,7 +16,6 @@ debian/09console-setup          usr/lib/dracut/modules.d
 debian/90overlay-root		usr/lib/dracut/modules.d
 usr/lib/dracut/modules.d/00bash
 usr/lib/dracut/modules.d/00dash
-usr/lib/dracut/modules.d/00mksh
 usr/lib/dracut/modules.d/00systemd
 usr/lib/dracut/modules.d/00warpclock
 usr/lib/dracut/modules.d/01fips
@@ -47,7 +46,7 @@ usr/lib/dracut/modules.d/03modsign
 usr/lib/dracut/modules.d/03rescue
 usr/lib/dracut/modules.d/04watchdog
 usr/lib/dracut/modules.d/04watchdog-modules
-usr/lib/dracut/modules.d/05busybox
+usr/lib/dracut/modules.d/99busybox
 usr/lib/dracut/modules.d/06dbus-broker
 usr/lib/dracut/modules.d/06dbus-daemon
 usr/lib/dracut/modules.d/06rngd
@@ -65,7 +64,7 @@ usr/lib/dracut/modules.d/80test-makeroot
 usr/lib/dracut/modules.d/80test-root
 usr/lib/dracut/modules.d/90btrfs
 usr/lib/dracut/modules.d/90crypt
-usr/lib/dracut/modules.d/90systemd-cryptsetup
+usr/lib/dracut/modules.d/01systemd-cryptsetup
 usr/lib/dracut/modules.d/90dm
 usr/lib/dracut/modules.d/90dmraid
 usr/lib/dracut/modules.d/90kernel-modules
