@@ -17,5 +17,6 @@ usr/lib/dracut/modules.d/95fcoe-uefi
 usr/lib/dracut/modules.d/95iscsi
 usr/lib/dracut/modules.d/95nbd
 usr/lib/dracut/modules.d/95nfs
+usr/lib/dracut/modules.d/95nvmf
 usr/lib/dracut/modules.d/95ssh-client
 usr/lib/dracut/modules.d/99uefi-lib
