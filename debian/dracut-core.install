@@ -61,9 +61,6 @@ usr/lib/dracut/modules.d/62bluetooth
 usr/lib/dracut/modules.d/80lvmmerge
 usr/lib/dracut/modules.d/81cio_ignore
 usr/lib/dracut/modules.d/80lvmthinpool-monitor
-usr/lib/dracut/modules.d/80test
-usr/lib/dracut/modules.d/80test-makeroot
-usr/lib/dracut/modules.d/80test-root
 usr/lib/dracut/modules.d/90btrfs
 usr/lib/dracut/modules.d/90crypt
 usr/lib/dracut/modules.d/01systemd-cryptsetup
