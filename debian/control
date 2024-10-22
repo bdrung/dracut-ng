@@ -12,8 +12,8 @@ Homepage: https://github.com/dracut-ng/dracut-ng/wiki
 Package: dracut-core
 Architecture: any
 Multi-Arch: foreign
-Recommends: cryptsetup, dmsetup, dmraid, kpartx, lvm2, mdadm, console-setup, binutils, systemd, zstd
-Depends: cpio, dracut-install, kmod, udev, e2fsprogs, gawk, init, ${shlibs:Depends}, ${misc:Depends}
+Recommends: cryptsetup, dmsetup, dmraid, kpartx, lvm2, mdadm, console-setup, binutils, systemd, systemd-sysv, zstd
+Depends: cpio, dracut-install, kmod, udev, e2fsprogs, gawk, ${shlibs:Depends}, ${misc:Depends}
 Breaks: dracut-network (<< 057+157-2), dracut-live (<< 059-2)
 Replaces: dracut-network (<< 057+157-2), dracut-live (<< 059-2)
 Description: dracut is an event driven initramfs infrastructure (core tools)
