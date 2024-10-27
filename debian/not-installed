@@ -2,3 +2,7 @@ usr/lib/kernel/install.d/*
 # wicked dracut module is not supported by debian
 usr/lib/dracut/modules.d/35network-wicked/*
 usr/lib/dracut/dracut.conf.d/*
+# dh_missing is complaining about some symlinks
+usr/lib/systemd/system/*.service
+usr/lib/systemd/system/initrd.target.wants/*.service
+usr/lib/systemd/system/sysinit.target.wants/dracut-shutdown.service
