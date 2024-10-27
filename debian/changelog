@@ -1,6 +1,7 @@
-dracut (105-1) UNRELEASED; urgency=low
+dracut (105-2~exp3) experimental; urgency=low
 
-  * new upstream
+  * new upstream, Closes: #1081566
+  * add  systemd-cryptsetup as Recommends, Closes: #1078792
   * remove package dracut-config-generic, Closes: #1075732
   * apply patches from Ubuntu
 
