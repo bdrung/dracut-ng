@@ -49,9 +49,6 @@ override_dh_install:
 	dh_install
 	dh_install -pdracut-core $(deb_systemdsystemunitdir)
 
-override_dh_missing:
-	dh_missing $(deb_systemdsystemunitdir)
-
 override_dh_clean:
 	if test -e dracut-version.sh.orig ; then \
 	   mv -f dracut-version.sh.orig dracut-version.sh ;\
