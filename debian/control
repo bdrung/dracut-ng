@@ -88,3 +88,14 @@ Depends: dracut-core, ${misc:Depends}
 Multi-Arch: foreign
 Description: dracut is an event driven initramfs infrastructure
  This is the dracut configuration to turn on rescue image generation
+
+Package: dracut-test
+Architecture: all
+Depends: dracut-core, ${misc:Depends}
+Breaks: dracut-core (<< 105)
+Replaces: dracut-core (<< 105)
+Description: dracut is an event driven initramfs infrastructure (test modules)
+ This package provides the Dracut modules and configuration files for the
+ Dracut test suite. This package is intended for testing Dracut itself
+ and is of no use for ordinary users. If you're not sure about this package,
+ you don't need it.

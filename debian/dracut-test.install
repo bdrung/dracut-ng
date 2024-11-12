@@ -1,0 +1,4 @@
+test/dracut.conf.d usr/lib/dracut
+test/modules.d/80test usr/lib/dracut/modules.d
+test/modules.d/80test-makeroot usr/lib/dracut/modules.d
+test/modules.d/80test-root usr/lib/dracut/modules.d
