@@ -22,15 +22,18 @@ Depends: btrfs-progs,
          make,
          mdadm,
          mount,
+         ovmf,
          qemu-efi-aarch64 [arm64],
          qemu-efi-arm [armhf],
          qemu-kvm,
          seabios [ppc64el],
+         squashfs-tools,
          systemd-boot-efi,
          systemd-coredump,
          systemd-cryptsetup,
          systemd-repart,
          systemd-sysv,
+         systemd-ukify,
          util-linux
 Restrictions: allow-stderr, needs-root
 Features: test-name=upstream-dracut-core
