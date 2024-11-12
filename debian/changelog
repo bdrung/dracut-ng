@@ -1,8 +1,44 @@
-dracut (105-2~exp5) experimental; urgency=low
+dracut (105-1) UNRELEASED; urgency=low
 
+  [ Thomas Lange ]
   * new upstream, Closes: #1081566
   * add systemd-cryptsetup as Recommends, Closes: #1078792
-  * apply patches from Ubuntu
+  * add Benjamin as uploader
+  * update standards version, no changes needed
+  * instead of depend on init, now recommend systemd-sysv, Closes: #1056382
+  * Do not call clean target in tests, Closes: #1086085
+
+  [ Benjamin Drung ]
+  * dracut-core:
+    - add new modules 00shell-interpreter, 01fips-crypto-policies,
+      01systemd-bsod, 01systemd-creds, 90numlock, 90pcmcia
+    - drop recommending pkgconf
+    - drop depending directly on libkmod2. dracut-install links against it.
+    - recommend zstd instead of pigz and default to zstd
+  * Switch to debhelper 13
+  * dracut: use await variant of update-initramfs trigger
+  * drop nm-path patch (network-manager ships the helpers in /usr/libexec)
+  * Add systemd-coredump, systemd-cryptsetup, and systemd-repart as
+    dependencies for upstream-dracut-core autopkgtest.
+  * Regenerate only the latest and missing initrds (LP: #2048990)
+  * Move module 95nvmf from dracut-core to dracut-network (LP: #2083881)
+  * Drop unneeded quilt from build dependencies
+  * Default initrdname to initrd.img-${kernel}
+  * Enable all hardening flags
+  * fix-01fips-crypto-policies-use-bin-in-shebang.patch: use /bin in shebang
+  * Add a dracut-test package to ship the files needed for the test suite
+  * autopkgtest:
+    - run autopkgtest with V=2 (for maximum verbosity)
+    - run autopkgtest on all architectures
+    - disable using KVM for ppc64el
+    - set ARCH to dpkg architecture
+    - Depend on ovmf, squashfs-tools, and systemd-ukify for TEST-18-UEFI
+    - Depend on systemd-cryptsetup for TEST-40-NBD
+  * dracut-config-generic: ship upstream 50-generic.conf instead of Debian
+    specific one and put it into /usr/lib/dracut/dracut.conf.d
+  * dracut-config-rescue: ship upstream 50-rescue.conf instead of Debian
+    specific one and put it into /usr/lib/dracut/dracut.conf.d
+  * Set Rules-Requires-Root: no
 
  -- Thomas Lange <lange@debian.org>  Mon, 21 Oct 2024 15:30:27 +0200
 
