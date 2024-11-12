@@ -1,1 +1,1 @@
-debian/etc/20-rescue.conf       etc/dracut.conf.d
+dracut.conf.d/rescue/50-rescue.conf       usr/lib/dracut/dracut.conf.d
