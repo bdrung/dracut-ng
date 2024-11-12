@@ -82,6 +82,7 @@ Depends: cryptsetup,
          qemu-efi-arm [armhf],
          qemu-kvm,
          seabios [ppc64el],
+         systemd-cryptsetup,
          systemd-sysv,
          util-linux,
          vim
