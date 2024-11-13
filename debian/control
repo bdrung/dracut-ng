@@ -13,8 +13,8 @@ Homepage: https://github.com/dracut-ng/dracut-ng/wiki
 Package: dracut-core
 Architecture: any
 Multi-Arch: foreign
-Recommends: cryptsetup, systemd-cryptsetup, dmsetup, dmraid, kpartx, lvm2, mdadm, console-setup, binutils, systemd, systemd-sysv, zstd
 Depends: cpio, dracut-install, kmod, udev, e2fsprogs, gawk, ${shlibs:Depends}, ${misc:Depends}
+Recommends: cryptsetup, systemd-cryptsetup, dmsetup, dmraid, kpartx, lvm2, mdadm, console-setup, binutils, systemd, systemd-sysv, zstd
 Breaks: dracut-network (<< 057+157-2), dracut-live (<< 059-2)
 Replaces: dracut-network (<< 057+157-2), dracut-live (<< 059-2)
 Description: dracut is an event driven initramfs infrastructure (core tools)
@@ -31,8 +31,8 @@ Description: dracut is an event driven initramfs infrastructure (core tools)
 Package: dracut
 Architecture: all
 Multi-Arch: foreign
-Suggests: dracut-network
 Depends: dracut-core (>= ${binary:Version}), dracut-core (<< ${binary:Version}+b+~), linux-base, ${misc:Depends}
+Suggests: dracut-network
 Provides: linux-initramfs-tool
 Conflicts: initramfs-tools, live-tools
 Description: Initramfs generator using udev
@@ -51,8 +51,8 @@ Description: dracut is an event driven initramfs infrastructure (dracut-install)
 
 Package: dracut-network
 Architecture: all
-Recommends: nfs-common, open-iscsi, nbd-client, curl
 Depends: dracut-core, iputils-arping, isc-dhcp-client | systemd | connman | network-manager, ${misc:Depends}
+Recommends: nfs-common, open-iscsi, nbd-client, curl
 Breaks: dracut-core (<< 105)
 Replaces: dracut-core (<< 105)
 Description: dracut is an event driven initramfs infrastructure (network modules)
@@ -73,8 +73,8 @@ Description: dracut is an event driven initramfs infrastructure (squashfs module
 
 Package: dracut-live
 Architecture: all
-Recommends: dracut-network
 Depends: dracut-core, dmsetup, ${misc:Depends}
+Recommends: dracut-network
 Breaks: dracut-network (<< 050-1), dracut-core (<< 050-1)
 Replaces: dracut-network (<< 050-1), dracut-core (<< 050-1)
 Description: dracut is an event driven initramfs infrastructure (live image modules)
