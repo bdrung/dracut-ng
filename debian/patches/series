@@ -3,3 +3,4 @@ udevsettle
 debian-initramfs-post-update.patch
 Default-initrdname-to-initrd.img-kernel.patch
 fix-01fips-crypto-policies-use-bin-in-shebang.patch
+test-decrease-default-VM-memory-size-to-1-GiB.patch
