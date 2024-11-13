@@ -4,7 +4,6 @@ Priority: optional
 Maintainer: Thomas Lange <lange@debian.org>
 Uploaders: Benjamin Drung <bdrung@debian.org>
 Build-Depends: asciidoc-base,
-               debhelper,
                debhelper-compat (= 13),
                docbook-xml,
                docbook-xsl,
