@@ -1,2 +1,2 @@
-/var/lib/dracut
 /etc/dracut.conf.d
+/var/lib/dracut

@@ -3,7 +3,15 @@ Section: utils
 Priority: optional
 Maintainer: Thomas Lange <lange@debian.org>
 Uploaders: Benjamin Drung <bdrung@debian.org>
-Build-Depends: debhelper-compat (= 13), debhelper, asciidoc-base, xsltproc, docbook-xsl, docbook-xml, libkmod-dev, pkgconf, systemd-dev
+Build-Depends: asciidoc-base,
+               debhelper,
+               debhelper-compat (= 13),
+               docbook-xml,
+               docbook-xsl,
+               libkmod-dev,
+               pkgconf,
+               systemd-dev,
+               xsltproc
 Rules-Requires-Root: no
 Standards-Version: 4.7.0
 Vcs-Browser: https://salsa.debian.org/debian/dracut
@@ -13,10 +21,28 @@ Homepage: https://github.com/dracut-ng/dracut-ng/wiki
 Package: dracut-core
 Architecture: any
 Multi-Arch: foreign
-Depends: cpio, dracut-install, kmod, udev, e2fsprogs, gawk, ${shlibs:Depends}, ${misc:Depends}
-Recommends: cryptsetup, systemd-cryptsetup, dmsetup, dmraid, kpartx, lvm2, mdadm, console-setup, binutils, systemd, systemd-sysv, zstd
-Breaks: dracut-network (<< 057+157-2), dracut-live (<< 059-2)
-Replaces: dracut-network (<< 057+157-2), dracut-live (<< 059-2)
+Depends: cpio,
+         dracut-install,
+         e2fsprogs,
+         gawk,
+         kmod,
+         udev,
+         ${misc:Depends},
+         ${shlibs:Depends}
+Recommends: binutils,
+            console-setup,
+            cryptsetup,
+            dmraid,
+            dmsetup,
+            kpartx,
+            lvm2,
+            mdadm,
+            systemd,
+            systemd-cryptsetup,
+            systemd-sysv,
+            zstd
+Breaks: dracut-live (<< 059-2), dracut-network (<< 057+157-2)
+Replaces: dracut-live (<< 059-2), dracut-network (<< 057+157-2)
 Description: dracut is an event driven initramfs infrastructure (core tools)
  Unlike existing initramfs's, this is an attempt at having as little as
  possible hard-coded into the initramfs as possible.  The initramfs has
@@ -31,7 +57,10 @@ Description: dracut is an event driven initramfs infrastructure (core tools)
 Package: dracut
 Architecture: all
 Multi-Arch: foreign
-Depends: dracut-core (>= ${binary:Version}), dracut-core (<< ${binary:Version}+b+~), linux-base, ${misc:Depends}
+Depends: dracut-core (<< ${binary:Version}+b+~),
+         dracut-core (>= ${binary:Version}),
+         linux-base,
+         ${misc:Depends}
 Suggests: dracut-network
 Provides: linux-initramfs-tool
 Conflicts: initramfs-tools, live-tools
@@ -42,7 +71,7 @@ Description: Initramfs generator using udev
 
 Package: dracut-install
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
+Depends: ${misc:Depends}, ${shlibs:Depends}
 Breaks: dracut-core (<< 060+5-7~)
 Replaces: dracut-core (<< 060+5-7~)
 Description: dracut is an event driven initramfs infrastructure (dracut-install)
@@ -51,8 +80,11 @@ Description: dracut is an event driven initramfs infrastructure (dracut-install)
 
 Package: dracut-network
 Architecture: all
-Depends: dracut-core, iputils-arping, isc-dhcp-client | systemd | connman | network-manager, ${misc:Depends}
-Recommends: nfs-common, open-iscsi, nbd-client, curl
+Depends: dracut-core,
+         iputils-arping,
+         isc-dhcp-client | systemd | connman | network-manager,
+         ${misc:Depends}
+Recommends: curl, nbd-client, nfs-common, open-iscsi
 Breaks: dracut-core (<< 105)
 Replaces: dracut-core (<< 105)
 Description: dracut is an event driven initramfs infrastructure (network modules)
@@ -73,10 +105,10 @@ Description: dracut is an event driven initramfs infrastructure (squashfs module
 
 Package: dracut-live
 Architecture: all
-Depends: dracut-core, dmsetup, ${misc:Depends}
+Depends: dmsetup, dracut-core, ${misc:Depends}
 Recommends: dracut-network
-Breaks: dracut-network (<< 050-1), dracut-core (<< 050-1)
-Replaces: dracut-network (<< 050-1), dracut-core (<< 050-1)
+Breaks: dracut-core (<< 050-1), dracut-network (<< 050-1)
+Replaces: dracut-core (<< 050-1), dracut-network (<< 050-1)
 Description: dracut is an event driven initramfs infrastructure (live image modules)
  Package to build a dracut initramfs with live image capabilities.
  .
