@@ -8,8 +8,8 @@ Forwarded: not-needed
 Last-Update: 2024-11-21
 ---
 This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
---- a/modules.d/50plymouth/module-setup.sh
-+++ b/modules.d/50plymouth/module-setup.sh
+--- a/modules.d/45plymouth/module-setup.sh
++++ b/modules.d/45plymouth/module-setup.sh
 @@ -20,7 +20,7 @@ check() {
      [[ "$mount_needs" ]] && return 1
      [[ $(pkglib_dir) ]] || return 1
@@ -28,8 +28,8 @@ This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
  
      if ! dracut_module_included "systemd"; then
          inst_hook pre-trigger 10 "$moddir"/plymouth-pretrigger.sh
---- a/modules.d/50plymouth/plymouth-populate-initrd.sh
-+++ b/modules.d/50plymouth/plymouth-populate-initrd.sh
+--- a/modules.d/45plymouth/plymouth-populate-initrd.sh
++++ b/modules.d/45plymouth/plymouth-populate-initrd.sh
 @@ -1,7 +1,8 @@
  #!/bin/bash
  
