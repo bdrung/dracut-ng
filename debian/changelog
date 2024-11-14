@@ -1,4 +1,4 @@
-dracut (105-1) UNRELEASED; urgency=low
+dracut (105-1) unstable; urgency=low
 
   [ Thomas Lange ]
   * new upstream, Closes: #1081566
@@ -34,13 +34,16 @@ dracut (105-1) UNRELEASED; urgency=low
     - set ARCH to dpkg architecture
     - Depend on ovmf, squashfs-tools, and systemd-ukify for TEST-18-UEFI
     - Depend on systemd-cryptsetup for TEST-40-NBD
+    - restrict systemd-boot-efi to supported archs
   * dracut-config-generic: ship upstream 50-generic.conf instead of Debian
     specific one and put it into /usr/lib/dracut/dracut.conf.d
   * dracut-config-rescue: ship upstream 50-rescue.conf instead of Debian
     specific one and put it into /usr/lib/dracut/dracut.conf.d
   * Set Rules-Requires-Root: no
+  * test: decrease default VM memory size to 1 GiB
+  * Run wrap-and-sort
 
- -- Thomas Lange <lange@debian.org>  Mon, 21 Oct 2024 15:30:27 +0200
+ -- Benjamin Drung <bdrung@debian.org>  Thu, 14 Nov 2024 12:29:30 +0100
 
 dracut (103-2) unstable; urgency=low
 
