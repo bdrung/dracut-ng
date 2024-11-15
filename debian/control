@@ -25,7 +25,6 @@ Multi-Arch: foreign
 Depends: cpio,
          dracut-install,
          e2fsprogs,
-         gawk,
          kmod,
          udev,
          ${misc:Depends},
