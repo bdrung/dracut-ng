@@ -60,7 +60,7 @@ Restrictions: allow-stderr
 Features: test-name=upstream-dracut-live
 
 Architecture: amd64 arm64 armhf ppc64el riscv64 s390x
-Test-Command: debian/tests/run-upstream-tests TESTS="40"
+Test-Command: USE_NETWORK=systemd-networkd debian/tests/run-upstream-tests TESTS="40"
 Depends: cryptsetup,
          dracut-network,
          dracut-test,
@@ -81,6 +81,7 @@ Depends: cryptsetup,
          qemu-efi-arm [armhf],
          qemu-kvm,
          seabios [ppc64el],
+         systemd,
          systemd-cryptsetup,
          systemd-sysv,
          util-linux,
