@@ -1,10 +1,10 @@
 # Note: These tests need root on Ubuntu, because the kernel is only readable by root. See https://launchpad.net/bugs/759725
 # Skip following test cases:
-# * TEST-14-IMSM: dmraid was removed from Debian
-# * TEST-50-MULTINIC: disabled in upstream CI since 2023-01-02
-# * TEST-60-BONDBRIDGEVLAN: https://github.com/dracutdevs/dracut/issues/2328
+# * TEST-23-IMSM: dmraid was removed from Debian
+# * TEST-61-MULTINIC: disabled in upstream CI since 2023-01-02
+# * TEST-62-BONDBRIDGEVLAN: https://github.com/dracutdevs/dracut/issues/2328
 Architecture: amd64 arm64 armhf ppc64el riscv64 s390x
-Test-Command: debian/tests/run-upstream-tests SKIP="14 16 20 30 35 40 50 60"
+Test-Command: debian/tests/run-upstream-tests SKIP="23 30 60 61 62 70 71 72"
 Depends: btrfs-progs,
          busybox,
          cryptsetup,
@@ -35,7 +35,7 @@ Restrictions: allow-stderr, needs-root
 Features: test-name=upstream-dracut-core
 
 Architecture: amd64 arm64 armhf ppc64el riscv64 s390x
-Test-Command: debian/tests/run-upstream-tests TESTS="16"
+Test-Command: debian/tests/run-upstream-tests TESTS="30"
 Depends: btrfs-progs,
          busybox,
          dracut-live,
@@ -58,7 +58,7 @@ Restrictions: allow-stderr, needs-root
 Features: test-name=upstream-dracut-live
 
 Architecture: amd64 arm64 armhf ppc64el riscv64 s390x
-Test-Command: debian/tests/run-upstream-tests TESTS="20"
+Test-Command: debian/tests/run-upstream-tests TESTS="60"
 Depends: dracut-live,
          dracut-network,
          dracut-test,
@@ -83,7 +83,7 @@ Restrictions: allow-stderr, needs-root
 Features: test-name=upstream-dracut-network-nfs
 
 Architecture: amd64 arm64 armhf ppc64el riscv64 s390x
-Test-Command: debian/tests/run-upstream-tests TESTS="30 35"
+Test-Command: debian/tests/run-upstream-tests TESTS="70 71"
 Depends: cryptsetup,
          dracut-network,
          dracut-test,
@@ -112,7 +112,7 @@ Restrictions: allow-stderr, needs-root
 Features: test-name=upstream-dracut-network-iscsi
 
 Architecture: amd64 arm64 armhf ppc64el riscv64 s390x
-Test-Command: debian/tests/run-upstream-tests TESTS="40"
+Test-Command: debian/tests/run-upstream-tests TESTS="72"
 Depends: cryptsetup,
          dracut-network,
          dracut-test,
