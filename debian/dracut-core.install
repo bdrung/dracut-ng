@@ -19,6 +19,7 @@ usr/lib/dracut/modules.d/01fips
 usr/lib/dracut/modules.d/01fips-crypto-policies
 usr/lib/dracut/modules.d/01systemd-ac-power
 usr/lib/dracut/modules.d/01systemd-ask-password
+usr/lib/dracut/modules.d/01systemd-battery-check
 usr/lib/dracut/modules.d/01systemd-bsod
 usr/lib/dracut/modules.d/01systemd-coredump
 usr/lib/dracut/modules.d/01systemd-creds
