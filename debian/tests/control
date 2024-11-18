@@ -32,7 +32,8 @@ Depends: btrfs-progs,
          systemd-repart,
          systemd-sysv,
          systemd-ukify,
-         util-linux
+         util-linux,
+         zstd
 Restrictions: allow-stderr
 Features: test-name=upstream-dracut-core
 
@@ -54,7 +55,8 @@ Depends: btrfs-progs,
          seabios [ppc64el],
          squashfs-tools,
          systemd-sysv,
-         util-linux
+         util-linux,
+         zstd
 Restrictions: allow-stderr
 Features: test-name=upstream-dracut-live
 
@@ -83,6 +85,7 @@ Depends: cryptsetup,
          systemd-cryptsetup,
          systemd-sysv,
          util-linux,
-         vim
+         vim,
+         zstd
 Restrictions: allow-stderr
 Features: test-name=upstream-dracut-network
