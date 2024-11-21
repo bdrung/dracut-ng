@@ -61,7 +61,7 @@ Restrictions: allow-stderr
 Features: test-name=upstream-dracut-live
 
 Architecture: amd64
-Test-Command: USE_NETWORK=systemd-networkd debian/tests/run-upstream-tests TESTS="40"
+Test-Command: debian/tests/run-upstream-tests TESTS="40"
 Depends: cryptsetup,
          dracut-network,
          dracut-test,

@@ -12,6 +12,7 @@ export ARCH
 export KVERSION
 export DRACUT=dracut
 export PKGLIBDIR=/usr/lib/dracut
+export USE_NETWORK=systemd-networkd
 
 if test "$ARCH" = "ppc64el"; then
 	# KVM fails on the Ubuntu ppc64el autopkgtest runners:
