@@ -98,6 +98,7 @@ usr/lib/dracut/modules.d/95virtiofs
 usr/lib/dracut/modules.d/96securityfs
 usr/lib/dracut/modules.d/97biosdevname
 usr/lib/dracut/modules.d/97masterkey
+usr/lib/dracut/modules.d/97systemd-emergency
 usr/lib/dracut/modules.d/98dracut-systemd
 usr/lib/dracut/modules.d/98ecryptfs
 usr/lib/dracut/modules.d/98integrity
