@@ -1,0 +1,42 @@
+Description: Use alternatives instead of the plymouth-set-default-theme tool
+ In Ubuntu's delta for plymouth, we do not ship the plymouth-set-default-theme
+ tool. This patch aligns the plymouth dracut hooks with the functionality in the
+ delta.
+Author: Simon Quigley <tsimonq2@ubuntu.com>
+Origin: vendor
+Forwarded: not-needed
+Last-Update: 2024-11-21
+---
+This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
+--- a/modules.d/45plymouth/module-setup.sh
++++ b/modules.d/45plymouth/module-setup.sh
+@@ -17,7 +17,7 @@ check() {
+     [[ "$mount_needs" ]] && return 1
+     [[ $(pkglib_dir) ]] || return 1
+ 
+-    require_binaries plymouthd plymouth plymouth-set-default-theme || return 1
++    require_binaries plymouthd plymouth || return 1
+ 
+     return 0
+ }
+@@ -43,7 +43,7 @@ install() {
+ 
+     inst_multiple readlink
+ 
+-    inst_multiple plymouthd plymouth plymouth-set-default-theme
++    inst_multiple plymouthd plymouth
+ 
+     if ! dracut_module_included "systemd"; then
+         inst_hook pre-trigger 10 "$moddir"/plymouth-pretrigger.sh
+--- a/modules.d/45plymouth/plymouth-populate-initrd.sh
++++ b/modules.d/45plymouth/plymouth-populate-initrd.sh
+@@ -1,7 +1,8 @@
+ #!/bin/bash
+ 
+ PLYMOUTH_LOGO_FILE="/usr/share/pixmaps/system-logo-white.png"
+-PLYMOUTH_THEME=$(plymouth-set-default-theme)
++PLYMOUTH_THEME_PATH="$(update-alternatives --query default.plymouth 2>/dev/null | sed -e '/^Value:/!d' -e 's/^Value: \(.*\)/\1/')"
++PLYMOUTH_THEME="$(basename "${PLYMOUTH_THEME_PATH:-none}" .plymouth || true)"
+ 
+ inst_multiple plymouthd plymouth
+ 
