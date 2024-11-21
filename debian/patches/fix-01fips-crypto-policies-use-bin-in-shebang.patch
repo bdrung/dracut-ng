@@ -1,0 +1,39 @@
+From: Benjamin Drung <benjamin.drung@canonical.com>
+Date: Mon, 21 Oct 2024 20:51:49 +0200
+Subject: fix(01fips-crypto-policies): use /bin in shebang
+
+lintian complaints on Debian/Ubuntu:
+
+```
+E: dracut-core: wrong-path-for-interpreter /usr/bin/bash != /bin/bash [usr/lib/dracut/modules.d/01fips-crypto-policies/module-setup.sh]
+E: dracut-core: wrong-path-for-interpreter /usr/bin/sh != /bin/sh [usr/lib/dracut/modules.d/01fips-crypto-policies/fips-crypto-policies.sh]
+```
+
+Even for usr-merged setup, the shells should be found in `/bin`.
+
+Forwarded: https://github.com/dracut-ng/dracut-ng/pull/773
+---
+ modules.d/01fips-crypto-policies/fips-crypto-policies.sh | 2 +-
+ modules.d/01fips-crypto-policies/module-setup.sh         | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/modules.d/01fips-crypto-policies/fips-crypto-policies.sh b/modules.d/01fips-crypto-policies/fips-crypto-policies.sh
+index ff29829..7d1e13f 100755
+--- a/modules.d/01fips-crypto-policies/fips-crypto-policies.sh
++++ b/modules.d/01fips-crypto-policies/fips-crypto-policies.sh
+@@ -1,4 +1,4 @@
+-#!/usr/bin/sh
++#!/bin/sh
+ 
+ type getarg > /dev/null 2>&1 || . /lib/dracut-lib.sh
+ 
+diff --git a/modules.d/01fips-crypto-policies/module-setup.sh b/modules.d/01fips-crypto-policies/module-setup.sh
+index 74e4e0a..e41c776 100755
+--- a/modules.d/01fips-crypto-policies/module-setup.sh
++++ b/modules.d/01fips-crypto-policies/module-setup.sh
+@@ -1,4 +1,4 @@
+-#!/usr/bin/bash
++#!/bin/bash
+ 
+ # called by dracut
+ check() {
