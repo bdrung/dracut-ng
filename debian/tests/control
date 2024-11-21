@@ -86,4 +86,4 @@ Depends: cryptsetup,
          util-linux,
          zstd
 Restrictions: allow-stderr
-Features: test-name=upstream-dracut-network
+Features: test-name=upstream-dracut-network-nbd
