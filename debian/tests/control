@@ -2,8 +2,6 @@
 # * TEST-23-IMSM: dmraid was removed from Debian
 # * TEST-61-MULTINIC: disabled in upstream CI since 2023-01-02
 # * TEST-62-BONDBRIDGEVLAN: https://github.com/dracutdevs/dracut/issues/2328
-# * TEST-70-ISCSI: iscsiuio.socket missing, see https://bugs.debian.org/1056733
-# * TEST-71-ISCSI-MULTI: iscsiuio.socket missing, see https://bugs.debian.org/1056733
 # arm64, armhf, and ppc64el need upstream support: https://github.com/dracutdevs/dracut/issues/2493
 Features: test-name=upstream-dracut-core
 Test-Command: debian/tests/run-upstream-tests SKIP="23 30 60 61 62 70 71 72"
@@ -86,6 +84,36 @@ Depends: dracut-live,
          systemd,
          systemd-sysv,
          sysvinit-utils,
+         util-linux,
+         zstd
+
+Features: test-name=upstream-dracut-network-iscsi
+Test-Command: debian/tests/run-upstream-tests TESTS="70 71"
+Architecture: amd64 s390x
+Restrictions: allow-stderr, needs-root
+Depends: cryptsetup,
+         dracut-network,
+         dracut-test,
+         iproute2,
+         ipxe-qemu,
+         isc-dhcp-client,
+         isc-dhcp-server,
+         iscsiuio,
+         linux-image-generic,
+         lvm2,
+         make,
+         mdadm,
+         mount,
+         open-iscsi,
+         procps,
+         qemu-efi-aarch64 [arm64],
+         qemu-efi-arm [armhf],
+         qemu-kvm,
+         seabios [ppc64el],
+         systemd,
+         systemd-cryptsetup,
+         systemd-sysv,
+         tgt,
          util-linux,
          zstd
 
