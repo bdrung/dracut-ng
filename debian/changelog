@@ -1,3 +1,20 @@
+dracut (105-2ubuntu1) plucky; urgency=medium
+
+  * Merge from Debian unstable. Remaining changes:
+    - run autopkgtest on all architectures
+    - Run upstream autopkgtest as root
+    - drop udevsettle patch (these kind of patches should be applied upstream)
+    - drop 90overlay-root in favor of 90overlayfs (Closes: #1017039)
+    - dracut-core:
+      - demote cryptsetup, systemd-cryptsetup, dmraid, dmsetup, kpartx, lvm2,
+        and mdadm to suggests
+      - demote binutils to suggests. its only needed when using UEFI executables
+    - Include all packages with dracut modules in Apport bug reports
+      (LP: #2081183)
+  * autopkgtest: also run TEST-20-NFS, TEST-30-ISCSI, and TEST-35-ISCSI-MULTI
+
+ -- Benjamin Drung <bdrung@ubuntu.com>  Thu, 21 Nov 2024 15:16:59 +0100
+
 dracut (105-2) unstable; urgency=medium
 
   * autopkgtest:
