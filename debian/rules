@@ -1,0 +1,60 @@
+#!/usr/bin/make -f
+
+#export DH_VERBOSE=1
+DPKG_EXPORT_BUILDTOOLS=1
+-include /usr/share/dpkg/buildtools.mk
+include /usr/share/dpkg/pkg-info.mk
+
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+DEB_HOST_ARCH ?= $(shell dpkg-architecture -qDEB_HOST_ARCH)
+export DRACUT_MAIN_VERSION=$(DEB_VERSION_UPSTREAM_REVISION)
+export DRACUT_FULL_VERSION=$(DEB_VERSION)
+# For "make install" to not install files needed for tests
+export enable_test=no
+
+deb_systemdsystemunitdir = $(shell pkg-config --variable=systemdsystemunitdir systemd | sed s,^/,,)
+
+%:
+	dh $@
+
+override_dh_auto_configure:
+	dh_auto_configure -- --systemdsystemunitdir=/$(deb_systemdsystemunitdir) --libdir=/usr/lib
+	$(SHELL) debian/fix-revdate
+	mv dracut-version.sh dracut-version.sh.orig
+	echo '#!/bin/sh' > dracut-version.sh
+	echo "DRACUT_VERSION=$${DRACUT_FULL_VERSION}" >> dracut-version.sh
+
+override_dh_fixperms-arch:
+	dh_fixperms
+	find debian/ -name "*.sh" | grep modules.d | xargs chmod 755
+
+override_dh_fixperms-indep:
+	dh_fixperms
+	find debian/ -name "*.sh" | grep modules.d | xargs chmod 755
+	rm -f debian/*/usr/lib/dracut/modules.d/98dracut-systemd/*.adoc
+	rm -f debian/*/usr/lib/dracut/modules.d/98dracut-systemd/*.8
+ifneq ($(DEB_HOST_ARCH), s390x)
+	for m in 80cms 81cio_ignore 91zipl 95dasd 95dasd_mod \
+		95dcssblk 95zfcp \
+		95znet; do \
+		rm -rf debian/*/usr/lib/dracut/modules.d/$$m ; \
+	done
+else
+	rm -rf debian/*/usr/lib/dracut/modules.d/00warpclock
+endif
+
+override_dh_auto_test:
+
+override_dh_install:
+	dh_install
+	dh_install -pdracut-core $(deb_systemdsystemunitdir)
+
+override_dh_clean:
+	if test -e dracut-version.sh.orig ; then \
+	   mv -f dracut-version.sh.orig dracut-version.sh ;\
+	fi
+	dh_clean dracut.pc Makefile.inc src/skipcpio/skipcpio src/util/util
+	if test -d .git; then \
+		git status|grep modified: | awk '/.adoc/ {print $$2}' | xargs -r git checkout;\
+		git checkout dracut.html ;\
+    fi

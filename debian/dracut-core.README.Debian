@@ -1,0 +1,42 @@
+dracut for Debian
+-----------------
+
+1. Give it a try
+
+Currently dracut is not the default initrd creation tool in Debian.
+You can try dracut without removing initramfs-tools from your machine
+by following these steps:
+
+# apt-get --no-install-recommends install dracut-core
+
+cd /boot
+cp -p vmlinuz-4.0.9-6-amd64 vmlinuz-4.0.9-6-amd64~dracut
+dracut /boot/initrd.img-4.0.9-6-amd64~dracut
+update-grub
+
+You will get a new grub menu entry under advanced boot options, which you can boot then
+
+Select: Advanced options for Debian GNU/Linux
+Then: Debian GNU/Linux, with Linux 4.0.9-6-amd64~dracut
+
+The initrd created by initramfs-tools will remain the default boot entry of grub.
+
+If the new initrd works for you, you can switch from initramfs-tools to dracut
+by installing the package dracut. This will then replace initramfs-tools.
+
+
+2. Check the content of the dracut initrd
+lsinitrd /boot/initrd.img-4.0.9-6-amd64~dracut
+
+3. i18n
+
+The module i18n for setting up the keyboard and the font is disabled in
+Debian. You cannot use the variables described in modules.d/10i18n/README.
+
+Instead, dracut uses the module 09console-setup which uses setupcon and
+is configured in the files /etc/default/keyboard (the keyboard) and
+/etc/default/console-setup (the font).  If you prefer to configure by
+Debconf, you can use dpkg-reconfigure keyboard-configuration and
+dpkg-reconfigure console-setup.
+
+ -- Thomas Lange <lange@debian.org>, Sat, 19 May 2018 18:50:02 +0200

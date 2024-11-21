@@ -1,0 +1,42 @@
+From: Benjamin Drung <benjamin.drung@canonical.com>
+Date: Wed, 20 Nov 2024 17:59:51 +0100
+Subject: fix(iscsi): include /usr/lib/open-iscsi/startup-checks.sh if needed
+
+On Debian/Ubuntu iscsid.service (from open-iscsi 2.1.10-1) fails to
+start in the initrd, because its `ExecStartPre` script is not included
+in the initrd:
+
+```
+$ grep ExecStartPre /usr/lib/systemd/system/iscsid.service
+ExecStartPre=/usr/lib/open-iscsi/startup-checks.sh
+```
+
+The upstream open-iscsi project ships an `iscsid.service` [1] that does not
+have an `ExecStartPre` entry, but Debian/Ubuntu uses their own service
+file [2].
+
+The TEST-70-ISCSI test will succeed on Ubuntu 25.04 (plucky) with
+open-iscsi 2.1.10-1ubuntu2 (see https://launchpad.net/bugs/2072484).
+
+[1] https://github.com/open-iscsi/open-iscsi/blob/master/etc/systemd/iscsid.service.template
+[2] https://salsa.debian.org/linux-blocks-team/open-iscsi/-/blob/master/debian/iscsid.service
+Fixes: https://launchpad.net/bugs/2081172
+Forwarded: https://github.com/dracut-ng/dracut-ng/pull/993
+---
+ modules.d/95iscsi/module-setup.sh | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/modules.d/95iscsi/module-setup.sh b/modules.d/95iscsi/module-setup.sh
+index d3307b9..469259d 100755
+--- a/modules.d/95iscsi/module-setup.sh
++++ b/modules.d/95iscsi/module-setup.sh
+@@ -198,6 +198,9 @@ install() {
+         "$systemdsystemunitdir"/iscsiuio.socket \
+         "$systemdsystemunitdir"/sockets.target.wants/iscsid.socket \
+         "$systemdsystemunitdir"/sockets.target.wants/iscsiuio.socket
++    if grep -q '^ExecStartPre=/usr/lib/open-iscsi/startup-checks.sh$' "$systemdsystemunitdir/iscsid.service"; then
++        inst_simple /usr/lib/open-iscsi/startup-checks.sh
++    fi
+ 
+     inst_simple /etc/iscsi/iscsid.conf
+     if [[ $hostonly ]]; then
