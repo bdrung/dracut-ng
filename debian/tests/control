@@ -1,8 +1,6 @@
 # Note: These tests need root on Ubuntu, because the kernel is only readable by root. See https://launchpad.net/bugs/759725
 # Skip following test cases:
 # * TEST-14-IMSM: dmraid was removed from Debian
-# * TEST-30-ISCSI: iscsiuio.socket missing, see https://bugs.debian.org/1056733
-# * TEST-35-ISCSI-MULTI: iscsiuio.socket missing, see https://bugs.debian.org/1056733
 # * TEST-50-MULTINIC: disabled in upstream CI since 2023-01-02
 # * TEST-60-BONDBRIDGEVLAN: https://github.com/dracutdevs/dracut/issues/2328
 Architecture: amd64 arm64 armhf ppc64el riscv64 s390x
@@ -83,6 +81,35 @@ Depends: dracut-live,
          zstd
 Restrictions: allow-stderr, needs-root
 Features: test-name=upstream-dracut-network-nfs
+
+Architecture: amd64 arm64 armhf ppc64el riscv64 s390x
+Test-Command: debian/tests/run-upstream-tests TESTS="30 35"
+Depends: cryptsetup,
+         dracut-network,
+         dracut-test,
+         iproute2,
+         isc-dhcp-client,
+         isc-dhcp-server,
+         iscsiuio,
+         linux-image-generic,
+         lvm2,
+         make,
+         mdadm,
+         mount,
+         open-iscsi,
+         procps,
+         qemu-efi-aarch64 [arm64],
+         qemu-efi-arm [armhf],
+         qemu-kvm,
+         seabios [ppc64el],
+         systemd,
+         systemd-cryptsetup,
+         systemd-sysv,
+         tgt,
+         util-linux,
+         zstd
+Restrictions: allow-stderr, needs-root
+Features: test-name=upstream-dracut-network-iscsi
 
 Architecture: amd64 arm64 armhf ppc64el riscv64 s390x
 Test-Command: debian/tests/run-upstream-tests TESTS="40"
