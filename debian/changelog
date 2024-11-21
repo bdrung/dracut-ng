@@ -1,3 +1,23 @@
+dracut (105-2) unstable; urgency=medium
+
+  * autopkgtest:
+    - run network tests with systemd-networkd
+    - drop explicit gawk dependency
+    - run test with zstd
+    - restrict to amd64 again (Closes: #1087834)
+    - update reasons for skipped tests
+    - run tests with V=1
+    - drop unneeded vim and iputils-ping dependencies
+    - rename upstream-dracut-network to upstream-dracut-network-nbd
+  * disable using DH_VERBOSE=1
+  * fix(iscsi): include /usr/lib/open-iscsi/startup-checks.sh if needed
+    (LP: #2081172)
+  * Add upstream metadata
+  * Let dracut-network recommend iscsiuio (for iscsi module)
+  * fix(dracut-init): add compatibility with Debian/Ubuntu for libdirs detection
+
+ -- Benjamin Drung <bdrung@debian.org>  Thu, 21 Nov 2024 14:30:47 +0100
+
 dracut (105-1) unstable; urgency=low
 
   [ Thomas Lange ]
