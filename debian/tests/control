@@ -1,6 +1,5 @@
 # Skip following test cases:
 # * TEST-14-IMSM: dmraid was removed from Debian
-# * TEST-20-NFS: linux kernel crash, see https://bugs.debian.org/1087900
 # * TEST-30-ISCSI: iscsiuio.socket missing, see https://bugs.debian.org/1056733
 # * TEST-35-ISCSI-MULTI: iscsiuio.socket missing, see https://bugs.debian.org/1056733
 # * TEST-50-MULTINIC: disabled in upstream CI since 2023-01-02
@@ -59,6 +58,31 @@ Depends: btrfs-progs,
          zstd
 Restrictions: allow-stderr
 Features: test-name=upstream-dracut-live
+
+Architecture: amd64
+Test-Command: debian/tests/run-upstream-tests TESTS="20"
+Depends: dracut-live,
+         dracut-network,
+         dracut-test,
+         iproute2,
+         isc-dhcp-client,
+         isc-dhcp-server,
+         linux-image-generic,
+         make,
+         mount,
+         nfs-kernel-server,
+         procps,
+         qemu-efi-aarch64 [arm64],
+         qemu-efi-arm [armhf],
+         qemu-kvm,
+         seabios [ppc64el],
+         systemd,
+         systemd-sysv,
+         sysvinit-utils,
+         util-linux,
+         zstd
+Restrictions: allow-stderr
+Features: test-name=upstream-dracut-network-nfs
 
 Architecture: amd64
 Test-Command: debian/tests/run-upstream-tests TESTS="40"
