@@ -85,7 +85,6 @@ Depends: cryptsetup,
          systemd-cryptsetup,
          systemd-sysv,
          util-linux,
-         vim,
          zstd
 Restrictions: allow-stderr
 Features: test-name=upstream-dracut-network
