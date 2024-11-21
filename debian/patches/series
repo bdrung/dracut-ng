@@ -8,3 +8,4 @@ fix-ignore-shellcheck-SC2329-in-addition-to-SC2317.patch
 feat-lsinitrd-support-3cpio.patch
 refactor-dracut-introduce-cpio_extract-function.patch
 feat-dracut-support-3cpio-for-creating-initrds.patch
+alternatives-not-set-default-theme.patch
