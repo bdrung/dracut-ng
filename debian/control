@@ -83,7 +83,7 @@ Depends: dracut-core,
          iputils-arping,
          isc-dhcp-client | systemd | connman | network-manager,
          ${misc:Depends}
-Recommends: curl, nbd-client, nfs-common, open-iscsi
+Recommends: curl, iscsiuio, nbd-client, nfs-common, open-iscsi
 Breaks: dracut-core (<< 105)
 Replaces: dracut-core (<< 105)
 Description: dracut is an event driven initramfs infrastructure (network modules)
