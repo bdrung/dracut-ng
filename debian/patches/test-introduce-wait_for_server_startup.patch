@@ -1,0 +1,145 @@
+From: Benjamin Drung <benjamin.drung@canonical.com>
+Date: Mon, 18 Nov 2024 21:39:28 +0100
+Subject: test: introduce wait_for_server_startup
+
+The code for the server startup is duplicated in multiple test cases. So
+introduce a helper function to reduce code duplication.
+
+Forwarded: https://github.com/dracut-ng/dracut-ng/pull/987
+---
+ test/TEST-20-NFS/test.sh            |  5 +----
+ test/TEST-30-ISCSI/test.sh          |  7 +------
+ test/TEST-35-ISCSI-MULTI/test.sh    |  7 +------
+ test/TEST-40-NBD/test.sh            |  7 +------
+ test/TEST-50-MULTINIC/test.sh       |  7 +------
+ test/TEST-60-BONDBRIDGEVLAN/test.sh |  7 +------
+ test/test-functions                 | 10 ++++++++++
+ 7 files changed, 16 insertions(+), 34 deletions(-)
+
+diff --git a/test/TEST-20-NFS/test.sh b/test/TEST-20-NFS/test.sh
+index 9d1bef0..0eb325b 100755
+--- a/test/TEST-20-NFS/test.sh
++++ b/test/TEST-20-NFS/test.sh
+@@ -34,10 +34,7 @@ run_server() {
+     tty -s && stty sane
+ 
+     if ! [[ $SERIAL ]]; then
+-        while ! grep -q Serving "$TESTDIR"/server.log; do
+-            echo "Waiting for the server to startup"
+-            sleep 1
+-        done
++        wait_for_server_startup || return 1
+     else
+         echo Sleeping 10 seconds to give the server a head start
+         sleep 10
+diff --git a/test/TEST-30-ISCSI/test.sh b/test/TEST-30-ISCSI/test.sh
+index 9520cd7..9208cf7 100755
+--- a/test/TEST-30-ISCSI/test.sh
++++ b/test/TEST-30-ISCSI/test.sh
+@@ -33,12 +33,7 @@ run_server() {
+     tty -s && stty sane
+ 
+     if ! [[ $SERIAL ]]; then
+-        while :; do
+-            grep Serving "$TESTDIR"/server.log && break
+-            echo "Waiting for the server to startup"
+-            tail "$TESTDIR"/server.log
+-            sleep 1
+-        done
++        wait_for_server_startup || return 1
+     else
+         echo Sleeping 10 seconds to give the server a head start
+         sleep 10
+diff --git a/test/TEST-35-ISCSI-MULTI/test.sh b/test/TEST-35-ISCSI-MULTI/test.sh
+index 9e950c3..6394725 100755
+--- a/test/TEST-35-ISCSI-MULTI/test.sh
++++ b/test/TEST-35-ISCSI-MULTI/test.sh
+@@ -33,12 +33,7 @@ run_server() {
+     tty -s && stty sane
+ 
+     if ! [[ $SERIAL ]]; then
+-        while :; do
+-            grep Serving "$TESTDIR"/server.log && break
+-            echo "Waiting for the server to startup"
+-            tail "$TESTDIR"/server.log
+-            sleep 1
+-        done
++        wait_for_server_startup || return 1
+     else
+         echo Sleeping 10 seconds to give the server a head start
+         sleep 10
+diff --git a/test/TEST-40-NBD/test.sh b/test/TEST-40-NBD/test.sh
+index 9f11c99..83b5522 100755
+--- a/test/TEST-40-NBD/test.sh
++++ b/test/TEST-40-NBD/test.sh
+@@ -46,12 +46,7 @@ run_server() {
+     tty -s && stty sane
+ 
+     if ! [[ $SERIAL ]]; then
+-        echo "Waiting for the server to startup"
+-        while :; do
+-            grep Serving "$TESTDIR"/server.log && break
+-            tail "$TESTDIR"/server.log
+-            sleep 1
+-        done
++        wait_for_server_startup || return 1
+     else
+         echo Sleeping 10 seconds to give the server a head start
+         sleep 10
+diff --git a/test/TEST-50-MULTINIC/test.sh b/test/TEST-50-MULTINIC/test.sh
+index b571dbf..f4d4b5d 100755
+--- a/test/TEST-50-MULTINIC/test.sh
++++ b/test/TEST-50-MULTINIC/test.sh
+@@ -36,12 +36,7 @@ run_server() {
+     tty -s && stty sane
+ 
+     if ! [[ $SERIAL ]]; then
+-        while :; do
+-            grep Serving "$TESTDIR"/server.log && break
+-            echo "Waiting for the server to startup"
+-            tail "$TESTDIR"/server.log
+-            sleep 1
+-        done
++        wait_for_server_startup || return 1
+     else
+         echo Sleeping 10 seconds to give the server a head start
+         sleep 10
+diff --git a/test/TEST-60-BONDBRIDGEVLAN/test.sh b/test/TEST-60-BONDBRIDGEVLAN/test.sh
+index 83bec75..baf856a 100755
+--- a/test/TEST-60-BONDBRIDGEVLAN/test.sh
++++ b/test/TEST-60-BONDBRIDGEVLAN/test.sh
+@@ -59,12 +59,7 @@ run_server() {
+     tty -s && stty sane
+ 
+     if ! [[ $SERIAL ]]; then
+-        echo "Waiting for the server to startup"
+-        while :; do
+-            grep Serving "$TESTDIR"/server.log && break
+-            tail "$TESTDIR"/server.log
+-            sleep 1
+-        done
++        wait_for_server_startup || return 1
+     else
+         echo Sleeping 10 seconds to give the server a head start
+         sleep 10
+diff --git a/test/test-functions b/test/test-functions
+index db2fdeb..49b908a 100644
+--- a/test/test-functions
++++ b/test/test-functions
+@@ -55,6 +55,16 @@ test_dracut() {
+         "$@" || return 1
+ }
+ 
++# Wait for the server QEMU has been started up.
++# It should print "Serving" in the server.log in that case.
++wait_for_server_startup() {
++    while ! grep -q Serving "$TESTDIR"/server.log; do
++        echo "Waiting for the server to startup"
++        tail "$TESTDIR"/server.log
++        sleep 1
++    done
++}
++
+ ovmf_code() {
+     for path in \
+         "/usr/share/OVMF/OVMF_CODE.fd" \

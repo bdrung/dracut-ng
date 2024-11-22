@@ -1,0 +1,34 @@
+From: Benjamin Drung <benjamin.drung@canonical.com>
+Date: Mon, 18 Nov 2024 21:50:03 +0100
+Subject: test: fail test if server has terminated
+
+The server might shutdown on error. When waiting for the server to
+startup, check if the server QEMU process has vanished and abort the
+test in that case.
+
+Forwarded: https://github.com/dracut-ng/dracut-ng/pull/987
+---
+ test/test-functions | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/test/test-functions b/test/test-functions
+index 49b908a..be35a9d 100644
+--- a/test/test-functions
++++ b/test/test-functions
+@@ -58,9 +58,16 @@ test_dracut() {
+ # Wait for the server QEMU has been started up.
+ # It should print "Serving" in the server.log in that case.
+ wait_for_server_startup() {
++    local server_pid
++    server_pid=$(cat "$TESTDIR"/server.pid)
++
+     while ! grep -q Serving "$TESTDIR"/server.log; do
+         echo "Waiting for the server to startup"
+         tail "$TESTDIR"/server.log
++        if ! test -f "/proc/$server_pid/status"; then
++            echo "Error: Server QEMU process $server_pid is gone. Please check $TESTDIR/server.log for failures." >&2
++            return 1
++        fi
+         sleep 1
+     done
+ }
