@@ -1,3 +1,9 @@
+dracut (105+git20241127-0ubuntu1) plucky; urgency=medium
+
+  * New upstream snapshot.
+
+ -- Benjamin Drung <bdrung@ubuntu.com>  Wed, 27 Nov 2024 14:13:16 +0100
+
 dracut (105-2ubuntu1) plucky; urgency=medium
 
   * Merge from Debian unstable. Remaining changes:
