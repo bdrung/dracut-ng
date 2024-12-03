@@ -1,3 +1,22 @@
+dracut (105-2ubuntu4) plucky; urgency=medium
+
+  * Install 99-ubuntu.conf in /usr/lib/dracut/dracut.conf.d instead of /etc
+
+ -- Benjamin Drung <bdrung@ubuntu.com>  Wed, 27 Nov 2024 15:47:41 +0100
+
+dracut (105-2ubuntu3) plucky; urgency=medium
+
+  * Set -H --hostonly-mode=sloppy as default arguments via a config file.
+
+ -- Simon Quigley <tsimonq2@ubuntu.com>  Sun, 24 Nov 2024 21:46:30 -0600
+
+dracut (105-2ubuntu2) plucky; urgency=medium
+
+  * Plymouth hook: Use alternatives instead of plymouth-set-default-theme
+    (LP: #1596220).
+
+ -- Simon Quigley <tsimonq2@ubuntu.com>  Thu, 21 Nov 2024 14:54:12 -0600
+
 dracut (105-2ubuntu1) plucky; urgency=medium
 
   * Merge from Debian unstable. Remaining changes:
