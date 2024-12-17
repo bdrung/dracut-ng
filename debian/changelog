@@ -1,3 +1,9 @@
+dracut (105+git20241217-1) unstable; urgency=medium
+
+  * New upstream snapshot.
+
+ -- Benjamin Drung <bdrung@debian.org>  Tue, 17 Dec 2024 17:00:22 +0100
+
 dracut (105-2) unstable; urgency=medium
 
   * autopkgtest:
