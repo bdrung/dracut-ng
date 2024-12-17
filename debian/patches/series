@@ -1,4 +1,3 @@
-makefile
 udevsettle
 debian-initramfs-post-update.patch
 Default-initrdname-to-initrd.img-kernel.patch
