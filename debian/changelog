@@ -1,3 +1,9 @@
+dracut (105+git20241217-0ubuntu1) plucky; urgency=medium
+
+  * New upstream snapshot.
+
+ -- Benjamin Drung <bdrung@ubuntu.com>  Tue, 17 Dec 2024 17:54:18 +0100
+
 dracut (105-2ubuntu4) plucky; urgency=medium
 
   * Install 99-ubuntu.conf in /usr/lib/dracut/dracut.conf.d instead of /etc
