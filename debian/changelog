@@ -1,3 +1,9 @@
+dracut (105+git20241221-0ubuntu1) plucky; urgency=medium
+
+  * New upstream snapshot.
+
+ -- Benjamin Drung <bdrung@ubuntu.com>  Sat, 21 Dec 2024 01:44:06 +0100
+
 dracut (105-2ubuntu5) plucky; urgency=medium
 
   * test: run RAID and ENC-RAID-LVM with --no-hostonly (LP: #2091954)
