@@ -6,7 +6,7 @@ Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 8bit
 
 The dracut 105-2ubuntu4 upstream-dracut-core autopkgtest hangs. The
-TEST-13-ENC-RAID-LVM asks for luks password:
+TEST-26-ENC-RAID-LVM asks for luks password:
 
 ```
 TEST: root filesystem on an encrypted LVM PV on a RAID-5
@@ -21,41 +21,27 @@ Please enter passphrase for disk luks-b51f309a-5a90-4ae8-acdc-ee47b42a6ee8: (pre
 Bug: https://github.com/dracut-ng/dracut-ng/issues/1057
 Bug-Ubuntu: https://bugs.launchpad.net/bugs/2091954
 ---
- test/TEST-10-RAID/test.sh         | 2 +-
- test/TEST-12-RAID-DEG/test.sh     | 2 +-
- test/TEST-13-ENC-RAID-LVM/test.sh | 2 +-
- 3 files changed, 3 insertions(+), 3 deletions(-)
+ test/TEST-20-STORAGE/test.sh      | 2 +-
+ test/TEST-26-ENC-RAID-LVM/test.sh | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/test/TEST-10-RAID/test.sh b/test/TEST-10-RAID/test.sh
-index b82cb9b..50cc8a2 100755
---- a/test/TEST-10-RAID/test.sh
-+++ b/test/TEST-10-RAID/test.sh
-@@ -57,7 +57,7 @@ test_setup() {
-     echo "testluks UUID=$ID_FS_UUID /etc/key" > /tmp/crypttab
-     echo -n "test" > /tmp/key
+diff --git a/test/TEST-20-STORAGE/test.sh b/test/TEST-20-STORAGE/test.sh
+index 7f49bd0..54ee74b 100755
+--- a/test/TEST-20-STORAGE/test.sh
++++ b/test/TEST-20-STORAGE/test.sh
+@@ -159,7 +159,7 @@ test_setup() {
+     fi
  
+     # shellcheck disable=SC2046
 -    test_dracut \
 +    test_dracut --no-hostonly \
-         -a "crypt lvm mdraid" \
-         -i "./cryptroot-ask.sh" "/sbin/cryptroot-ask" \
-         -i "/tmp/crypttab" "/etc/crypttab" \
-diff --git a/test/TEST-12-RAID-DEG/test.sh b/test/TEST-12-RAID-DEG/test.sh
-index 7170215..290a351 100755
---- a/test/TEST-12-RAID-DEG/test.sh
-+++ b/test/TEST-12-RAID-DEG/test.sh
-@@ -96,7 +96,7 @@ test_setup() {
-     echo -n test > /tmp/key
-     chmod 0600 /tmp/key
- 
--    test_dracut \
-+    test_dracut --no-hostonly \
-         -m "crypt lvm mdraid kernel-modules" \
-         -i "./cryptroot-ask.sh" "/sbin/cryptroot-ask" \
-         -i "/tmp/mdadm.conf" "/etc/mdadm.conf" \
-diff --git a/test/TEST-13-ENC-RAID-LVM/test.sh b/test/TEST-13-ENC-RAID-LVM/test.sh
-index 4211ef9..16001c8 100755
---- a/test/TEST-13-ENC-RAID-LVM/test.sh
-+++ b/test/TEST-13-ENC-RAID-LVM/test.sh
+         -a "lvm" \
+         $(if command -v mdadm > /dev/null; then echo "-a mdraid"; fi) \
+         $(if command -v cryptsetup > /dev/null; then echo "-a crypt"; fi) \
+diff --git a/test/TEST-26-ENC-RAID-LVM/test.sh b/test/TEST-26-ENC-RAID-LVM/test.sh
+index 6ba637c..ad8adff 100755
+--- a/test/TEST-26-ENC-RAID-LVM/test.sh
++++ b/test/TEST-26-ENC-RAID-LVM/test.sh
 @@ -97,7 +97,7 @@ test_setup() {
      echo -n test > /tmp/key
      chmod 0600 /tmp/key
@@ -63,5 +49,5 @@ index 4211ef9..16001c8 100755
 -    test_dracut \
 +    test_dracut --no-hostonly \
          -a "crypt lvm mdraid" \
-         -i "./cryptroot-ask.sh" "/sbin/cryptroot-ask" \
          -i "/tmp/crypttab" "/etc/crypttab" \
+         -i "/tmp/key" "/etc/key" \
