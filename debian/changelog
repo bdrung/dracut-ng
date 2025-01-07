@@ -1,3 +1,10 @@
+dracut (105-3) unstable; urgency=medium
+
+  * Add patches to improve test cases in error case
+  * autopkgtest: add TEST-20-NFS test
+
+ -- Benjamin Drung <bdrung@debian.org>  Tue, 07 Jan 2025 10:25:32 +0100
+
 dracut (105-2) unstable; urgency=medium
 
   * autopkgtest:
