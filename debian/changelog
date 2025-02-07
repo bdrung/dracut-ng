@@ -1,3 +1,27 @@
+dracut (106-1) unstable; urgency=medium
+
+  * New upstream release.
+  * Update debian/watch to point to dracut-ng upstream
+  * dracut-live: suggest isomd5sum (for checkisomd5 command) (Closes: #1095162)
+  * dracut-core: install /usr/lib/kernel/install.d (Closes: #1082811)
+  * Drop patches included upstream and refresh remaining patches
+  * Move modules:
+    - reserve range 50-59 to out of tree dracut modules
+    - fix(shell-interpreter): move later in the module ordering
+    - move 01systemd-sysusers to 60systemd-sysusers
+  * dracut-core: remove moved upstream docs
+  * dracut-core: drop dracut.html (please use man pages instead)
+  * dracut-core: add new modules 01systemd-battery-check and 97systemd-emergency
+  * test: reorganize tests (new numbering schema)
+  * Run upstream autopkgtest as root
+  * test: depend on dbus and systemd-container for TEST-41-FULL-SYSTEMD
+  * new patches:
+    - test: log error when constructing sysroot
+    - test(FULL-SYSTEMD): skip systemd-network-management if missing
+  * dracut-core: drop gawk dependency
+
+ -- Benjamin Drung <bdrung@debian.org>  Fri, 07 Feb 2025 21:21:31 +0100
+
 dracut (105-3) unstable; urgency=medium
 
   * Add patches to improve test cases in error case
