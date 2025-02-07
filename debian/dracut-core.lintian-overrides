@@ -1,4 +1,6 @@
 # one single directory for modules is needed, see https://github.com/dracutdevs/dracut/issues/2485
 dracut-core: executable-in-usr-lib [usr/lib/dracut/*]
+# kernel-install from the systemd package expects this plugin directory
+dracut-core: executable-in-usr-lib [usr/lib/kernel/install.d/*]
 # These services run in the initrd and are allowed to linger until the very end of shutdown sequence
 dracut-core: systemd-service-file-shutdown-problems [usr/lib/systemd/system/*dracut-*.service]

@@ -111,5 +111,6 @@ usr/lib/dracut/modules.d/99fs-lib
 usr/lib/dracut/modules.d/99memstrack
 usr/lib/dracut/modules.d/99shutdown
 usr/lib/dracut/skipcpio
+usr/lib/kernel/install.d
 usr/share/bash-completion/completions
 usr/share/pkgconfig/dracut.pc
