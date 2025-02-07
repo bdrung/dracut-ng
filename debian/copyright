@@ -46,7 +46,7 @@ Copyright:
  (C) 2012 Red Hat, Inc.  All rights reserved.
 License: LGPL-2.1+
 
-Files: test/TEST-30-ISCSI/ibft.pl
+Files: test/TEST-70-ISCSI/ibft.pl
 Copyright: 2019 Lubomir Rintel
 License: GPL-2+
 
