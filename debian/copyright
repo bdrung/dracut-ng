@@ -14,6 +14,7 @@ Files: debian/*
 Copyright:
   2009, Philippe Seewer <philippe.seewer@bfh.ch>
   2011-2024 Thomas Lange <lange@cs.uni-koeln.de>
+  2025 Benjamin Drung <bdrung@debian.org>
 License: GPL-2+
 
 Files: modules.d/97masterkey/masterkey.sh
