@@ -1,3 +1,9 @@
+dracut (106+git20250207-0ubuntu1) plucky; urgency=medium
+
+  * New upstream snapshot.
+
+ -- Benjamin Drung <bdrung@ubuntu.com>  Fri, 07 Feb 2025 23:45:18 +0100
+
 dracut (106-1) unstable; urgency=medium
 
   * New upstream release.
