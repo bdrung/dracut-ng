@@ -10,6 +10,7 @@ Test-Command: debian/tests/run-upstream-tests SKIP="23 30 60 61 62 70 71 72"
 Depends: btrfs-progs,
          busybox,
          cryptsetup,
+         dbus,
          dracut-core,
          dracut-test,
          fdisk,
