@@ -3,7 +3,7 @@ export DRACUT_SYSTEMD=1
 if [ -f /dracut-state.sh ]; then
     . /dracut-state.sh 2> /dev/null
 fi
-type getarg > /dev/null 2>&1 || . /lib/dracut-lib.sh
+command -v getarg > /dev/null || . /lib/dracut-lib.sh
 
 source_conf /etc/conf.d
 
@@ -41,7 +41,7 @@ for p in $(getargs rd.driver.post); do
     _do_insmodpost=1
 done
 
-[ -n "$_do_insmodpost" ] && initqueue --settled --unique --onetime insmodpost.sh
+[ -n "$_do_insmodpost" ] && /sbin/initqueue --settled --unique --onetime insmodpost.sh
 unset _do_insmodpost _modprobe_d
 unset i
 

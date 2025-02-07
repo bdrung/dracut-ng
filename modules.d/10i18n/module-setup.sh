@@ -4,7 +4,7 @@
 check() {
     [[ "$mount_needs" ]] && return 1
 
-    require_binaries setfont loadkeys kbd_mode || return 1
+    require_binaries loadkeys setfont || return 1
 
     return 0
 }
@@ -115,19 +115,37 @@ install() {
     }
 
     install_base() {
-        inst_multiple setfont loadkeys kbd_mode stty
+        inst_multiple \
+            loadkeys \
+            setfont
 
-        if ! dracut_module_included "systemd"; then
-            inst "${moddir}"/console_init.sh /lib/udev/console_init
-            inst_rules "${moddir}"/10-console.rules
-            inst_hook cmdline 20 "${moddir}/parse-i18n.sh"
-        fi
+        inst_multiple -o \
+            kbd_mode \
+            stty
 
         if [[ ${kbddir} != "/usr/share" ]]; then
             inst_dir /usr/share
             for _src in "${KBDSUBDIRS[@]}"; do
                 [ ! -e "${initdir}/usr/share/${_src}" ] && ln -s "${kbddir}/${_src}" "${initdir}/usr/share/${_src}"
             done
+        fi
+
+        if dracut_module_included "systemd"; then
+            # https://github.com/dracutdevs/dracut/issues/796
+            [[ -f $dracutsysrootdir${VCONFIG_CONF} ]] && inst_simple ${VCONFIG_CONF}
+
+            inst_rules 90-vconsole.rules
+
+            if [[ -e "$systemdsystemunitdir"/systemd-vconsole-setup.service ]]; then
+                inst_multiple -o \
+                    "$systemdutildir"/systemd-vconsole-setup \
+                    "$systemdsystemunitdir"/systemd-vconsole-setup.service \
+                    "$systemdsystemunitdir"/sysinit.target.wants/systemd-vconsole-setup.service
+            fi
+        else
+            inst "${moddir}"/console_init.sh /lib/udev/console_init
+            inst_rules "${moddir}"/10-console.rules
+            inst_hook cmdline 20 "${moddir}/parse-i18n.sh"
         fi
     }
 
@@ -163,6 +181,13 @@ install() {
         [ -f "$dracutsysrootdir"$I18N_CONF ] && . "$dracutsysrootdir"$I18N_CONF
         # shellcheck disable=SC1090
         [ -f "$dracutsysrootdir"$VCONFIG_CONF ] && . "$dracutsysrootdir"$VCONFIG_CONF
+
+        if dracut_module_included "systemd" && [[ -f $dracutsysrootdir${I18N_CONF} ]]; then
+            inst_simple ${I18N_CONF}
+        else
+            mksubdirs "${initdir}"${I18N_CONF}
+            print_vars LC_ALL LANG >> "${initdir}"${I18N_CONF}
+        fi
 
         shopt -q -s nocasematch
         if [[ ${UNICODE} ]]; then
@@ -252,13 +277,6 @@ install() {
             inst_simple "${kbddir}"/unimaps/"${FONT_UNIMAP}".uni
         fi
 
-        if dracut_module_included "systemd" && [[ -f $dracutsysrootdir${I18N_CONF} ]]; then
-            inst_simple ${I18N_CONF}
-        else
-            mksubdirs "${initdir}"${I18N_CONF}
-            print_vars LC_ALL LANG >> "${initdir}"${I18N_CONF}
-        fi
-
         if ! dracut_module_included "systemd"; then
             mksubdirs "${initdir}"${VCONFIG_CONF}
             print_vars KEYMAP EXT_KEYMAPS UNICODE FONT FONT_MAP FONT_UNIMAP >> "${initdir}"${VCONFIG_CONF}
@@ -280,7 +298,7 @@ install() {
 
         [[ "$kbddir" ]] || return 1
 
-        [[ -f $dracutsysrootdir$I18N_CONF && -f $dracutsysrootdir$VCONFIG_CONF ]] \
+        [[ -f $dracutsysrootdir$I18N_CONF ]] \
             || [[ ! ${hostonly} || ${i18n_vars} ]] || {
             derror 'i18n_vars not set!  Please set up i18n_vars in ' \
                 'configuration file.'
@@ -290,11 +308,6 @@ install() {
 
     if checks; then
         install_base
-
-        # https://github.com/dracutdevs/dracut/issues/796
-        if dracut_module_included "systemd" && [[ -f $dracutsysrootdir${VCONFIG_CONF} ]]; then
-            inst_simple ${VCONFIG_CONF}
-        fi
 
         if [[ ${hostonly} ]] && ! [[ ${i18n_install_all} == "yes" ]]; then
             install_local_i18n || install_all_kbd

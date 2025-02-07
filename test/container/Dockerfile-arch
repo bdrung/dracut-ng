@@ -1,35 +1,43 @@
+# Test coverage provided by this container:
+# - ntfs-3g
+# - mkinitcpio
+# - sbsigntools
+# - qrencode (systemd-bsod)
+# - rdma out of tree dracut module
+# - both dbus-daemon and dbus-broker
+# - dmraid (not activly maintained)
+# - network: network-legacy, network-manager, systemd-networkd
+
+# Not installed
+# - busybox (no need, tested elsewhere)
+# - cifs-utils (no need, tested elsewhere)
+# - openssh (no need, tested elsewhere)
+# - rng-tools (does not start, https://github.com/dracut-ng/dracut-ng/pull/290#issuecomment-2138184351)
+
 FROM docker.io/archlinux
 
-# prefer running tests with xfs
-ENV TEST_FSTYPE=xfs
+# prefer running tests with btrfs
+ENV TEST_FSTYPE=btrfs
 
 RUN pacman --noconfirm -Syu \
     asciidoc \
-    astyle \
-    base-devel \
     bluez \
     btrfs-progs \
-    busybox \
     cargo \
-    cifs-utils \
-    connman \
     cpio \
-    dash \
     dhclient \
     dhcp \
     dmraid \
+    dracut \
     elfutils \
     erofs-utils \
-    f2fs-tools \
-    git \
-    glibc \
-    jfsutils \
+    gcc \
     jq \
     linux \
     lvm2 \
-    lzop \
+    make \
     mdadm \
-    mkosi \
+    mkinitcpio \
     multipath-tools \
     nbd \
     networkmanager \
@@ -38,20 +46,17 @@ RUN pacman --noconfirm -Syu \
     ntfs-3g \
     nvme-cli \
     open-iscsi \
-    openssh \
     parted \
-    pigz \
+    pciutils \
+    pkgconf \
     plymouth \
     qemu \
     qrencode \
-    rng-tools \
     sbsigntools \
-    shellcheck \
-    shfmt \
     squashfs-tools \
     swtpm \
     systemd-ukify \
     tgt \
     tpm2-tools \
-    xfsprogs \
+    xorriso \
     && yes | pacman -Scc

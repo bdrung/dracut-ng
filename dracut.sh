@@ -30,10 +30,23 @@ if ((BASH_VERSINFO[0] < 4)); then
 fi
 
 dracut_args=("$@")
-# shellcheck disable=SC2155
-readonly dracut_cmd=$(readlink -f "$0")
+dracut_cmd=$(readlink -f "$0")
+readonly dracut_cmd
 
 set -o pipefail
+
+# below we sometimes cd, which causes problems if we're building an UKI
+# and relative paths are passed on to us. Store the pwd before we do anything.
+pwd=$(pwd)
+path_rel_to_abs() {
+    for var in "$@"; do
+        if [[ $var == /* ]]; then
+            echo "$var"
+        else
+            echo "$pwd/$var"
+        fi
+    done
+}
 
 usage() {
     [[ $sysroot_l ]] && dracutsysrootdir="$sysroot_l"
@@ -312,6 +325,16 @@ push_host_devs() {
         [[ -z $_dev ]] && continue
         [[ " ${host_devs[*]} " == *" $_dev "* ]] && return
         host_devs+=("$_dev")
+    done
+}
+
+# Fills up user_devs stack variable and makes sure there are no duplicates
+push_user_devs() {
+    local _dev
+    for _dev in "$@"; do
+        [[ -z $_dev ]] && continue
+        [[ " ${user_devs[*]} " == *" $_dev "* ]] && return
+        user_devs+=("$_dev")
     done
 }
 
@@ -1095,9 +1118,9 @@ drivers_dir="${drivers_dir%"${drivers_dir##*[!/]}"}"
 [[ $reproducible_l ]] && reproducible="$reproducible_l"
 [[ $loginstall_l ]] && loginstall="$loginstall_l"
 [[ $uefi_l ]] && uefi=$uefi_l
-[[ $uefi_stub_l ]] && uefi_stub="$uefi_stub_l"
-[[ $uefi_splash_image_l ]] && uefi_splash_image="$uefi_splash_image_l"
-[[ $kernel_image_l ]] && kernel_image="$kernel_image_l"
+[[ $uefi_stub_l ]] && uefi_stub=$(path_rel_to_abs "$uefi_stub_l")
+[[ $uefi_splash_image_l ]] && uefi_splash_image=$(path_rel_to_abs "$uefi_splash_image_l")
+[[ $kernel_image_l ]] && kernel_image=$(path_rel_to_abs "$kernel_image_l")
 [[ $sbat_l ]] && sbat="$sbat_l"
 [[ $machine_id_l ]] && machine_id="$machine_id_l"
 
@@ -1289,8 +1312,8 @@ if [[ -z $DRACUT_KMODDIR_OVERRIDE && -n $drivers_dir ]]; then
     fi
 fi
 
-# shellcheck disable=SC2155
-readonly TMPDIR="$(realpath -e "$tmpdir")"
+TMPDIR="$(realpath -e "$tmpdir")"
+readonly TMPDIR
 [ -d "$TMPDIR" ] || {
     printf "%s\n" "dracut[F]: Invalid tmpdir '$tmpdir'." >&2
     exit 1
@@ -1301,8 +1324,8 @@ if findmnt --raw -n --target "$tmpdir" --output=options | grep -q noexec; then
     noexec=1
 fi
 
-# shellcheck disable=SC2155
-readonly DRACUT_TMPDIR="$(mktemp -p "$TMPDIR/" -d -t dracut.XXXXXX)"
+DRACUT_TMPDIR="$(mktemp -p "$TMPDIR/" -d -t dracut.XXXXXX)"
+readonly DRACUT_TMPDIR
 [ -d "$DRACUT_TMPDIR" ] || {
     printf "%s\n" "dracut[F]: mktemp -p '$TMPDIR/' -d -t dracut.XXXXXX failed." >&2
     exit 1
@@ -1334,7 +1357,11 @@ if [[ $early_microcode == yes ]] || { [[ $acpi_override == yes ]] && [[ -d $acpi
     mkdir "$early_cpio_dir"
 fi
 
-[[ "$dracutsysrootdir" ]] || [[ "$noexec" ]] || export DRACUT_RESOLVE_LAZY="1"
+if ${DRACUT_LDD:-ldd} "${dracutsysrootdir}/bin/sh" | grep -q musl &> /dev/null; then
+    musl=1
+fi
+
+[[ "$dracutsysrootdir" ]] || [[ "$noexec" ]] || [[ "$musl" ]] || export DRACUT_RESOLVE_LAZY="1"
 
 if [[ $print_cmdline ]]; then
     stdloglvl=0
@@ -1685,7 +1712,7 @@ for line in "${fstab_lines[@]}"; do
             push_host_devs "$mp"
         done
     fi
-    push_host_devs "$dev"
+    push_user_devs "$dev"
     host_fs_types["$dev"]="$3"
 done
 
@@ -1697,12 +1724,12 @@ for f in $add_fstab; do
 done
 
 for dev in $add_device; do
-    push_host_devs "$dev"
+    push_user_devs "$dev"
 done
 
 if ((${#add_device_l[@]})); then
     add_device+=" ${add_device_l[*]} "
-    push_host_devs "${add_device_l[@]}"
+    push_user_devs "${add_device_l[@]}"
 fi
 
 if [[ $hostonly ]] && [[ $hostonly_default_device != "no" ]]; then
@@ -1828,7 +1855,7 @@ _get_fs_type() {
     return 1
 }
 
-for dev in "${host_devs[@]}"; do
+for dev in "${host_devs[@]}" "${user_devs[@]}"; do
     _get_fs_type "$dev"
     check_block_and_slaves_all _get_fs_type "$(get_maj_min "$dev")"
 done
@@ -1854,7 +1881,7 @@ export initdir dracutbasedir \
     omit_drivers mdadmconf lvmconf root_devs \
     use_fstab fstab_lines libdirs fscks nofscks ro_mnt \
     stdloglvl sysloglvl fileloglvl kmsgloglvl logfile \
-    host_fs_types host_devs swap_devs sshkey add_fstab \
+    host_fs_types host_devs user_devs swap_devs sshkey add_fstab \
     DRACUT_VERSION \
     prefix filesystems drivers \
     hostonly_cmdline loginstall \
@@ -2031,10 +2058,12 @@ if [[ $no_kernel != yes ]]; then
     if [[ $force_drivers ]]; then
         # shellcheck disable=SC2086
         hostonly='' instmods -c $force_drivers
-        rm -f "$initdir"/etc/cmdline.d/20-force_driver.conf
-        for mod in $force_drivers; do
-            echo "rd.driver.pre=$mod" >> "$initdir"/etc/cmdline.d/20-force_drivers.conf
-        done
+        if [[ $kernel_only != yes ]]; then
+            rm -f "$initdir"/etc/cmdline.d/20-force_driver.conf
+            for mod in $force_drivers; do
+                echo "rd.driver.pre=$mod" >> "$initdir"/etc/cmdline.d/20-force_drivers.conf
+            done
+        fi
     fi
     if [[ $filesystems ]]; then
         # shellcheck disable=SC2086
@@ -2538,8 +2567,8 @@ if [[ $uefi == yes ]]; then
         fi
     fi
 
-    offs=$(objdump -h "$uefi_stub" 2> /dev/null | gawk 'NF==7 {size=strtonum("0x"$3);
-                offset=strtonum("0x"$4)} END {print size + offset}')
+    offs=$(($(objdump -h "$uefi_stub" 2> /dev/null | awk 'NF==7 {size=$3;
+                offset=$4} END {print "16#"size" + 16#"offset}')))
     if [[ $offs -eq 0 ]]; then
         dfatal "Failed to get the size of $uefi_stub to create UEFI image file"
         exit 1

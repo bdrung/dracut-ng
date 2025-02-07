@@ -2,6 +2,9 @@
 # This file is part of dracut.
 # SPDX-License-Identifier: GPL-2.0-or-later
 
+# keep this module as small as possible and consider adding rules to more
+# specific dracut modules when possible
+
 # Prerequisite check(s) for module.
 check() {
     [[ $mount_needs ]] && return 1
@@ -12,12 +15,13 @@ check() {
 }
 
 installkernel() {
-    hostonly='' instmods autofs4 ipv6 algif_hash hmac sha256
+    hostonly='' instmods autofs4 ipv6 dmi-sysfs
     instmods -s efivarfs
 }
 
 # called by dracut
 install() {
+
     if [[ $prefix == /run/* ]]; then
         dfatal 'systemd does not work with a prefix, which contains "/run"!!'
         exit 1
@@ -92,9 +96,7 @@ install() {
             /etc/hostname \
             /etc/nsswitch.conf \
             /etc/machine-id \
-            /etc/machine-info \
-            /etc/vconsole.conf \
-            /etc/locale.conf
+            /etc/machine-info
     fi
 
     if ! [[ -e "$initdir/etc/machine-id" ]]; then
@@ -120,6 +122,7 @@ install() {
 
     local _systemdbinary="$systemdutildir"/systemd
 
+    # testing systemd using sanitizers - see https://systemd.io/TESTING_WITH_SANITIZERS/
     if ldd "$_systemdbinary" | grep -qw libasan; then
         local _wrapper="$systemdutildir"/systemd-asan-wrapper
         cat > "$initdir"/"$_wrapper" << EOF
@@ -135,24 +138,11 @@ EOF
 
     unset _systemdbinary
 
-    inst_binary true
-    ln_r "$(find_binary true)" "/usr/bin/loginctl"
-    ln_r "$(find_binary true)" "/bin/loginctl"
-    inst_rules \
-        90-vconsole.rules \
-        99-systemd.rules
-
-    if dracut_module_included "i18n" && [[ -e "$systemdsystemunitdir"/systemd-vconsole-setup.service ]]; then
-        inst_multiple -o \
-            "$systemdutildir"/systemd-vconsole-setup \
-            "$systemdsystemunitdir"/systemd-vconsole-setup.service \
-            "$systemdsystemunitdir"/sysinit.target.wants/systemd-vconsole-setup.service
-    fi
-
     # Install library file(s)
     _arch=${DRACUT_ARCH:-$(uname -m)}
     inst_libdir_file \
         {"tls/$_arch/",tls/,"$_arch/",}"libgcrypt.so*" \
+        {"tls/$_arch/",tls/,"$_arch/",}"libbpf.so*" \
         {"tls/$_arch/",tls/,"$_arch/",}"libnss_*" \
         {"tls/$_arch/",tls/,"$_arch/",}"systemd/libsystemd*.so"
 }

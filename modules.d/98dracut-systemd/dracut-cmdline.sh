@@ -3,7 +3,7 @@
 if [ -f /dracut-state.sh ]; then
     . /dracut-state.sh 2> /dev/null
 fi
-type getarg > /dev/null 2>&1 || . /lib/dracut-lib.sh
+command -v getarg > /dev/null || . /lib/dracut-lib.sh
 
 [ -f /usr/lib/initrd-release ] && . /usr/lib/initrd-release
 [ -n "$DRACUT_VERSION" ] && info "dracut-$DRACUT_VERSION"
@@ -18,9 +18,9 @@ fi
 info "Using kernel command line parameters:" "$(getcmdline)"
 
 getargbool 0 rd.udev.log_level=info -d rd.udev.log-priority=info -d rd.udev.info -d -y rdudevinfo \
-    && echo 'udev_log="info"' >> /etc/udev/udev.conf
+    && echo 'udev_log=info' >> /etc/udev/udev.conf
 getargbool 0 rd.udev.log_level=debug -d rd.udev.log-priority=debug -d rd.udev.debug -d -y rdudevdebug \
-    && echo 'udev_log="debug"' >> /etc/udev/udev.conf
+    && echo 'udev_log=debug' >> /etc/udev/udev.conf
 
 source_conf /etc/conf.d
 

@@ -28,10 +28,11 @@ if [ -z "$netroot" ]; then
 fi
 [ -z "$iscsiroot" ] && iscsiroot=$(getarg iscsiroot=)
 [ -z "$iscsi_firmware" ] && getargbool 0 rd.iscsi.firmware -y iscsi_firmware && iscsi_firmware="1"
+[ -z "$iscsi_transport" ] && iscsi_transport=$(getarg rd.iscsi.transport=)
 
 [ -n "$iscsiroot" ] && [ -n "$iscsi_firmware" ] && die "Mixing iscsiroot and iscsi_firmware is dangerous"
 
-type write_fs_tab > /dev/null 2>&1 || . /lib/fs-lib.sh
+command -v write_fs_tab > /dev/null || . /lib/fs-lib.sh
 
 # Root takes precedence over netroot
 if [ "${root%%:*}" = "iscsi" ]; then
@@ -79,15 +80,15 @@ fi
 # iscsi_firmware does not need argument checking
 if [ -n "$iscsi_firmware" ]; then
     if [ "$root" != "dhcp" ] && [ "$netroot" != "dhcp" ]; then
-        [ -z "$netroot" ] && netroot=iscsi:
+        [ -z "$netroot" ] && [ "$iscsi_transport" != bnx2i ] && netroot=iscsi:
     fi
     modprobe -b -q iscsi_boot_sysfs 2> /dev/null
     modprobe -b -q iscsi_ibft
     # if no ip= is given, but firmware
     echo "${DRACUT_SYSTEMD+systemctl is-active initrd-root-device.target || }[ -f '/tmp/iscsistarted-firmware' ]" > "$hookdir"/initqueue/finished/iscsi_started.sh
-    initqueue --unique --online /sbin/iscsiroot online "iscsi:" "$NEWROOT"
-    initqueue --unique --onetime --timeout /sbin/iscsiroot timeout "iscsi:" "$NEWROOT"
-    initqueue --unique --onetime --settled /sbin/iscsiroot online "iscsi:" "'$NEWROOT'"
+    /sbin/initqueue --unique --online /sbin/iscsiroot online "iscsi:" "$NEWROOT"
+    /sbin/initqueue --unique --onetime --timeout /sbin/iscsiroot timeout "iscsi:" "$NEWROOT"
+    /sbin/initqueue --unique --onetime --settled /sbin/iscsiroot online "iscsi:" "'$NEWROOT'"
 fi
 
 # ISCSI actually supported?
@@ -103,7 +104,7 @@ modprobe -b -q be2iscsi
 
 if [ -n "$netroot" ] && [ "$root" != "/dev/root" ] && [ "$root" != "dhcp" ]; then
     if ! getargbool 1 rd.neednet > /dev/null || ! getarg "ip="; then
-        initqueue --unique --onetime --settled /sbin/iscsiroot dummy "'$netroot'" "'$NEWROOT'"
+        /sbin/initqueue --unique --onetime --settled /sbin/iscsiroot dummy "'$netroot'" "'$NEWROOT'"
     fi
 fi
 
@@ -142,11 +143,11 @@ if [ -z "$netroot" ] || ! [ "${netroot%%:*}" = "iscsi" ]; then
     return 1
 fi
 
-initqueue --unique --onetime --timeout /sbin/iscsiroot timeout "$netroot" "$NEWROOT"
+/sbin/initqueue --unique --onetime --timeout /sbin/iscsiroot timeout "$netroot" "$NEWROOT"
 
 for nroot in $(getargs netroot); do
     [ "${nroot%%:*}" = "iscsi" ] || continue
-    type parse_iscsi_root > /dev/null 2>&1 || . /lib/net-lib.sh
+    command -v parse_iscsi_root > /dev/null || . /lib/net-lib.sh
     parse_iscsi_root "$nroot" || return 1
     netroot_enc=$(str_replace "$nroot" '/' '\2f')
     echo "${DRACUT_SYSTEMD+systemctl is-active initrd-root-device.target || }[ -f '/tmp/iscsistarted-$netroot_enc' ]" > "$hookdir"/initqueue/finished/iscsi_started.sh

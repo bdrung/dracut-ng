@@ -336,10 +336,10 @@ crypto LUKS - key on removable device support
 NB: If systemd is included in the dracut initrd, dracut's built in
 removable device keying support won't work. systemd will prompt for
 a password from the console even if you've supplied **rd.luks.key**.
-You may be able to use standard systemd *fstab*(5) syntax to
+You may be able to use standard systemd man:fstab[5,external] syntax to
 get the same effect. If you do need **rd.luks.key** to work,
 you will have to exclude the "systemd" dracut module and any modules
-that depend on it. See *dracut.conf*(5) and
+that depend on it. See man:dracut.conf[5] and
 https://bugzilla.redhat.com/show_bug.cgi?id=905683 for more
 information.
 
@@ -581,7 +581,7 @@ USB Android phone::
 The following options are supported by the 'network-legacy' dracut
 module. Other network modules might support a slightly different set of
 options; refer to the documentation of the specific network module in use. For
-NetworkManager, see *nm-initrd-generator*(8).
+NetworkManager, see man:nm-initrd-generator[8].
 
 **ip=**__{dhcp|on|any|dhcp6|auto6|either6|link6|single-dhcp}__::
     dhcp|on|any::: get ip from dhcp server from all interfaces. If netroot=dhcp,
@@ -696,7 +696,7 @@ interface name. Better name it "bootnet" or "bluesocket".
 **team=**__<teammaster>__:__<teamslaves>__[:__<teamrunner>__]::
     Setup team device <teammaster> on top of <teamslaves>.
     <teamslaves> is a comma-separated list of physical (ethernet) interfaces.
-    <teamrunner> is the runner type to be used (see *teamd.conf*(5)); defaults to
+    <teamrunner> is the runner type to be used (see man:teamd.conf[5,external]); defaults to
     activebackup.
     Team without parameters assumes
     team=team0:eth0,eth1:activebackup
@@ -876,6 +876,14 @@ iscsistart -b --param node.session.timeo.replacement_timeout=30
 
 **rd.iscsi.testroute=0**:
     Turn off checking, if the route to the iSCSI target IP is possible before trying to login.
+
+**rd.iscsi.transport=__<transport_name>__**::
+    Set the iSCSI transport name (see man:iscsiadm[8,external]). iSCSI offload
+    transports like **bnx2i** don't need the network to be up in order to bring
+    up iSCSI connections. This parameter indicates that network setup can be
+    skipped in the initramfs, which makes booting with iSCSI offload cards
+    faster and more reliable. This parameter currently only has an effect for
+    _<transport_name>=bnx2i_.
 
 FCoE
 ~~~~
@@ -1272,6 +1280,11 @@ of the base root filesystem and the persistent overlay, or
 root filesystem, and `/run/overlayfs` becomes the temporary, writable, upper
 directory overlay, to complete the bootable root filesystem.
 
+**rd.live.overlay.nouserconfirmprompt=**::
+Suppresses the 'Using temporary overlay' blocking prompt that asks for a
+user confirmation before proceeding to boot. This allows the boot process
+to continue to completion without user interation.
+
 **rd.live.overlay.reset=**1::
 Specifies that a persistent overlay should be reset on boot.  All previous root
 filesystem changes are vacated by this action.
@@ -1465,4 +1478,4 @@ Harald Hoyer
 
 SEE ALSO
 --------
-*dracut*(8) *dracut.conf*(5)
+man:dracut[8] man:dracut.conf[5]

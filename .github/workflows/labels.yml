@@ -1,6 +1,10 @@
-name: "Pull Request Labeler"
+---
+name: "Labeler"
 
-on: pull_request_target
+# runs on pull_request_target instead of pull_request
+# see https://github.com/actions/labeler?tab=readme-ov-file#permissions
+on:  # yamllint disable-line rule:truthy
+    pull_request_target:
 
 jobs:
     triage:

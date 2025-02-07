@@ -4,7 +4,7 @@ export DRACUT_SYSTEMD=1
 if [ -f /dracut-state.sh ]; then
     . /dracut-state.sh 2> /dev/null
 fi
-type getarg > /dev/null 2>&1 || . /lib/dracut-lib.sh
+command -v getarg > /dev/null || . /lib/dracut-lib.sh
 
 source_conf /etc/conf.d
 
@@ -14,7 +14,6 @@ export _rdshell_name="dracut" action="Boot" hook="emergency"
 _emergency_action=$(getarg rd.emergency)
 
 if getargbool 1 rd.shell || getarg rd.break; then
-    FSTXT="/run/dracut/fsck/fsck_help_$fstype.txt"
     RDSOSREPORT="$(rdsosreport)"
     source_hook "$hook"
     while read -r _tty rest; do
@@ -29,12 +28,17 @@ if getargbool 1 rd.shell || getarg rd.break; then
             echo 'after mounting them and attach it to a bug report.'
             echo
             echo
-            [ -f "$FSTXT" ] && cat "$FSTXT"
         ) > /dev/"$_tty"
     done < /proc/consoles
     [ -f /etc/profile ] && . /etc/profile
     [ -z "$PS1" ] && export PS1="$_name:\${PWD}# "
-    exec sulogin -e
+
+    if getargbool 0 SYSTEMD_SULOGIN_FORCE; then
+        # allows passwordless logins if root account is locked.
+        exec sulogin -e
+    else
+        exec sulogin
+    fi
 else
     export hook="shutdown-emergency"
     warn "$action has failed. To debug this issue add \"rd.shell rd.debug\" to the kernel command line."

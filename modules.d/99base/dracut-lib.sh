@@ -1,6 +1,6 @@
 #!/bin/sh
 
-type wait_for_dev > /dev/null 2>&1 || . /lib/dracut-dev-lib.sh
+command -v wait_for_dev > /dev/null || . /lib/dracut-dev-lib.sh
 
 export DRACUT_SYSTEMD
 export NEWROOT
@@ -8,7 +8,6 @@ if [ -n "$NEWROOT" ]; then
     [ -d "$NEWROOT" ] || mkdir -p -m 0755 "$NEWROOT"
 fi
 
-# shellcheck disable=SC2153
 if [ -z "$PREFIX" ]; then
     if ! [ -d /run/initramfs ]; then
         mkdir -p -m 0755 /run/initramfs/log
@@ -126,9 +125,9 @@ killall_proc_mountpoint() {
 getcmdline() {
     local _line
     local _i
-    local CMDLINE_ETC_D
-    local CMDLINE_ETC
-    local CMDLINE_PROC
+    local CMDLINE_ETC_D=''
+    local CMDLINE_ETC=''
+    local CMDLINE_PROC=''
     unset _line
 
     if [ -e /etc/cmdline ]; then
@@ -153,7 +152,7 @@ getcmdline() {
 
 getarg() {
     debug_off
-    local _deprecated _newoption
+    local _deprecated='' _newoption=''
     CMDLINE=$(getcmdline)
     export CMDLINE
     while [ $# -gt 0 ]; do
@@ -308,32 +307,6 @@ getargs() {
     return 1
 }
 
-# Prints value of given option.  If option is a flag and it's present,
-# it just returns 0.  Otherwise 1 is returned.
-# $1 = options separated by commas
-# $2 = option we are interested in
-#
-# Example:
-# $1 = cipher=aes-cbc-essiv:sha256,hash=sha256,verify
-# $2 = hash
-# Output:
-# sha256
-getoptcomma() {
-    local line=",$1,"
-    local opt="$2"
-    local tmp
-
-    case "${line}" in
-        *,${opt}=*,*)
-            tmp="${line#*,"${opt}"=}"
-            echo "${tmp%%,*}"
-            return 0
-            ;;
-        *,${opt},*) return 0 ;;
-    esac
-    return 1
-}
-
 # Splits given string 'str' with separator 'sep' into variables 'var1', 'var2',
 # 'varN'.  If number of fields is less than number of variables, remaining are
 # not set.  If number of fields is greater than number of variables, the last
@@ -467,22 +440,6 @@ check_quiet() {
         [ -n "$a" ] && [ "$a" -ge 28 ] && DRACUT_QUIET="yes"
         export DRACUT_QUIET
     fi
-}
-
-check_occurances() {
-    # Count the number of times the character $ch occurs in $str
-    # Return 0 if the count matches the expected number, 1 otherwise
-    local str="$1"
-    local ch="$2"
-    local expected="$3"
-    local count=0
-
-    while [ "${str#*"$ch"}" != "${str}" ]; do
-        str="${str#*"$ch"}"
-        count=$((count + 1))
-    done
-
-    [ $count -eq "$expected" ]
 }
 
 incol2() {
@@ -747,10 +704,6 @@ usable_root() {
         [ -e "$_i" ] && return 0
     done
 
-    for _i in proc sys dev; do
-        [ -e "$1"/$_i ] || return 1
-    done
-
     return 0
 }
 
@@ -801,34 +754,6 @@ inst_hook() {
     mv -f "/tmp/$$-${_job}.sh" "$hookdir/${_hookname}/${_job}.sh"
 }
 
-# inst_mount_hook <mountpoint> <prio> <name> <script>
-#
-# Install a mount hook with priority <prio>,
-# which executes <script> as soon as <mountpoint> is mounted.
-inst_mount_hook() {
-    local _prio="$2" _jobname="$3" _script="$4"
-    local _hookname
-    _hookname="mount-$(str_replace "$1" '/' '\\x2f')"
-    [ -d "$hookdir/${_hookname}" ] || mkdir -p "$hookdir/${_hookname}"
-    inst_hook --hook "$_hookname" --unique --name "${_prio}-${_jobname}" "$_script"
-}
-
-# wait_for_mount <mountpoint>
-#
-# Installs a initqueue-finished script,
-# which will cause the main loop only to exit,
-# if <mountpoint> is mounted.
-wait_for_mount() {
-    local _name
-    _name="$(str_replace "$1" '/' '\\x2f')"
-    printf '. /lib/dracut-lib.sh\nismounted "%s"\n' "$1" \
-        >> "$hookdir/initqueue/finished/ismounted-${_name}.sh"
-    {
-        printf 'ismounted "%s" || ' "$1"
-        printf 'warn "\"%s\" is not mounted"\n' "$1"
-    } >> "$hookdir/emergency/90-${_name}.sh"
-}
-
 killproc() {
     debug_off
     local _exe
@@ -877,7 +802,7 @@ wait_for_loginit() {
 }
 
 # pidof version for root
-if ! command -v pidof > /dev/null 2> /dev/null; then
+if ! command -v pidof > /dev/null; then
     pidof() {
         debug_off
         local _cmd
@@ -1068,10 +993,6 @@ make_trace_mem() {
     if [ -z "$log_level" ] || [ "$log_level" -le 0 ]; then
         return
     fi
-
-    # FIXME? useless echo?
-    # shellcheck disable=SC2116
-    msg=$(echo "$msg")
 
     msg_printed=0
     while [ $# -gt 0 ]; do

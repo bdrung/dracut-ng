@@ -31,7 +31,7 @@ early userspace.
 
 Initramfs images are also called "initrd".
 
-For a complete list of kernel command line options see *dracut.cmdline*(7).
+For a complete list of kernel command line options see man:dracut.cmdline[7].
 
 If you are dropped to an emergency shell, while booting your initramfs,
 the file _/run/initramfs/rdsosreport.txt_ is created, which can be saved to a
@@ -65,6 +65,7 @@ _<output file>_ **--rebuild**::
 
 **-a, --add** _<list of dracut modules>_::
     Add a space-separated list of dracut modules to the default set of modules.
+    If a module appears in both _add_ and _omit_ lists, it will be omitted.
     This parameter can be specified multiple times.
 +
 [NOTE]
@@ -77,9 +78,11 @@ example:
 ===============================
 
 **--force-add** _<list of dracut modules>_::
-    Force to add a space-separated list of dracut modules to the default set of
-    modules, when -H is specified. This parameter can be specified multiple
-    times.
+    A space-separated list of dracut modules appended to the default set of
+    modules when _host-only_ (`-H`) mode is specified.  Unlike `--add`,
+    `--force-add` will _override_ omittied (`-o`) modules; it is thus useful to
+    ensure that a module is added even if it is specified as omitted in
+    configuration files.  This parameter can be specified multiple times.
 +
 [NOTE]
 ===============================
@@ -93,6 +96,10 @@ example:
 **-o, --omit** _<list of dracut modules>_::
     Omit a space-separated list of dracut modules. This parameter can be
     specified multiple times.
+    Warning: Avoid manually omitting dracut modules, as you may
+    inadvertently remove essential ones that dracut can't detect
+    or warn you about. Using this option is not recommended and is at
+    your own risk.
 +
 [NOTE]
 ===============================
@@ -109,6 +116,7 @@ example:
     parameter can be specified multiple times.
     This option forces dracut to only include the specified dracut modules.
     In most cases the "--add" option is what you want to use.
+    This option is not recommended to use (use at your own risk).
 +
 [NOTE]
 ===============================
@@ -123,6 +131,9 @@ example:
     Specify a space-separated list of kernel modules to exclusively include
     in the initramfs. The kernel modules have to be specified without the ".ko"
     suffix. This parameter can be specified multiple times.
+    This option forces dracut to only include the specified kernel modules.
+    In most cases the "--add-drivers" option is what you want to use.
+    This option is not recommended to use (use at your own risk).
 +
 [NOTE]
 ===============================
@@ -616,7 +627,7 @@ and no /etc/cmdline/*.conf will be generated into the initramfs.
 
 **--enhanced-cpio**::
     Attempt to use the dracut-cpio binary, which optimizes archive creation for
-    copy-on-write filesystems by using the copy_file_range(2) syscall via Rust's
+    copy-on-write filesystems by using the man:copy_file_range[2] syscall via Rust's
     io::copy(). When specified, initramfs archives are also padded to ensure
     optimal data alignment for extent sharing. To retain reflink data
     deduplication benefits, this should be used alongside the **--no-compress**
@@ -777,4 +788,4 @@ Warren Togami
 
 SEE ALSO
 --------
-*dracut.cmdline*(7) *dracut.conf*(5) *lsinitrd*(1)
+man:dracut.cmdline[7] man:dracut.conf[5] man:lsinitrd[1]

@@ -48,7 +48,7 @@ man8pages = man/dracut.8 \
 
 manpages = $(man1pages) $(man5pages) $(man7pages) $(man8pages)
 
-.PHONY: install clean archive testimage test all check AUTHORS CONTRIBUTORS doc
+.PHONY: install clean archive test all check AUTHORS CONTRIBUTORS doc
 
 all: dracut.pc dracut-install src/skipcpio/skipcpio dracut-util
 
@@ -108,7 +108,7 @@ ifeq ($(enable_dracut_cpio),yes)
 all: dracut-cpio
 endif
 
-doc: $(manpages) dracut.html
+doc: $(manpages)
 
 ifneq ($(enable_documentation),no)
 all: doc
@@ -120,23 +120,30 @@ endif
 
 %.xml: %.adoc
 	@rm -f -- "$@"
-	asciidoc -a "version=$(DRACUT_FULL_VERSION)" -d manpage -b docbook -o "$@" $<
+	asciidoc -f man/asciidoc.conf -a "version=$(DRACUT_FULL_VERSION)" -d manpage -b docbook -o "$@" $<
+
+# If ANOTRA_BIN not set, default to look for "npx" to run "npx antora".  If we
+# end up with undefined ANTORA_BIN (i.e. not set and npx not found), we'll give
+# a sane error when building docs below.
+ifeq ($(ANTORA_BIN),)
+NPX := $(shell command -v npx 2> /dev/null)
+ifneq ($(NPX),)
+ANTORA_BIN := "$(NPX) antora"
+endif
+endif
+.PHONY: doc_site
+doc_site: $(manpages) doc_site/modules/ROOT/nav.adoc doc_site/modules/ROOT/pages/index.adoc
+ifndef ANTORA_BIN
+	$(error Antora not found, install nodejs or set ANTORA_BIN to make doc site)
+endif
+	mkdir -p doc_site/modules/ROOT/pages/man
+	cd doc_site/modules/ROOT/pages/man/; for i in $(manpages) man/dracut.usage; do ln -sf ../../../../../$${i}.adoc $(basename $i); done
+	$(shell echo $(ANTORA_BIN)) --attribute "mainversion=$(DRACUT_MAIN_VERSION)" \
+	  --attribute "version=${DRACUT_FULL_VERSION}" \
+	  antora-playbook.yml
 
 dracut.8: man/dracut.8.adoc \
 	man/dracut.usage.adoc
-
-dracut.html: man/dracut.adoc $(manpages) docs/dracut.css man/dracut.usage.adoc
-	@rm -f -- dracut.xml
-	asciidoc -a "mainversion=$(DRACUT_MAIN_VERSION)" \
-		-a "version=$(DRACUT_FULL_VERSION)" \
-		-a numbered \
-		-d book -b docbook -o dracut.xml man/dracut.adoc
-	@rm -f -- dracut.html
-	xsltproc -o dracut.html --xinclude -nonet \
-		--stringparam custom.css.source docs/dracut.css \
-		--stringparam generate.css.header 1 \
-		http://docbook.sourceforge.net/release/xsl/current/xhtml/docbook.xsl dracut.xml
-	@rm -f -- dracut.xml
 
 dracut.pc: Makefile.inc Makefile
 	@echo "Name: dracut" > dracut.pc
@@ -164,7 +171,11 @@ install: all
 	ln -fs dracut-functions.sh $(DESTDIR)$(pkglibdir)/dracut-functions
 	install -m 0755 dracut-logger.sh $(DESTDIR)$(pkglibdir)/dracut-logger.sh
 	install -m 0755 dracut-initramfs-restore.sh $(DESTDIR)$(pkglibdir)/dracut-initramfs-restore
+	rm -rf $(DESTDIR)$(pkglibdir)/modules.d/80test*
 	cp -arx modules.d dracut.conf.d $(DESTDIR)$(pkglibdir)
+	for i in $(configprofile) ; do \
+		cp -arx dracut.conf.d/$$i/* $(DESTDIR)$(pkglibdir)/dracut.conf.d/ ;\
+	done
 ifneq ($(enable_test),no)
 	cp -arx test $(DESTDIR)$(pkglibdir)
 else
@@ -182,7 +193,7 @@ endif
 		ln -srf $(DESTDIR)$(pkglibdir)/modules.d/98dracut-systemd/dracut-shutdown-onfailure.service $(DESTDIR)$(systemdsystemunitdir)/dracut-shutdown-onfailure.service; \
 		ln -srf $(DESTDIR)$(pkglibdir)/modules.d/98dracut-systemd/dracut-shutdown.service $(DESTDIR)$(systemdsystemunitdir)/dracut-shutdown.service; \
 		mkdir -p $(DESTDIR)$(systemdsystemunitdir)/sysinit.target.wants; \
-		ln -s ../dracut-shutdown.service \
+		ln -sf ../dracut-shutdown.service \
 		$(DESTDIR)$(systemdsystemunitdir)/sysinit.target.wants/dracut-shutdown.service; \
 		mkdir -p $(DESTDIR)$(systemdsystemunitdir)/initrd.target.wants; \
 		for i in \
@@ -195,7 +206,7 @@ endif
 		    dracut-pre-udev.service \
 		    ; do \
 			ln -srf $(DESTDIR)$(pkglibdir)/modules.d/98dracut-systemd/$$i $(DESTDIR)$(systemdsystemunitdir); \
-			ln -s ../$$i \
+			ln -sf ../$$i \
 			$(DESTDIR)$(systemdsystemunitdir)/initrd.target.wants/$$i; \
 		done \
 	fi
@@ -219,20 +230,27 @@ endif
 	install -m 0644 shell-completion/bash/lsinitrd $(DESTDIR)${bashcompletiondir}/lsinitrd
 	mkdir -p $(DESTDIR)${pkgconfigdatadir}
 	install -m 0644 dracut.pc $(DESTDIR)${pkgconfigdatadir}/dracut.pc
+	if ! [ -n "$(systemdsystemunitdir)" ]; then \
+		rm -rf $(DESTDIR)$(pkglibdir)/test/TEST-[0-9][0-9]-*SYSTEMD* ;\
+		rm -rf $(DESTDIR)$(pkglibdir)/modules.d/*systemd* $(DESTDIR)$(mandir)/*.service.* ; \
+		for i in bluetooth connman dbus* fido2 lvmmerge lvmthinpool-monitor memstrack network-manager pcsc pkcs11 rngd squash* tpm2-tss; do \
+			rm -rf $(DESTDIR)$(pkglibdir)/modules.d/[0-9][0-9]$${i}; \
+		done \
+	fi
 
 clean:
 	$(RM) *~
 	$(RM) */*~
 	$(RM) */*/*~
 	$(RM) $(manpages:%=%.xml) dracut.xml
-	$(RM) test-*.img
 	$(RM) dracut-*.tar.bz2 dracut-*.tar.xz
 	$(RM) dracut-install src/install/dracut-install $(DRACUT_INSTALL_OBJECTS)
-	$(RM) skipcpio/skipcpio $(SKIPCPIO_OBJECTS)
-	$(RM) dracut-util util/util $(UTIL_OBJECTS)
+	$(RM) src/skipcpio/skipcpio $(SKIPCPIO_OBJECTS)
+	$(RM) dracut-util src/util/util $(UTIL_OBJECTS)
 	$(RM) $(manpages)
 	$(RM) dracut.pc
 	$(RM) dracut-cpio src/dracut-cpio/target/release/dracut-cpio*
+	$(RM) -rf build/ doc_site/modules/ROOT/pages/man/*
 	$(MAKE) -C test clean
 
 syncheck:
@@ -254,34 +272,8 @@ else
 endif
 endif
 
-check: all syncheck
+check: all
 	@$(MAKE) -C test check
-
-testimage: all
-	./dracut.sh -N -l -a debug -f test-$(KVERSION).img $(KVERSION)
-	@echo wrote  test-$(KVERSION).img
-
-debugtestimage: all
-	./dracut.sh --debug -l -a debug -f test-$(KVERSION).img $(KVERSION)
-	@echo wrote  test-$(KVERSION).img
-
-testimages: all
-	./dracut.sh -l -a debug --kernel-only -f test-kernel-$(KVERSION).img $(KVERSION)
-	@echo wrote  test-$(KVERSION).img
-	./dracut.sh -l -a debug --no-kernel -f test-dracut.img $(KVERSION)
-	@echo wrote  test-dracut.img
-
-debughostimage: all
-	./dracut.sh --debug -H -l -f test-$(KVERSION).img $(KVERSION)
-	@echo wrote  test-$(KVERSION).img
-
-hostimage: all
-	./dracut.sh -H -l -f test-$(KVERSION).img $(KVERSION)
-	@echo wrote  test-$(KVERSION).img
-
-efi: all
-	./dracut.sh --uefi -H -l -f linux-$(KVERSION).efi $(KVERSION)
-	@echo wrote linux-$(KVERSION).efi
 
 AUTHORS:
 	@git log | git shortlog --numbered --summary -e | while read -r a rest || [ -n "$$rest" ]; do echo "$$rest"; done > AUTHORS

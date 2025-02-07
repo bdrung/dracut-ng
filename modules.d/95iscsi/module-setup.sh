@@ -54,6 +54,7 @@ install_ibft() {
                 echo -n "rd.iscsi.ibft=1 "
             fi
             echo -n "rd.iscsi.firmware=1 "
+            [ -z "$ibft_mod" ] || echo -n "rd.iscsi.transport=$ibft_mod "
         fi
     done
 }
@@ -191,14 +192,6 @@ install() {
     inst_multiple umount iscsi-iname iscsiadm iscsid
     inst_binary sort
 
-    inst_multiple -o \
-        "$systemdsystemunitdir"/iscsid.socket \
-        "$systemdsystemunitdir"/iscsid.service \
-        "$systemdsystemunitdir"/iscsiuio.service \
-        "$systemdsystemunitdir"/iscsiuio.socket \
-        "$systemdsystemunitdir"/sockets.target.wants/iscsid.socket \
-        "$systemdsystemunitdir"/sockets.target.wants/iscsiuio.socket
-
     inst_simple /etc/iscsi/iscsid.conf
     if [[ $hostonly ]]; then
         inst_simple /etc/iscsi/initiatorname.iscsi
@@ -225,7 +218,11 @@ install() {
             "$systemdsystemunitdir"/iscsid.socket \
             "$systemdsystemunitdir"/iscsiuio.service \
             "$systemdsystemunitdir"/iscsiuio.socket \
-            iscsiadm iscsid
+            "$systemdsystemunitdir"/sockets.target.wants/iscsid.socket \
+            "$systemdsystemunitdir"/sockets.target.wants/iscsiuio.socket
+        if grep -q '^ExecStartPre=/usr/lib/open-iscsi/startup-checks.sh$' "$systemdsystemunitdir/iscsid.service"; then
+            inst_simple /usr/lib/open-iscsi/startup-checks.sh
+        fi
 
         for i in \
             iscsid.socket \

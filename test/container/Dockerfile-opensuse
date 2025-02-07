@@ -1,63 +1,60 @@
-FROM registry.opensuse.org/opensuse/tumbleweed-dnf:latest
+# Test coverage provided by this container:
+# - arm64
+# - default hostonly
+# - network-legacy
+# - mkosi-initrd
+# - hmaccalc (fido)
+# - rdma out of tree dracut module
+# - dbus-broker
+# - network: network-legacy, network-manager
 
-# prefer running tests with btrfs
-ENV TEST_FSTYPE=btrfs
+FROM registry.opensuse.org/opensuse/tumbleweed:latest
 
 # Install needed packages for the dracut CI container
-RUN dnf -y install --setopt=install_weak_deps=False \
+RUN zypper --non-interactive install --no-recommends \
     asciidoc \
     bash-completion \
     btrfsprogs \
-    bzip2 \
     cargo \
     cryptsetup \
-    dash \
-    dbus-broker \
     dhcp-client \
     dhcp-server \
-    dmraid \
+    distribution-gpg-keys \
     e2fsprogs \
     erofs-utils \
     gcc \
     git \
     hmaccalc \
-    iproute \
+    iproute2 \
     iputils \
     iscsiuio \
     kbd \
-    kernel \
+    kernel-vanilla \
     libkmod-devel \
     lvm2 \
     make \
     mdadm \
-    mkosi \
+    mkosi-initrd \
     nbd \
     NetworkManager \
-    nfs-utils \
+    nfs-kernel-server \
     open-iscsi \
     parted \
-    pigz \
-    procps \
+    pciutils \
     python3-pefile \
-    qemu-kvm \
-    rng-tools \
-    rpm-build \
-    sbsigntools \
-    ShellCheck \
-    shfmt \
+    qemu \
     squashfs \
     swtpm \
     systemd-boot \
     systemd-experimental \
-    tar \
+    systemd-portable \
     tgt \
     tpm2.0-tools \
-    /usr/bin/qemu-system-$(uname -m) \
     util-linux-systemd \
-    xz \
-    && dnf -y update && dnf clean all
+    xorriso \
+    && zypper --non-interactive dist-upgrade --no-recommends
 
-# configuration in the package is not compatible
-# with the upstream CI, lets remove it
+# workaround for openSUSE on arm64
 RUN \
-  rm -rf /usr/lib/dracut/dracut.conf.d
+    KVERSION="$(cd /lib/modules && ls -1 | tail -1)" \
+    && if [ "$(arch)"="aarch64" ] && [ -e /usr/lib/modules/"$KVERSION"/Image ]; then ln -sf /usr/lib/modules/"$KVERSION"/Image /usr/lib/modules/"$KVERSION"/vmlinuz; fi

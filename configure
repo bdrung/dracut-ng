@@ -6,7 +6,18 @@ echo \#buildapi-variable-no-builddir > /dev/null
 prefix=/usr
 
 enable_documentation=yes
-enable_dracut_cpio=no
+
+# if is cargo installed, let's build dracut-cpio
+if command -v cargo > /dev/null; then
+    enable_dracut_cpio=yes
+else
+    enable_dracut_cpio=no
+fi
+
+# set systemdsystemunitdir on systemd-based systems
+if [ -d /usr/lib/systemd/system ]; then
+    systemdsystemunitdir=/usr/lib/systemd/system
+fi
 
 CC="${CC:-cc}"
 PKG_CONFIG="${PKG_CONFIG:-pkg-config}"
@@ -50,6 +61,8 @@ while (($# > 0)); do
         --systemdsystemunitdir) read_arg systemdsystemunitdir "$@" || shift ;;
         --bashcompletiondir) read_arg bashcompletiondir "$@" || shift ;;
         --enable-dracut-cpio) enable_dracut_cpio=yes ;;
+        --disable-dracut-cpio) enable_dracut_cpio=no ;;
+        --configprofile) read_arg configprofile "$@" || shift ;;
         *) echo "Ignoring unknown option '$1'" ;;
     esac
     shift
@@ -190,6 +203,7 @@ EOF
     [[ $infodir ]] && echo "infodir ?= ${infodir}"
     [[ $systemdsystemunitdir ]] && echo "systemdsystemunitdir ?= ${systemdsystemunitdir}"
     [[ $bashcompletiondir ]] && echo "bashcompletiondir ?= ${bashcompletiondir}"
+    [[ $configprofile ]] && echo "configprofile ?= ${configprofile}"
 } >> Makefile.inc.$$
 
 mv Makefile.inc.$$ Makefile.inc

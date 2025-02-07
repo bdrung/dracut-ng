@@ -6,31 +6,29 @@ check() {
 }
 
 depends() {
+    local deps
+    deps="terminfo"
+
     if [[ $V == "2" ]]; then
-        echo debug
+        deps+=" debug"
     fi
 
+    echo "$deps"
     return 0
 }
 
 install() {
     inst_simple /etc/os-release
 
-    inst_multiple mkdir ln dd stty mount poweroff umount setsid sync cat grep
+    inst_multiple mkdir ln dd mount poweroff umount setsid sync cat grep
 
-    for _terminfodir in /lib/terminfo /etc/terminfo /usr/share/terminfo; do
-        [ -f "${_terminfodir}/l/linux" ] && break
-    done
-    inst_multiple -o "${_terminfodir}/l/linux"
-
-    inst_binary "${dracutbasedir}/dracut-util" "/usr/bin/dracut-util"
-    ln -s dracut-util "${initdir}/usr/bin/dracut-getarg"
-    ln -s dracut-util "${initdir}/usr/bin/dracut-getargs"
-
-    inst_script "${dracutbasedir}/modules.d/99base/dracut-lib.sh" "/lib/dracut-lib.sh"
-    inst_script "${dracutbasedir}/modules.d/99base/dracut-dev-lib.sh" "/lib/dracut-dev-lib.sh"
-
-    inst_script "$moddir/test-init.sh" "/sbin/init"
-
-    inst_multiple -o plymouth
+    if dracut_module_included "systemd"; then
+        inst_simple "$moddir/testsuite.target" "${systemdsystemunitdir}/testsuite.target"
+        inst_simple "$moddir/testsuite.service" "${systemdsystemunitdir}/testsuite.service"
+        $SYSTEMCTL -q --root "$initdir" add-wants testsuite.target "testsuite.service"
+        ln_r "${systemdsystemunitdir}/testsuite.target" "${systemdsystemunitdir}/default.target"
+        inst_script "$moddir/test-init.sh" "/sbin/test-init"
+    else
+        inst_script "$moddir/test-init.sh" "/sbin/init"
+    fi
 }

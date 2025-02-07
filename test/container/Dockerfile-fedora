@@ -1,79 +1,102 @@
-FROM registry.fedoraproject.org/fedora:latest
+# Test coverage provided by this container:
+# - arm64
+# - default hostonly
+# - xfs
+# - memstrack
+# - ndctl (for nvdimm)
+# - fcoe-utils (Fibre Channel over Ethernet)
+# - curl (url-lib)
+# - cifs-utils (cifs)
+# - openssh (ssh-client)
+# - rsyslog (syslog)
+# - libkcapi-hmaccalc (fido)
+# - nss-softokn, kdumpbase out of tree dracut modules
+# - fips
+# - ignition
+# - dbus-broker
+# - network: network-legacy, network-manager
 
-# Install needed packages for the dracut CI container
+ARG DISTRIBUTION=fedora
+ARG REGISTRY=registry.fedoraproject.org
+
+FROM ${REGISTRY}/${DISTRIBUTION}
+
+# export ARG
+ARG DISTRIBUTION
+
+# prefer running tests with xfs
+ENV TEST_FSTYPE=xfs
+
+RUN \
+if [[ "${DISTRIBUTION}" =~ "centos:" ]]; then \
+    dnf config-manager --set-enabled crb; \
+    dnf -y install epel-release; \
+else \
+    dnf -y install --setopt=install_weak_deps=False \
+    btrfs-progs \
+    dhcp-client \
+    dhcp-server \
+    nbd \
+    qemu \
+    scsi-target-utils \
+; fi
+
 RUN dnf -y install --setopt=install_weak_deps=False \
     asciidoc \
-    astyle \
     bash-completion \
     bluez \
-    btrfs-progs \
-    busybox \
-    bzip2 \
     cargo \
     cifs-utils \
     cryptsetup \
-    dash \
-    dbus-daemon \
+    crypto-policies-scripts \
     device-mapper-multipath \
-    dhcp-client \
-    dhcp-server \
-    dmraid \
+    dracut-live \
     e2fsprogs \
     erofs-utils \
-    f2fs-tools \
     fcoe-utils \
     fuse3 \
     gcc \
-    git \
+    ignition \
     iproute \
     iputils \
     iscsi-initiator-utils \
-    jfsutils \
     jq \
     kbd \
+    kdump-utils \
     kernel \
     kmod-devel \
     libkcapi-hmaccalc \
     libselinux-utils \
     lvm2 \
-    lzop \
     make \
     mdadm \
     memstrack \
-    mkosi \
-    nbd \
     ndctl \
     NetworkManager \
     nfs-utils \
-    ntfs-3g \
-    ntfsprogs \
     nvme-cli \
     parted \
     pcsc-lite \
-    pigz \
     plymouth \
-    qemu \
-    qrencode \
+    qemu-kvm \
     rng-tools \
-    rpm-build \
-    sbsigntools \
-    scsi-target-utils \
-    ShellCheck \
-    shfmt \
+    rsyslog \
     squashfs-tools \
     swtpm \
     systemd-boot-unsigned \
-    systemd-networkd \
     systemd-resolved \
     systemd-ukify \
-    tar \
     tpm2-tools \
     xfsprogs \
-    xz \
+    xorriso \
     && dnf -y update && dnf clean all
 
-# discard configurations that enforce an out-of-tree dracut module
-# which would break test automation
-# since this is a distro specific change, lets do it in the container
+# CentOS Stream ships only qemu-kvm, but it disables the KVM accel when it's not available
 RUN \
-  rm -rf /usr/lib/dracut/dracut.conf.d/50-nss-softokn.conf
+if [[ "${DISTRIBUTION}" =~ "centos:" ]]; then \
+    [[ -e /usr/bin/qemu-kvm ]] || ln -sf /usr/libexec/qemu-kvm /usr/bin/qemu-kvm ;\
+    [[ -e /usr/bin/qemu-system-$(uname -m) ]] || ln -sv /usr/libexec/qemu-kvm /usr/bin/qemu-system-$(uname -m) ;\
+    update-crypto-policies --no-reload --set FIPS ;\
+else \
+    fips-mode-setup --enable ;\
+fi

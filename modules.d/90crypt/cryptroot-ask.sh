@@ -6,7 +6,7 @@ NEWROOT=${NEWROOT:-"/sysroot"}
 # do not ask, if we already have root
 [ -f "$NEWROOT"/proc ] && exit 0
 
-. /lib/dracut-lib.sh
+command -v getarg > /dev/null || . /lib/dracut-lib.sh
 
 mkdir -p -m 0700 /run/cryptsetup
 
@@ -78,7 +78,7 @@ asked_file=/tmp/cryptroot-asked-$luksname
 # load dm_crypt if it is not already loaded
 [ -d /sys/module/dm_crypt ] || modprobe dm_crypt
 
-. /lib/dracut-crypt-lib.sh
+command -v ask_for_password > /dev/null || . /lib/dracut-crypt-lib.sh
 
 #
 # Open LUKS device
@@ -157,7 +157,7 @@ else
             fi
             sleep 1
             info "No key found for $device.  Will try $numtries time(s) more later."
-            initqueue --unique --onetime --settled \
+            /sbin/initqueue --unique --onetime --settled \
                 --name cryptroot-ask-"$luksname" \
                 "$(command -v cryptroot-ask)" "$device" "$luksname" "$is_keysource" "$((numtries - 1))"
             exit 0

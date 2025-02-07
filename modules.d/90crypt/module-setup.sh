@@ -36,7 +36,6 @@ installkernel() {
             # get the device name
             name=/dev/$(dmsetup info -c --noheadings -o blkdevname "${name%:}")
             # check if the device exists as a key in our host_fs_types (even with null string)
-            # shellcheck disable=SC2030  # this is a shellcheck bug
             if [[ ${host_fs_types[$name]+_} ]]; then
                 # split the cipher aes-xts-plain64 in pieces
                 IFS='-:' read -ra mods <<< "$cipher"
@@ -54,7 +53,6 @@ installkernel() {
 # called by dracut
 cmdline() {
     local dev UUID
-    # shellcheck disable=SC2031
     for dev in "${!host_fs_types[@]}"; do
         [[ ${host_fs_types[$dev]} != "crypto_LUKS" ]] && continue
 
@@ -129,7 +127,6 @@ install() {
             if [ "${forceentry}" = "yes" ]; then
                 echo "$_mapper $_dev $_luksfile $_luksoptions"
             else
-                # shellcheck disable=SC2031
                 for _hdev in "${!host_fs_types[@]}"; do
                     [[ ${host_fs_types[$_hdev]} == "crypto_LUKS" ]] || continue
                     if [[ $_hdev -ef $_dev ]] || [[ /dev/block/$_hdev -ef $_dev ]]; then
@@ -139,9 +136,16 @@ install() {
                 done
             fi
         done < "$dracutsysrootdir"/etc/crypttab > "$initdir"/etc/crypttab
-        mark_hostonly /etc/crypttab
+
+        # Remove empty /etc/crypttab to allow creating it later
+        if [ -s "$initdir"/etc/crypttab ]; then
+            mark_hostonly /etc/crypttab
+        else
+            rm -f "$initdir"/etc/crypttab
+        fi
     fi
 
+    inst_multiple -o stty
     inst_simple "$moddir/crypt-lib.sh" "/lib/dracut-crypt-lib.sh"
     inst_script "$moddir/crypt-run-generator.sh" "/sbin/crypt-run-generator"
 

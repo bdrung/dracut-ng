@@ -91,7 +91,10 @@ if ! [[ $libdirs ]]; then
         && [[ -d $dracutsysrootdir/lib64 ]]; then
         libdirs+=" /lib64"
         [[ -d $dracutsysrootdir/usr/lib64 ]] && libdirs+=" /usr/lib64"
-    else
+
+    fi
+
+    if [[ -d $dracutsysrootdir/lib ]]; then
         libdirs+=" /lib"
         [[ -d $dracutsysrootdir/usr/lib ]] && libdirs+=" /usr/lib"
     fi
@@ -343,23 +346,6 @@ dracut_instmods() {
     fi
 }
 
-inst_library() {
-    local _ret _hostonly_install
-    if [[ $1 == "-H" ]]; then
-        _hostonly_install="-H"
-        shift
-    fi
-    [[ -e ${initdir}/"${2:-$1}" ]] && return 0 # already there
-    [[ -e $1 ]] || return 1                    # no source
-    if $DRACUT_INSTALL ${dracutsysrootdir:+-r "$dracutsysrootdir"} ${initdir:+-D "$initdir"} ${loginstall:+-L "$loginstall"} ${DRACUT_RESOLVE_DEPS:+-l} ${DRACUT_FIPS_MODE:+-f} ${_hostonly_install:+-H} "$@"; then
-        return 0
-    else
-        _ret=$?
-        derror FAILED: "$DRACUT_INSTALL" ${dracutsysrootdir:+-r "$dracutsysrootdir"} ${initdir:+-D "$initdir"} ${loginstall:+-L "$loginstall"} ${DRACUT_RESOLVE_DEPS:+-l} ${DRACUT_FIPS_MODE:+-f} ${_hostonly_install:+-H} "$@"
-        return $_ret
-    fi
-}
-
 inst_binary() {
     local _ret
     if $DRACUT_INSTALL ${dracutsysrootdir:+-r "$dracutsysrootdir"} ${initdir:+-D "$initdir"} ${loginstall:+-L "$loginstall"} ${DRACUT_RESOLVE_DEPS:+-l} ${DRACUT_FIPS_MODE:+-f} "$@"; then
@@ -382,15 +368,9 @@ inst_script() {
     fi
 }
 
+# empty function for compatibility
 inst_fsck_help() {
-    local _ret _helper="/run/dracut/fsck/fsck_help_$1.txt"
-    if $DRACUT_INSTALL ${dracutsysrootdir:+-r "$dracutsysrootdir"} ${initdir:+-D "$initdir"} ${loginstall:+-L "$loginstall"} ${DRACUT_RESOLVE_DEPS:+-l} ${DRACUT_FIPS_MODE:+-f} "$2" "$_helper"; then
-        return 0
-    else
-        _ret=$?
-        derror "$DRACUT_INSTALL" ${dracutsysrootdir:+-r "$dracutsysrootdir"} ${initdir:+-D "$initdir"} ${loginstall:+-L "$loginstall"} ${DRACUT_RESOLVE_DEPS:+-l} ${DRACUT_FIPS_MODE:+-f} "$2" "$_helper"
-        return $_ret
-    fi
+    :
 }
 
 # Use with form hostonly="$(optional_hostonly)" inst_xxxx <args>
@@ -549,32 +529,6 @@ inst_rules() {
     done
 }
 
-inst_rules_wildcard() {
-    local _target=/etc/udev/rules.d _rule _found
-
-    inst_dir "${udevdir}/rules.d"
-    inst_dir "$_target"
-    for _rule in ${udevdir}/rules.d/$1 ${dracutbasedir}/rules.d/$1; do
-        [[ -e $_rule ]] || continue
-        inst_rule_programs "$_rule"
-        inst_rule_group_owner "$_rule"
-        inst_rule_initqueue "$_rule"
-        inst_simple "$_rule"
-        _found=$_rule
-    done
-    if [[ -n ${hostonly} ]]; then
-        for _rule in ${_target}/$1; do
-            [[ -f $_rule ]] || continue
-            inst_rule_programs "$_rule"
-            inst_rule_group_owner "$_rule"
-            inst_rule_initqueue "$_rule"
-            inst_simple "$_rule"
-            _found=$_rule
-        done
-    fi
-    [[ $_found ]] || ddebug "Skipping udev rule: $_rule"
-}
-
 # make sure that library links are correct and up to date
 build_ld_cache() {
     local dstdir="${dstdir:-"$initdir"}"
@@ -682,10 +636,10 @@ inst_libdir_file() {
 
 # install sysusers files
 inst_sysusers() {
-    inst_multiple -o "$sysusers/$*"
+    inst_multiple -o "$sysusers/$*" "$sysusers/acct-*-$*"
 
     if [[ $hostonly ]]; then
-        inst_multiple -H -o "$sysusersconfdir/$*"
+        inst_multiple -H -o "$sysusersconfdir/$*" "$sysusers/acct-*-$*"
     fi
 }
 
@@ -935,8 +889,10 @@ check_module() {
     [[ $2 ]] || mods_checked_as_dep+=" $_mod "
 
     if [[ " $omit_dracutmodules " == *\ $_mod\ * ]]; then
-        ddebug "Module '$_mod' will not be installed, because it's in the list to be omitted!"
-        return 1
+        if [[ " $force_add_dracutmodules " != *\ $_mod\ * ]]; then
+            ddebug "Module '$_mod' will not be installed, because it's in the list to be omitted!"
+            return 1
+        fi
     fi
 
     if [[ " $dracutmodules $add_dracutmodules $force_add_dracutmodules" == *\ $_mod\ * ]]; then

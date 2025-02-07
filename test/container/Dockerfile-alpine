@@ -1,82 +1,66 @@
-FROM docker.io/alpine:latest
+# Test coverage provided by this container:
+# - default hostonly
+# - musl (instead of glibc)
+# - openrc (instead of systemd)
+# - eudev (instead of systemd-udev)
+# - elogind (instead of logind)
+# - busybox default shell (no dash installed)
+# - gzip compression
+# - dbus-daemon
+# - network: none
 
-# prefer running tests with clang
-ENV CC=clang
+# Not installed
+# - cargo (to increase coverage)
+# - dash (to increase coverage)
+# - ntfs-3g (not enabled with linux-virt)
+# - erofs-utils (not enabled with linux-virt)
+# - multipath-tools (does not work well)
+# - ovmf (systemd-boot-efistub, UEFI, UKI is not available)
+# - kernel-install is not available
+# - networkmanager (does not work with dracut)
 
-# ovmf is not installed as systemd-boot-efistub is not available
-# see https://gitlab.alpinelinux.org/alpine/aports/-/merge_requests/61369
+ARG DISTRIBUTION=alpine
+FROM docker.io/${DISTRIBUTION}
+
+# export ARG
+ARG DISTRIBUTION
+
+# Packages to pass the BASIC test
 RUN apk add --no-cache \
     asciidoc \
-    bash \
-    binutils \
-    blkid \
-    bluez \
+    dracut-tests \
+    file \
+    gcc \
+    kmod \
+    kmod-dev \
+    linux-virt \
+    make \
+    musl-dev \
+    musl-fts-dev
+
+# Packages for all tests, only enabled for alpine:edge
+RUN \
+if [ "$DISTRIBUTION" = "alpine:edge" ] ; then \
+    apk add --no-cache \
     btrfs-progs \
-    busybox \
-    bzip2 \
-    cargo \
-    clang \
-    coreutils \
     cpio \
     cryptsetup \
-    curl \
-    dash \
     device-mapper \
-    dhclient \
-    dmraid \
-    dosfstools \
-    dracut \
-    e2fsprogs \
     elogind \
-    erofs-utils \
-    eudev \
-    file \
-    findmnt \
-    f2fs-tools \
-    gawk \
-    git \
     gpg \
-    grep \
-    iputils \
-    jfsutils \
     jq \
     kbd \
     keyutils \
-    kmod \
-    kmod-dev \
     libcap-utils \
-    linux-virt \
     losetup \
     lvm2 \
-    make \
     mdadm \
-    mtools \
-    multipath-tools \
-    musl-fts-dev \
-    nbd \
-    ntfs-3g \
-    ntfs-3g-progs \
     nvme-cli \
-    open-iscsi \
-    openssh \
     parted \
-    partx \
-    pigz \
-    plymouth \
+    plymouth-themes \
     procps \
-    qemu-img \
-    qemu-system-x86_64 \
-    rng-tools \
-    sed \
-    sfdisk \
     squashfs-tools \
-    sudo \
-    swtpm \
     util-linux-misc \
-    xfsprogs \
-    xz
-
-RUN \
-  cp /usr/lib/udev/rules.d/* /lib/udev/rules.d/ && \
-  ln -sf /sbin/poweroff /sbin/shutdown && \
-  ln -sf /boot/vmlinuz-virt /boot/vmlinuz-$(cd /lib/modules; ls -1 | tail -1)
+    util-linux-login \
+    xorriso \
+; fi

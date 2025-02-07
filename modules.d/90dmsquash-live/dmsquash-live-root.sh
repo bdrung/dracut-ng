@@ -1,8 +1,7 @@
 #!/bin/sh
 
-type getarg > /dev/null 2>&1 || . /lib/dracut-lib.sh
-type det_fs > /dev/null 2>&1 || . /lib/fs-lib.sh
-
+command -v getarg > /dev/null || . /lib/dracut-lib.sh
+command -v det_fs > /dev/null || . /lib/fs-lib.sh
 command -v unpack_archive > /dev/null || . /lib/img-lib.sh
 
 PATH=/usr/sbin:/usr/bin:/sbin:/bin
@@ -26,6 +25,7 @@ squash_image=$(getarg rd.live.squashimg)
 getargbool 0 rd.live.ram && live_ram="yes"
 getargbool 0 rd.live.overlay.reset && reset_overlay="yes"
 getargbool 0 rd.live.overlay.readonly && readonly_overlay="--readonly" || readonly_overlay=""
+getargbool 0 rd.live.overlay.nouserconfirmprompt && overlay_no_user_confirm_prompt="--noprompt" || overlay_no_user_confirm_prompt=""
 overlay=$(getarg rd.live.overlay)
 getargbool 0 rd.writable.fsimg && writable_fsimg="yes"
 overlay_size=$(getarg rd.live.overlay.size=)
@@ -219,7 +219,7 @@ do_live_overlay() {
     fi
 
     if [ -z "$setup" ] || [ -n "$readonly_overlay" ]; then
-        if [ -n "$setup" ]; then
+        if [ -n "$setup" ] || [ -n "$overlay_no_user_confirm_prompt" ]; then
             warn "Using temporary overlay."
         elif [ -n "$devspec" ] && [ -n "$pathspec" ]; then
             [ -z "$m" ] \
@@ -344,7 +344,7 @@ if [ -e "$SQUASHED" ]; then
         elif [ -f /run/initramfs/squashfs/LiveOS/ext3fs.img ]; then
             FSIMG="/run/initramfs/squashfs/LiveOS/ext3fs.img"
         fi
-    elif [ -d /run/initramfs/squashfs/proc ]; then
+    elif [ -d /run/initramfs/squashfs/usr ]; then
         FSIMG=$SQUASHED
         if [ -z "$overlayfs" ] && [ -n "$DRACUT_SYSTEMD" ]; then
             reloadsysrootmountunit=":>/xor_overlayfs;"

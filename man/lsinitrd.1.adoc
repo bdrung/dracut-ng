@@ -1,5 +1,4 @@
-LSINITRD(1)
-=========
+= LSINITRD(1)
 :doctype: manpage
 :man source:   dracut
 :man manual:   dracut
@@ -65,4 +64,4 @@ Nikoli
 
 SEE ALSO
 --------
-*dracut*(8)
+man:dracut[8]

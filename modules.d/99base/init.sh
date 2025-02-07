@@ -17,6 +17,7 @@ export PATH
 
 # mount some important things
 if [ ! -d /proc/self ]; then
+    mkdir -m 0755 -p /proc
     if ! mount -t proc -o nosuid,noexec,nodev proc /proc > /dev/null; then
         echo "Cannot mount proc on /proc! Compile the kernel with CONFIG_PROC_FS!"
         exit 1
@@ -24,6 +25,7 @@ if [ ! -d /proc/self ]; then
 fi
 
 if [ ! -d /sys/kernel ]; then
+    mkdir -m 0755 -p /sys
     if ! mount -t sysfs -o nosuid,noexec,nodev sysfs /sys > /dev/null; then
         echo "Cannot mount sysfs on /sys! Compile the kernel with CONFIG_SYSFS!"
         exit 1
@@ -31,11 +33,12 @@ if [ ! -d /sys/kernel ]; then
 fi
 
 RD_DEBUG=""
-. /lib/dracut-lib.sh
+command -v getarg > /dev/null || . /lib/dracut-lib.sh
 
 setdebug
 
 if ! ismounted /dev; then
+    mkdir -m 0755 -p /dev
     mount -t devtmpfs -o mode=0755,noexec,nosuid,strictatime devtmpfs /dev > /dev/null
 fi
 
@@ -90,9 +93,8 @@ fi
 
 trap "emergency_shell Signal caught!" 0
 
-export UDEVRULESD=/run/udev/rules.d
 [ -d /run/udev ] || mkdir -p -m 0755 /run/udev
-[ -d "$UDEVRULESD" ] || mkdir -p -m 0755 "$UDEVRULESD"
+[ -d /run/udev/rules.d ] || mkdir -p -m 0755 /run/udev/rules.d
 
 if [ "$RD_DEBUG" = "yes" ]; then
     mkfifo /run/initramfs/loginit.pipe

@@ -1,67 +1,64 @@
+# Test coverage provided by this container:
+# - arm64
+# - dash default shell (instead of bash)
+# - runit (instead of systemd)
+# - eudev (instead of systemd-udev)
+# - elogind (instead of logind)
+# - UEFI boot, UKI (without systemd)
+# - zfs and zfs out of tree dracut module
+# - gzip compression
+# - clang
+# - dbus-daemon
+# - network: network-legacy, network-manager
+
+# Not installed
+# - kernel-install is not available
+
 FROM ghcr.io/void-linux/void-glibc-full
+
+# prefer running tests with zfs and clang
+ENV TEST_FSTYPE=zfs
+ENV CC=clang
 
 RUN xbps-install -Syu xbps && xbps-install -yu \
     asciidoc \
-    astyle \
-    base-devel \
     bash \
     binutils \
-    bluez \
     btrfs-progs \
-    busybox \
     cargo \
-    cifs-utils \
-    connman \
+    clang \
     cpio \
     cryptsetup \
-    curl \
-    dash \
     dhclient \
     dhcp \
-    dmraid \
-    dosfstools \
     e2fsprogs \
     edk2-ovmf \
     elfutils \
     elogind \
     erofs-utils \
     eudev \
-    f2fs-tools \
-    git \
     glibc \
     gnupg \
+    iproute2 \
     iputils \
-    jfsutils \
     jq \
     kbd \
     libkmod-devel \
     linux \
     lvm2 \
-    lzop \
     make \
     mdadm \
-    mtools \
-    nbd \
-    NetworkManager \
     nfs-utils \
-    ntfs-3g \
     nvme-cli \
-    open-iscsi \
-    openssh \
     parted \
-    pigz \
+    pkg-config \
     plymouth \
     qemu \
-    rng-tools \
-    sbsigntool \
-    shellcheck \
-    shfmt \
     squashfs-tools \
-    swtpm \
     systemd-boot-efistub \
-    tgt \
-    tpm2-tools \
+    ncurses-base \
     ukify \
-    xfsprogs \
-    xz \
-    && rm -rf /var/cache/xbps
+    xorriso \
+    zfs \
+    && rm -rf /var/cache/xbps \
+    && rm -rf /usr/lib/firmware

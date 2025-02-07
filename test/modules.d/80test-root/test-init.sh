@@ -18,6 +18,10 @@ grep -q '^tmpfs /run tmpfs' /proc/self/mounts \
 
 exec > /dev/console 2>&1
 
+if command -v systemctl > /dev/null 2>&1; then
+    systemctl --failed --no-legend --no-pager >> /run/failed
+fi
+
 if [ -s /run/failed ]; then
     echo "**************************FAILED**************************"
     cat /run/failed
@@ -29,4 +33,11 @@ fi
 
 echo "made it to the rootfs!"
 echo "Powering down."
-poweroff -f
+
+if [ -d /usr/lib/systemd/system ]; then
+    # graceful poweroff
+    systemctl poweroff
+else
+    # force immediate poweroff
+    poweroff -f
+fi
