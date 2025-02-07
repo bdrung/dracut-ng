@@ -13,7 +13,6 @@ usr/lib/dracut/dracut-util
 usr/lib/dracut/dracut-version.sh
 usr/lib/dracut/modules.d/00bash
 usr/lib/dracut/modules.d/00dash
-usr/lib/dracut/modules.d/00shell-interpreter
 usr/lib/dracut/modules.d/00systemd
 usr/lib/dracut/modules.d/00warpclock
 usr/lib/dracut/modules.d/01fips
@@ -109,6 +108,7 @@ usr/lib/dracut/modules.d/99base
 usr/lib/dracut/modules.d/99busybox
 usr/lib/dracut/modules.d/99fs-lib
 usr/lib/dracut/modules.d/99memstrack
+usr/lib/dracut/modules.d/99shell-interpreter
 usr/lib/dracut/modules.d/99shutdown
 usr/lib/dracut/skipcpio
 usr/lib/kernel/install.d
