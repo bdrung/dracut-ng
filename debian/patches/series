@@ -2,3 +2,4 @@ udevsettle
 debian-initramfs-post-update.patch
 Default-initrdname-to-initrd.img-kernel.patch
 test-log-error-when-constructing-sysroot.patch
+test-FULL-SYSTEMD-skip-systemd-network-management-if-miss.patch
