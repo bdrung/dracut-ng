@@ -36,7 +36,6 @@ usr/lib/dracut/modules.d/01systemd-repart
 usr/lib/dracut/modules.d/01systemd-resolved
 usr/lib/dracut/modules.d/01systemd-sysctl
 usr/lib/dracut/modules.d/01systemd-sysext
-usr/lib/dracut/modules.d/01systemd-sysusers
 usr/lib/dracut/modules.d/01systemd-timedated
 usr/lib/dracut/modules.d/01systemd-timesyncd
 usr/lib/dracut/modules.d/01systemd-tmpfiles
@@ -55,6 +54,7 @@ usr/lib/dracut/modules.d/10i18n
 usr/lib/dracut/modules.d/30convertfs
 usr/lib/dracut/modules.d/45drm
 usr/lib/dracut/modules.d/45plymouth
+usr/lib/dracut/modules.d/60systemd-sysusers
 usr/lib/dracut/modules.d/62bluetooth
 usr/lib/dracut/modules.d/80lvmmerge
 usr/lib/dracut/modules.d/80lvmthinpool-monitor
