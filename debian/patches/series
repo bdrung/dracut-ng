@@ -1,11 +1,3 @@
-makefile
 udevsettle
 debian-initramfs-post-update.patch
 Default-initrdname-to-initrd.img-kernel.patch
-fix-01fips-crypto-policies-use-bin-in-shebang.patch
-test-decrease-default-VM-memory-size-to-1-GiB.patch
-fix-iscsi-include-usr-lib-open-iscsi-startup-checks.sh-if.patch
-fix-dracut-init-add-compatibility-with-Debian-Ubuntu-for-.patch
-test-introduce-wait_for_server_startup.patch
-test-fail-test-if-server-has-terminated.patch
-test-print-all-server-startup-logs-in-V-1-or-V-2-mode.patch
