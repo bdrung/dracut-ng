@@ -33,7 +33,7 @@ Depends: btrfs-progs,
          systemd-ukify,
          util-linux,
          zstd
-Restrictions: allow-stderr
+Restrictions: allow-stderr, needs-root
 Features: test-name=upstream-dracut-core
 
 Architecture: amd64
@@ -56,7 +56,7 @@ Depends: btrfs-progs,
          systemd-sysv,
          util-linux,
          zstd
-Restrictions: allow-stderr
+Restrictions: allow-stderr, needs-root
 Features: test-name=upstream-dracut-live
 
 Architecture: amd64
@@ -81,7 +81,7 @@ Depends: dracut-live,
          sysvinit-utils,
          util-linux,
          zstd
-Restrictions: allow-stderr
+Restrictions: allow-stderr, needs-root
 Features: test-name=upstream-dracut-network-nfs
 
 Architecture: amd64
@@ -109,5 +109,5 @@ Depends: cryptsetup,
          systemd-sysv,
          util-linux,
          zstd
-Restrictions: allow-stderr
+Restrictions: allow-stderr, needs-root
 Features: test-name=upstream-dracut-network-nbd
