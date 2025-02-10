@@ -1,0 +1,55 @@
+From: Benjamin Drung <benjamin.drung@canonical.com>
+Date: Mon, 10 Feb 2025 10:52:40 +0100
+Subject: test(ISCSI): skip root=ibft if qemu -acpitable is not supported
+
+Several architectures do not support the qemu option `-acpitable`. Skip
+the `root=ibft` in this case.
+
+Forwarded: https://github.com/dracut-ng/dracut-ng/pull/1216
+---
+ test/TEST-70-ISCSI/test.sh | 14 +++++++++-----
+ test/run-qemu              |  6 ++++++
+ 2 files changed, 15 insertions(+), 5 deletions(-)
+
+diff --git a/test/TEST-70-ISCSI/test.sh b/test/TEST-70-ISCSI/test.sh
+index 6af7094..616a84c 100755
+--- a/test/TEST-70-ISCSI/test.sh
++++ b/test/TEST-70-ISCSI/test.sh
+@@ -90,11 +90,15 @@ do_test_run() {
+         "rd.iscsi.initiator=$initiator" \
+         || return 1
+ 
+-    run_client "root=ibft" "ibft.table" \
+-        "root=LABEL=singleroot" \
+-        "rd.iscsi.ibft=1" \
+-        "rd.iscsi.firmware=1" \
+-        || return 1
++    if "$testdir"/run-qemu --supports -acpitable; then
++        run_client "root=ibft" "ibft.table" \
++            "root=LABEL=singleroot" \
++            "rd.iscsi.ibft=1" \
++            "rd.iscsi.firmware=1" \
++            || return 1
++    else
++        echo "CLIENT TEST: root=ibft [SKIPPED]"
++    fi
+ 
+     echo "All tests passed [OK]"
+     return 0
+diff --git a/test/run-qemu b/test/run-qemu
+index 14a393b..0f68e04 100755
+--- a/test/run-qemu
++++ b/test/run-qemu
+@@ -21,6 +21,12 @@ QEMU_CPU="${QEMU_CPU:-max}"
+     exit 1
+ }
+ 
++if test "${1-}" = "--supports"; then
++    option="$2"
++    "$BIN" -help | grep -q "^$option"
++    exit 0
++fi
++
+ case "$ARCH" in
+     aarch64 | arm64)
+         ARGS+=(-M "virt,gic-version=max")
