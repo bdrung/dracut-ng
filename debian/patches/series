@@ -8,3 +8,4 @@ test-use-set-eu-in-run-qemu.patch
 test-ISCSI-skip-root-ibft-if-qemu-acpitable-is-not-suppor.patch
 test-FULL-SYSTEMD-make-smbios-option-a-parameter-of-run_c.patch
 test-FULL-SYSTEMD-skip-encrypted-root-if-qemu-smbios-is-n.patch
+test-use-persistent-names-for-network-devices.patch

@@ -1,0 +1,385 @@
+From: Benjamin Drung <benjamin.drung@canonical.com>
+Date: Tue, 11 Feb 2025 18:05:36 +0100
+Subject: test: use persistent names for network devices
+
+TEST-70-ISCSI fails on Ubuntu s390x because the network device is named
+`enc0` instead of `enp0s1`:
+
+```
+CLIENT TEST START: NBD root=nbd:IP:port
+[...]
+[   36.084991] virtio_net virtio2 enc0: renamed from eth0
+```
+
+So use persistent names for network devices by mapping the MAC address
+to a name.
+
+Forwarded: https://github.com/dracut-ng/dracut-ng/pull/1222
+---
+ test/TEST-61-MULTINIC/client-persistent-lan0.link  |  5 +++
+ test/TEST-61-MULTINIC/client-persistent-lan1.link  |  5 +++
+ test/TEST-61-MULTINIC/client-persistent-lan2.link  |  5 +++
+ .../TEST-61-MULTINIC/client-persistent-lan254.link |  5 +++
+ .../TEST-61-MULTINIC/client-persistent-lan255.link |  5 +++
+ test/TEST-61-MULTINIC/client-persistent-lan98.link |  5 +++
+ test/TEST-61-MULTINIC/client-persistent-lan99.link |  5 +++
+ test/TEST-61-MULTINIC/client.link                  |  6 ----
+ test/TEST-61-MULTINIC/test.sh                      | 38 +++++++++++++---------
+ test/TEST-70-ISCSI/client-persistent-lan0.link     |  5 +++
+ test/TEST-70-ISCSI/client-persistent-lan1.link     |  5 +++
+ test/TEST-70-ISCSI/client.link                     |  6 ----
+ test/TEST-70-ISCSI/test.sh                         |  7 ++--
+ .../client-persistent-lan0.link                    |  5 +++
+ .../client-persistent-lan1.link                    |  5 +++
+ test/TEST-71-ISCSI-MULTI/client.link               |  6 ----
+ test/TEST-71-ISCSI-MULTI/test.sh                   | 19 ++++++-----
+ 17 files changed, 91 insertions(+), 46 deletions(-)
+ create mode 100644 test/TEST-61-MULTINIC/client-persistent-lan0.link
+ create mode 100644 test/TEST-61-MULTINIC/client-persistent-lan1.link
+ create mode 100644 test/TEST-61-MULTINIC/client-persistent-lan2.link
+ create mode 100644 test/TEST-61-MULTINIC/client-persistent-lan254.link
+ create mode 100644 test/TEST-61-MULTINIC/client-persistent-lan255.link
+ create mode 100644 test/TEST-61-MULTINIC/client-persistent-lan98.link
+ create mode 100644 test/TEST-61-MULTINIC/client-persistent-lan99.link
+ delete mode 100644 test/TEST-61-MULTINIC/client.link
+ create mode 100644 test/TEST-70-ISCSI/client-persistent-lan0.link
+ create mode 100644 test/TEST-70-ISCSI/client-persistent-lan1.link
+ delete mode 100644 test/TEST-70-ISCSI/client.link
+ create mode 100644 test/TEST-71-ISCSI-MULTI/client-persistent-lan0.link
+ create mode 100644 test/TEST-71-ISCSI-MULTI/client-persistent-lan1.link
+ delete mode 100644 test/TEST-71-ISCSI-MULTI/client.link
+
+diff --git a/test/TEST-61-MULTINIC/client-persistent-lan0.link b/test/TEST-61-MULTINIC/client-persistent-lan0.link
+new file mode 100644
+index 0000000..0ad736a
+--- /dev/null
++++ b/test/TEST-61-MULTINIC/client-persistent-lan0.link
+@@ -0,0 +1,5 @@
++[Match]
++MACAddress=52:54:00:12:34:00
++
++[Link]
++Name=lan0
+diff --git a/test/TEST-61-MULTINIC/client-persistent-lan1.link b/test/TEST-61-MULTINIC/client-persistent-lan1.link
+new file mode 100644
+index 0000000..229fdf6
+--- /dev/null
++++ b/test/TEST-61-MULTINIC/client-persistent-lan1.link
+@@ -0,0 +1,5 @@
++[Match]
++MACAddress=52:54:00:12:34:01
++
++[Link]
++Name=lan1
+diff --git a/test/TEST-61-MULTINIC/client-persistent-lan2.link b/test/TEST-61-MULTINIC/client-persistent-lan2.link
+new file mode 100644
+index 0000000..26df482
+--- /dev/null
++++ b/test/TEST-61-MULTINIC/client-persistent-lan2.link
+@@ -0,0 +1,5 @@
++[Match]
++MACAddress=52:54:00:12:34:02
++
++[Link]
++Name=lan2
+diff --git a/test/TEST-61-MULTINIC/client-persistent-lan254.link b/test/TEST-61-MULTINIC/client-persistent-lan254.link
+new file mode 100644
+index 0000000..cc1a804
+--- /dev/null
++++ b/test/TEST-61-MULTINIC/client-persistent-lan254.link
+@@ -0,0 +1,5 @@
++[Match]
++MACAddress=52:54:00:12:34:fe
++
++[Link]
++Name=lan254
+diff --git a/test/TEST-61-MULTINIC/client-persistent-lan255.link b/test/TEST-61-MULTINIC/client-persistent-lan255.link
+new file mode 100644
+index 0000000..dae8c81
+--- /dev/null
++++ b/test/TEST-61-MULTINIC/client-persistent-lan255.link
+@@ -0,0 +1,5 @@
++[Match]
++MACAddress=52:54:00:12:34:ff
++
++[Link]
++Name=lan255
+diff --git a/test/TEST-61-MULTINIC/client-persistent-lan98.link b/test/TEST-61-MULTINIC/client-persistent-lan98.link
+new file mode 100644
+index 0000000..0878174
+--- /dev/null
++++ b/test/TEST-61-MULTINIC/client-persistent-lan98.link
+@@ -0,0 +1,5 @@
++[Match]
++MACAddress=52:54:00:12:34:98
++
++[Link]
++Name=lan98
+diff --git a/test/TEST-61-MULTINIC/client-persistent-lan99.link b/test/TEST-61-MULTINIC/client-persistent-lan99.link
+new file mode 100644
+index 0000000..a4668fa
+--- /dev/null
++++ b/test/TEST-61-MULTINIC/client-persistent-lan99.link
+@@ -0,0 +1,5 @@
++[Match]
++MACAddress=52:54:00:12:34:99
++
++[Link]
++Name=lan99
+diff --git a/test/TEST-61-MULTINIC/client.link b/test/TEST-61-MULTINIC/client.link
+deleted file mode 100644
+index b992bfd..0000000
+--- a/test/TEST-61-MULTINIC/client.link
++++ /dev/null
+@@ -1,6 +0,0 @@
+-[Match]
+-OriginalName=*
+-
+-[Link]
+-NamePolicy=keep kernel database onboard slot path
+-MACAddressPolicy=keep
+diff --git a/test/TEST-61-MULTINIC/test.sh b/test/TEST-61-MULTINIC/test.sh
+index 56efa50..487c177 100755
+--- a/test/TEST-61-MULTINIC/test.sh
++++ b/test/TEST-61-MULTINIC/test.sh
+@@ -130,46 +130,46 @@ test_client() {
+     client_test "MULTINIC root=nfs BOOTIF=" \
+         00 01 02 \
+         "root=nfs:192.168.50.1:/nfs/client BOOTIF=52-54-00-12-34-00" \
+-        "enp0s1" || return 1
++        "lan0" || return 1
+ 
+-    client_test "MULTINIC root=nfs BOOTIF= ip=enp0s3:dhcp" \
++    client_test "MULTINIC root=nfs BOOTIF= ip=lan2:dhcp" \
+         00 01 02 \
+-        "root=nfs:192.168.50.1:/nfs/client BOOTIF=52-54-00-12-34-00 ip=enp0s2:dhcp" \
+-        "enp0s1 enp0s2" || return 1
++        "root=nfs:192.168.50.1:/nfs/client BOOTIF=52-54-00-12-34-00 ip=lan1:dhcp" \
++        "lan0 lan1" || return 1
+ 
+     # PXE Style BOOTIF= with dhcp root-path
+     client_test "MULTINIC root=dhcp BOOTIF=" \
+         00 01 02 \
+         "root=dhcp BOOTIF=52-54-00-12-34-02" \
+-        "enp0s3" || return 1
++        "lan2" || return 1
+ 
+     # Multinic case, where only one nic works
+     client_test "MULTINIC root=nfs ip=dhcp" \
+         FF 00 FE \
+         "root=nfs:192.168.50.1:/nfs/client ip=dhcp" \
+-        "enp0s2" || return 1
++        "lan0" || return 1
+ 
+     # Require two interfaces
+-    client_test "MULTINIC root=nfs ip=enp0s2:dhcp ip=enp0s3:dhcp bootdev=enp0s2" \
++    client_test "MULTINIC root=nfs ip=lan1:dhcp ip=lan2:dhcp bootdev=lan1" \
+         00 01 02 \
+-        "root=nfs:192.168.50.1:/nfs/client ip=enp0s2:dhcp ip=enp0s3:dhcp bootdev=enp0s2" \
+-        "enp0s2 enp0s3" || return 1
++        "root=nfs:192.168.50.1:/nfs/client ip=lan1:dhcp ip=lan2:dhcp bootdev=lan1" \
++        "lan1 lan2" || return 1
+ 
+     # Require three interfaces with dhcp root-path
+-    client_test "MULTINIC root=dhcp ip=enp0s1:dhcp ip=enp0s2:dhcp ip=enp0s3:dhcp bootdev=enp0s3" \
++    client_test "MULTINIC root=dhcp ip=lan0:dhcp ip=lan1:dhcp ip=lan2:dhcp bootdev=lan2" \
+         00 01 02 \
+-        "root=dhcp ip=enp0s1:dhcp ip=enp0s2:dhcp ip=enp0s3:dhcp bootdev=enp0s3" \
+-        "enp0s1 enp0s2 enp0s3" || return 1
++        "root=dhcp ip=lan0:dhcp ip=lan1:dhcp ip=lan2:dhcp bootdev=lan2" \
++        "lan0 lan1 lan2" || return 1
+ 
+     client_test "MULTINIC bonding" \
+         00 01 02 \
+-        "root=nfs:192.168.50.1:/nfs/client ip=bond0:dhcp  bond=bond0:enp0s1,enp0s2,enp0s3:mode=balance-rr" \
++        "root=nfs:192.168.50.1:/nfs/client ip=bond0:dhcp  bond=bond0:lan0,lan1,lan2:mode=balance-rr" \
+         "bond0" || return 1
+ 
+     # bridge, where only one interface is actually connected
+     client_test "MULTINIC bridging" \
+         00 01 02 \
+-        "root=nfs:192.168.50.1:/nfs/client ip=bridge0:dhcp::52:54:00:12:34:00 bridge=bridge0:enp0s1,enp0s5,enp0s6" \
++        "root=nfs:192.168.50.1:/nfs/client ip=bridge0:dhcp::52:54:00:12:34:00 bridge=bridge0:lan0,lan98,lan99" \
+         "bridge0" || return 1
+     return 0
+ }
+@@ -329,7 +329,13 @@ test_setup() {
+         inst_multiple poweroff shutdown
+         inst_hook shutdown-emergency 000 ./hard-off.sh
+         inst_hook emergency 000 ./hard-off.sh
+-        inst_simple ./client.link /etc/systemd/network/01-client.link
++        inst_simple ./client-persistent-lan0.link /etc/systemd/network/01-persistent-lan0.link
++        inst_simple ./client-persistent-lan1.link /etc/systemd/network/01-persistent-lan1.link
++        inst_simple ./client-persistent-lan2.link /etc/systemd/network/01-persistent-lan2.link
++        inst_simple ./client-persistent-lan98.link /etc/systemd/network/01-persistent-lan98.link
++        inst_simple ./client-persistent-lan99.link /etc/systemd/network/01-persistent-lan99.link
++        inst_simple ./client-persistent-lan254.link /etc/systemd/network/01-persistent-lan254.link
++        inst_simple ./client-persistent-lan255.link /etc/systemd/network/01-persistent-lan255.link
+ 
+         inst_binary awk
+     )
+@@ -343,7 +349,7 @@ test_setup() {
+         export initdir="$TESTDIR"/overlay
+         # shellcheck disable=SC1090
+         . "$PKGLIBDIR"/dracut-init.sh
+-        rm "$initdir"/etc/systemd/network/01-client.link
++        rm "$initdir"/etc/systemd/network/01-persistent-lan*.link
+         inst_simple ./server.link /etc/systemd/network/01-server.link
+         inst_hook pre-mount 99 ./wait-if-server.sh
+     )
+diff --git a/test/TEST-70-ISCSI/client-persistent-lan0.link b/test/TEST-70-ISCSI/client-persistent-lan0.link
+new file mode 100644
+index 0000000..0ad736a
+--- /dev/null
++++ b/test/TEST-70-ISCSI/client-persistent-lan0.link
+@@ -0,0 +1,5 @@
++[Match]
++MACAddress=52:54:00:12:34:00
++
++[Link]
++Name=lan0
+diff --git a/test/TEST-70-ISCSI/client-persistent-lan1.link b/test/TEST-70-ISCSI/client-persistent-lan1.link
+new file mode 100644
+index 0000000..229fdf6
+--- /dev/null
++++ b/test/TEST-70-ISCSI/client-persistent-lan1.link
+@@ -0,0 +1,5 @@
++[Match]
++MACAddress=52:54:00:12:34:01
++
++[Link]
++Name=lan1
+diff --git a/test/TEST-70-ISCSI/client.link b/test/TEST-70-ISCSI/client.link
+deleted file mode 100644
+index b992bfd..0000000
+--- a/test/TEST-70-ISCSI/client.link
++++ /dev/null
+@@ -1,6 +0,0 @@
+-[Match]
+-OriginalName=*
+-
+-[Link]
+-NamePolicy=keep kernel database onboard slot path
+-MACAddressPolicy=keep
+diff --git a/test/TEST-70-ISCSI/test.sh b/test/TEST-70-ISCSI/test.sh
+index 616a84c..a7d318b 100755
+--- a/test/TEST-70-ISCSI/test.sh
++++ b/test/TEST-70-ISCSI/test.sh
+@@ -72,13 +72,13 @@ do_test_run() {
+     initiator=$(iscsi-iname)
+ 
+     run_client "root=dhcp" "" \
+-        "root=/dev/root netroot=dhcp ip=enp0s1:dhcp" \
++        "root=/dev/root netroot=dhcp ip=lan0:dhcp" \
+         "rd.iscsi.initiator=$initiator" \
+         || return 1
+ 
+     run_client "netroot=iscsi target0" "" \
+         "root=LABEL=singleroot netroot=iscsi:192.168.50.1::::iqn.2009-06.dracut:target0" \
+-        "ip=192.168.50.101::192.168.50.1:255.255.255.0:iscsi-1:enp0s1:off" \
++        "ip=192.168.50.101::192.168.50.1:255.255.255.0:iscsi-1:lan0:off" \
+         "rd.iscsi.initiator=$initiator" \
+         || return 1
+ 
+@@ -222,7 +222,8 @@ test_setup() {
+     test_dracut \
+         --no-hostonly --no-hostonly-cmdline \
+         --add "$USE_NETWORK" \
+-        --include "./client.link" "/etc/systemd/network/01-client.link" \
++        --include "./client-persistent-lan0.link" "/etc/systemd/network/01-persistent-lan0.link" \
++        --include "./client-persistent-lan1.link" "/etc/systemd/network/01-persistent-lan1.link" \
+         --kernel-cmdline "rw rd.auto"
+ }
+ 
+diff --git a/test/TEST-71-ISCSI-MULTI/client-persistent-lan0.link b/test/TEST-71-ISCSI-MULTI/client-persistent-lan0.link
+new file mode 100644
+index 0000000..0ad736a
+--- /dev/null
++++ b/test/TEST-71-ISCSI-MULTI/client-persistent-lan0.link
+@@ -0,0 +1,5 @@
++[Match]
++MACAddress=52:54:00:12:34:00
++
++[Link]
++Name=lan0
+diff --git a/test/TEST-71-ISCSI-MULTI/client-persistent-lan1.link b/test/TEST-71-ISCSI-MULTI/client-persistent-lan1.link
+new file mode 100644
+index 0000000..229fdf6
+--- /dev/null
++++ b/test/TEST-71-ISCSI-MULTI/client-persistent-lan1.link
+@@ -0,0 +1,5 @@
++[Match]
++MACAddress=52:54:00:12:34:01
++
++[Link]
++Name=lan1
+diff --git a/test/TEST-71-ISCSI-MULTI/client.link b/test/TEST-71-ISCSI-MULTI/client.link
+deleted file mode 100644
+index b992bfd..0000000
+--- a/test/TEST-71-ISCSI-MULTI/client.link
++++ /dev/null
+@@ -1,6 +0,0 @@
+-[Match]
+-OriginalName=*
+-
+-[Link]
+-NamePolicy=keep kernel database onboard slot path
+-MACAddressPolicy=keep
+diff --git a/test/TEST-71-ISCSI-MULTI/test.sh b/test/TEST-71-ISCSI-MULTI/test.sh
+index ed79d69..9dcd8c0 100755
+--- a/test/TEST-71-ISCSI-MULTI/test.sh
++++ b/test/TEST-71-ISCSI-MULTI/test.sh
+@@ -67,8 +67,8 @@ do_test_run() {
+     initiator=$(iscsi-iname)
+     run_client "netroot=iscsi target1 target2" \
+         "root=LABEL=sysroot" \
+-        "ip=192.168.50.101:::255.255.255.0::enp0s1:off" \
+-        "ip=192.168.51.101:::255.255.255.0::enp0s2:off" \
++        "ip=192.168.50.101:::255.255.255.0::lan0:off" \
++        "ip=192.168.51.101:::255.255.255.0::lan1:off" \
+         "netroot=iscsi:192.168.51.1::::iqn.2009-06.dracut:target1" \
+         "netroot=iscsi:192.168.50.1::::iqn.2009-06.dracut:target2" \
+         "rd.iscsi.initiator=$initiator" \
+@@ -76,8 +76,8 @@ do_test_run() {
+ 
+     run_client "netroot=iscsi target1 target2 rd.iscsi.waitnet=0" \
+         "root=LABEL=sysroot" \
+-        "ip=192.168.50.101:::255.255.255.0::enp0s1:off" \
+-        "ip=192.168.51.101:::255.255.255.0::enp0s2:off" \
++        "ip=192.168.50.101:::255.255.255.0::lan0:off" \
++        "ip=192.168.51.101:::255.255.255.0::lan1:off" \
+         "netroot=iscsi:192.168.51.1::::iqn.2009-06.dracut:target1" \
+         "netroot=iscsi:192.168.50.1::::iqn.2009-06.dracut:target2" \
+         "rd.iscsi.firmware" \
+@@ -87,8 +87,8 @@ do_test_run() {
+ 
+     run_client "netroot=iscsi target1 target2 rd.iscsi.waitnet=0 rd.iscsi.testroute=0" \
+         "root=LABEL=sysroot" \
+-        "ip=192.168.50.101:::255.255.255.0::enp0s1:off" \
+-        "ip=192.168.51.101:::255.255.255.0::enp0s2:off" \
++        "ip=192.168.50.101:::255.255.255.0::lan0:off" \
++        "ip=192.168.51.101:::255.255.255.0::lan1:off" \
+         "netroot=iscsi:192.168.51.1::::iqn.2009-06.dracut:target1" \
+         "netroot=iscsi:192.168.50.1::::iqn.2009-06.dracut:target2" \
+         "rd.iscsi.firmware" \
+@@ -98,8 +98,8 @@ do_test_run() {
+ 
+     run_client "netroot=iscsi target1 target2 rd.iscsi.waitnet=0 rd.iscsi.testroute=0 default GW" \
+         "root=LABEL=sysroot" \
+-        "ip=192.168.50.101::192.168.50.1:255.255.255.0::enp0s1:off" \
+-        "ip=192.168.51.101::192.168.51.1:255.255.255.0::enp0s2:off" \
++        "ip=192.168.50.101::192.168.50.1:255.255.255.0::lan0:off" \
++        "ip=192.168.51.101::192.168.51.1:255.255.255.0::lan1:off" \
+         "netroot=iscsi:192.168.51.1::::iqn.2009-06.dracut:target1" \
+         "netroot=iscsi:192.168.50.1::::iqn.2009-06.dracut:target2" \
+         "rd.iscsi.firmware" \
+@@ -223,7 +223,8 @@ test_setup() {
+     test_dracut \
+         --no-hostonly --no-hostonly-cmdline \
+         --add "$USE_NETWORK" \
+-        -i "./client.link" "/etc/systemd/network/01-client.link"
++        -i ./client-persistent-lan0.link /etc/systemd/network/01-persistent-lan0.link \
++        -i ./client-persistent-lan1.link /etc/systemd/network/01-persistent-lan1.link
+ 
+     # Make server's dracut image
+     "$DRACUT" -i "$TESTDIR"/overlay / \
