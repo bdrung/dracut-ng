@@ -1,4 +1,5 @@
-usr/lib/dracut/dracut.conf.d/*
+usr/lib/dracut/dracut.conf.d/*.conf.example
+usr/lib/dracut/dracut.conf.d/test*
 # dh_missing is complaining about some symlinks
 usr/lib/systemd/system/*.service
 usr/lib/systemd/system/initrd.target.wants/*.service

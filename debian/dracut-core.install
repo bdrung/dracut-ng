@@ -11,6 +11,14 @@ usr/lib/dracut/dracut-initramfs-restore
 usr/lib/dracut/dracut-logger.sh
 usr/lib/dracut/dracut-util
 usr/lib/dracut/dracut-version.sh
+usr/lib/dracut/dracut.conf.d/fips
+usr/lib/dracut/dracut.conf.d/generic
+usr/lib/dracut/dracut.conf.d/hostonly
+usr/lib/dracut/dracut.conf.d/ima
+usr/lib/dracut/dracut.conf.d/no-network
+usr/lib/dracut/dracut.conf.d/no-xattr
+usr/lib/dracut/dracut.conf.d/rescue
+usr/lib/dracut/dracut.conf.d/uki-virt
 usr/lib/dracut/modules.d/00bash
 usr/lib/dracut/modules.d/00dash
 usr/lib/dracut/modules.d/00systemd
