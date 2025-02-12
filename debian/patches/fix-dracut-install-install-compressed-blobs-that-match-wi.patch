@@ -1,0 +1,92 @@
+From: You-Sheng Yang <vicamo.yang@canonical.com>
+Date: Wed, 22 Jan 2025 23:37:53 +0800
+Subject: fix(dracut-install): install compressed blobs that match wildcard
+ fwpath
+
+dracut-install tries to invoke `glob()` with full path expanded from
+"intel/ish/ish_*.bin", but while all the binaries were compressed, this
+matches no file and none of the custom ISH firmware blobs will be
+installed.
+
+Closes: #1150
+Bug-Ubuntu: https://bugs.launchpad.net/bugs/2095518
+Forwarded: https://github.com/dracut-ng/dracut-ng/pull/1152
+Signed-off-by: You-Sheng Yang <vicamo.yang@canonical.com>
+---
+ src/install/dracut-install.c | 42 ++++++++++++++++++++++++++++++++----------
+ 1 file changed, 32 insertions(+), 10 deletions(-)
+
+diff --git a/src/install/dracut-install.c b/src/install/dracut-install.c
+index 96bc2eb..bacbe86 100644
+--- a/src/install/dracut-install.c
++++ b/src/install/dracut-install.c
+@@ -1437,12 +1437,15 @@ static int install_all(int argc, char **argv)
+         return r;
+ }
+ 
+-static int install_firmware_fullpath(const char *fwpath)
++static int install_firmware_fullpath(const char *fwpath, bool maybe_compressed)
+ {
+         const char *fw = fwpath;
+         _cleanup_free_ char *fwpath_compressed = NULL;
+         int ret;
+         if (access(fwpath, F_OK) != 0) {
++                if (!maybe_compressed)
++                        return 1;
++
+                 _asprintf(&fwpath_compressed, "%s.zst", fwpath);
+                 if (access(fwpath_compressed, F_OK) != 0) {
+                         strcpy(fwpath_compressed + strlen(fwpath) + 1, "xz");
+@@ -1460,6 +1463,23 @@ static int install_firmware_fullpath(const char *fwpath)
+         return ret;
+ }
+ 
++static bool install_firmware_glob(const char *fwpath)
++{
++        size_t i;
++        _cleanup_globfree_ glob_t globbuf;
++        bool found = false;
++        int ret;
++
++        glob(fwpath, 0, NULL, &globbuf);
++        for (i = 0; i < globbuf.gl_pathc; i++) {
++                ret = install_firmware_fullpath(globbuf.gl_pathv[i], false);
++                if (ret == 0)
++                        found = true;
++        }
++
++        return found;
++}
++
+ static int install_firmware(struct kmod_module *mod)
+ {
+         struct kmod_list *l = NULL;
+@@ -1490,17 +1510,19 @@ static int install_firmware(struct kmod_module *mod)
+ 
+                         if (strpbrk(value, "*?[") != NULL
+                             && access(fwpath, F_OK) != 0) {
+-                                size_t i;
+-                                _cleanup_globfree_ glob_t globbuf;
+-
+-                                glob(fwpath, 0, NULL, &globbuf);
+-                                for (i = 0; i < globbuf.gl_pathc; i++) {
+-                                        ret = install_firmware_fullpath(globbuf.gl_pathv[i]);
+-                                        if (ret == 0)
+-                                                found_this = true;
++                                found_this = install_firmware_glob(fwpath);
++                                if (!found_this) {
++                                        _cleanup_free_ char *fwpath_compressed = NULL;
++
++                                        _asprintf(&fwpath_compressed, "%s.zst", fwpath);
++                                        found_this = install_firmware_glob(fwpath_compressed);
++                                        if (!found_this) {
++                                                strcpy(fwpath_compressed + strlen(fwpath) + 1, "xz");
++                                                found_this = install_firmware_glob(fwpath_compressed);
++                                        }
+                                 }
+                         } else {
+-                                ret = install_firmware_fullpath(fwpath);
++                                ret = install_firmware_fullpath(fwpath, true);
+                                 if (ret == 0)
+                                         found_this = true;
+                         }
