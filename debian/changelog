@@ -1,3 +1,18 @@
+dracut (106-2) unstable; urgency=medium
+
+  * new patches (all accepted upstream):
+    - test(ISCSI): skip root=ibft if qemu -acpitable is not supported
+    - test(FULL-SYSTEMD): skip encrypted root if qemu -smbios is not supported
+    - test: use persistent names for network devices
+    - fix(dracut-install): install compressed blobs that match wildcard fwpath
+      (LP: #2095518)
+  * autopkgtest: explicitly depend on ipxe-qemu
+  * dracut-core: install upstream dracut.conf.d subdirectories
+    (to be used with --confdir)
+  * Enable autopkgtest for s390x
+
+ -- Benjamin Drung <bdrung@debian.org>  Thu, 13 Feb 2025 01:05:51 +0100
+
 dracut (106-1) unstable; urgency=medium
 
   * New upstream release.
