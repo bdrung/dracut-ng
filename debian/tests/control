@@ -30,7 +30,7 @@ Depends: btrfs-progs,
          systemd-boot-efi [amd64 arm64 armhf riscv64]
 
 Tests: 30-dmsquash
-Architecture: amd64 s390x
+Architecture: amd64 armhf ppc64el s390x
 Restrictions: allow-stderr, needs-root
 Depends: btrfs-progs,
          busybox,
