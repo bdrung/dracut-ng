@@ -56,5 +56,4 @@ override_dh_clean:
 	dh_clean dracut.pc Makefile.inc src/skipcpio/skipcpio src/util/util
 	if test -d .git; then \
 		git status|grep modified: | awk '/.adoc/ {print $$2}' | xargs -r git checkout;\
-		git checkout dracut.html ;\
     fi
