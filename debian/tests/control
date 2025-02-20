@@ -4,10 +4,10 @@
 # * TEST-62-BONDBRIDGEVLAN: https://github.com/dracutdevs/dracut/issues/2328
 # * TEST-70-ISCSI: iscsiuio.socket missing, see https://bugs.debian.org/1056733
 # * TEST-71-ISCSI-MULTI: iscsiuio.socket missing, see https://bugs.debian.org/1056733
-# arm64, armhf, and ppc64el need upstream support: https://github.com/dracutdevs/dracut/issues/2493
+# arm64, armhf, ppc64el, and s390x need upstream support: https://github.com/dracutdevs/dracut/issues/2493
 Features: test-name=upstream-dracut-core
 Test-Command: debian/tests/run-upstream-tests SKIP="23 30 60 61 62 70 71 72"
-Architecture: amd64 s390x
+Architecture: amd64
 Restrictions: allow-stderr, needs-root
 Depends: btrfs-progs,
          busybox,
@@ -41,7 +41,7 @@ Depends: btrfs-progs,
 
 Features: test-name=upstream-dracut-live
 Test-Command: debian/tests/run-upstream-tests TESTS="30"
-Architecture: amd64 s390x
+Architecture: amd64
 Restrictions: allow-stderr, needs-root
 Depends: btrfs-progs,
          busybox,
@@ -65,7 +65,7 @@ Depends: btrfs-progs,
 
 Features: test-name=upstream-dracut-network-nfs
 Test-Command: debian/tests/run-upstream-tests TESTS="60"
-Architecture: amd64 s390x
+Architecture: amd64
 Restrictions: allow-stderr, needs-root
 Depends: dracut-live,
          dracut-network,
@@ -91,7 +91,7 @@ Depends: dracut-live,
 
 Features: test-name=upstream-dracut-network-nbd
 Test-Command: debian/tests/run-upstream-tests TESTS="72"
-Architecture: amd64 s390x
+Architecture: amd64
 Restrictions: allow-stderr, needs-root
 Depends: cryptsetup,
          dracut-network,
