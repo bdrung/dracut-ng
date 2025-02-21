@@ -1,3 +1,9 @@
+dracut (106-4) unstable; urgency=medium
+
+  * skip upstream test 12, time out on Debian
+
+ -- Thomas Lange <lange@debian.org>  Fri, 21 Feb 2025 17:53:33 +0100
+
 dracut (106-3) unstable; urgency=medium
 
   * disable autopkgtest for s390x, Closes: #1096001
