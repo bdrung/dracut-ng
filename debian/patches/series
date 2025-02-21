@@ -1,2 +1,1 @@
-debian-initramfs-post-update.patch
 test-exit-with-code-77-if-test-is-skipped.patch
