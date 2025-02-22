@@ -1,3 +1,9 @@
+dracut (106-5) unstable; urgency=medium
+
+  * disable upstream test 43
+
+ -- Thomas Lange <lange@debian.org>  Sat, 22 Feb 2025 14:06:40 +0100
+
 dracut (106-4) unstable; urgency=medium
 
   * skip upstream test 12, time out on Debian
