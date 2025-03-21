@@ -6,6 +6,7 @@ Uploaders: Benjamin Drung <bdrung@debian.org>
 Build-Depends: debhelper-compat (= 13),
                dh-apport,
                asciidoc-base,
+               bash-completion,
                docbook-xml,
                docbook-xsl,
                libkmod-dev,
