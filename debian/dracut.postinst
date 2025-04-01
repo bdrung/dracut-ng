@@ -6,10 +6,19 @@ if [ "x$1" != xtriggered ]; then
     # activate trigger
     if dpkg-trigger --no-await update-initramfs; then
         echo "update-initramfs: deferring update (trigger activated)"
+        # The /run/update-initramfs.dpkg-trigger file is just a workaround.
+        # The timestamp should be provided directly by the dpkg trigger.
+        # See https://bugs.debian.org/1099136
+        touch /run/update-initramfs.dpkg-trigger
         exit 0
     fi
 else
-    update-initramfs -u
+    # The /run/update-initramfs.dpkg-trigger file is just a workaround.
+    # The timestamp should be provided directly by the dpkg trigger.
+    # See https://bugs.debian.org/1099136
+    timestamp=$(stat -c %Y /run/update-initramfs.dpkg-trigger 2>/dev/null || true)
+    update-initramfs -u -s "$timestamp"
+    rm -f /run/update-initramfs.dpkg-trigger
 fi
 
 #DEBHELPER#
