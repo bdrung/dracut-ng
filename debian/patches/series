@@ -4,3 +4,4 @@ feat-debian.conf-default-to-initrd.img-kernel-on-Debian-U.patch
 test-drop-requiring-iscsiuio.socket.patch
 feat-Makefile-set-Dracut-version-on-install.patch
 alternatives-not-set-default-theme.patch
+plymouth-Only-pull-in-the-SimpleDRM-driver-by-default.patch
