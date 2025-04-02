@@ -1,0 +1,28 @@
+From: Benjamin Drung <benjamin.drung@canonical.com>
+Date: Wed, 2 Apr 2025 10:35:47 +0200
+Subject: plymouth: Only pull in the SimpleDRM driver by default
+
+Plymouth doesn't always show splash screen if DRM drivers are installed
+in initrd.
+
+So let Dracut behave more like initramfs-tools and remove all DRM
+drivers and just use SimpleDRM that's built-into the kernel.
+
+LP: #2105377
+---
+ modules.d/45plymouth/module-setup.sh | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/modules.d/45plymouth/module-setup.sh b/modules.d/45plymouth/module-setup.sh
+index 0282d4c..88268b5 100755
+--- a/modules.d/45plymouth/module-setup.sh
++++ b/modules.d/45plymouth/module-setup.sh
+@@ -24,7 +24,7 @@ check() {
+ 
+ # called by dracut
+ depends() {
+-    echo drm bash
++    echo simpledrm bash
+ }
+ 
+ # called by dracut
