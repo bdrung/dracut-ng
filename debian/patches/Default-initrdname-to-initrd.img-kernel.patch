@@ -12,11 +12,9 @@ Signed-off-by: Benjamin Drung <benjamin.drung@canonical.com>
  man/dracut.conf.5.adoc      | 2 +-
  3 files changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/dracut-initramfs-restore.sh b/dracut-initramfs-restore.sh
-index 98cfaed..a2413f7 100755
 --- a/dracut-initramfs-restore.sh
 +++ b/dracut-initramfs-restore.sh
-@@ -56,8 +56,8 @@ mount -o ro /boot &> /dev/null || true
+@@ -56,8 +56,8 @@
  
  IMG=$(find_initrd_for_kernel_version "$KERNEL_VERSION")
  if [ -z "$IMG" ]; then
@@ -27,11 +25,9 @@ index 98cfaed..a2413f7 100755
      else
          echo "No initramfs image found to restore!"
          exit 1
-diff --git a/dracut.sh b/dracut.sh
-index 8dc0a38..00e2e83 100755
 --- a/dracut.sh
 +++ b/dracut.sh
-@@ -1172,7 +1172,7 @@ if ! [[ $outfile ]]; then
+@@ -1172,7 +1172,7 @@
          outfile="$dracutsysrootdir$efidir/Linux/linux-$kernel${MACHINE_ID:+-${MACHINE_ID}}${BUILD_ID:+-${BUILD_ID}}.efi"
      else
          if ! [[ $initrdname ]]; then
@@ -40,11 +36,9 @@ index 8dc0a38..00e2e83 100755
          fi
          if [[ -d "$dracutsysrootdir"/efi/loader/entries || -L "$dracutsysrootdir"/efi/loader/entries ]] \
              && [[ $MACHINE_ID ]] \
-diff --git a/man/dracut.conf.5.adoc b/man/dracut.conf.5.adoc
-index ae8a690..4de56e4 100644
 --- a/man/dracut.conf.5.adoc
 +++ b/man/dracut.conf.5.adoc
-@@ -350,7 +350,7 @@ The initrdname configuration option is required to match the
+@@ -350,7 +350,7 @@
  _initr*$\{kernel\}*_ file pattern and only one file with this pattern should
  exists in the directory where initramfs is loaded from.
  +
