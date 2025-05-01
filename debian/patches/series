@@ -1,7 +1,6 @@
 udevsettle
 debian-initramfs-post-update.patch
 Default-initrdname-to-initrd.img-kernel.patch
-test-ISCSI-make-acpitable-file-a-parameter-of-run_client.patch
 test-use-set-eu-in-run-qemu.patch
 test-ISCSI-skip-root-ibft-if-qemu-acpitable-is-not-suppor.patch
 test-FULL-SYSTEMD-make-smbios-option-a-parameter-of-run_c.patch
