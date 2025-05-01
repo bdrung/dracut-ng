@@ -62,7 +62,7 @@ usr/lib/dracut/modules.d/10i18n
 usr/lib/dracut/modules.d/30convertfs
 usr/lib/dracut/modules.d/45drm
 usr/lib/dracut/modules.d/45plymouth
-usr/lib/dracut/modules.d/60systemd-sysusers
+usr/lib/dracut/modules.d/99systemd-sysusers
 usr/lib/dracut/modules.d/62bluetooth
 usr/lib/dracut/modules.d/80lvmmerge
 usr/lib/dracut/modules.d/80lvmthinpool-monitor
