@@ -7,7 +7,7 @@ check() {
     # No mdadm?  No mdraid support.
     require_binaries mdadm expr || return 1
 
-    [[ $hostonly ]] || [[ $mount_needs ]] && {
+    [[ $hostonly_mode == "strict" ]] || [[ $mount_needs ]] && {
         for dev in "${!host_fs_types[@]}"; do
             [[ ${host_fs_types[$dev]} != *_raid_member ]] && continue
 
@@ -46,7 +46,7 @@ cmdline() {
         [[ ${host_fs_types[$dev]} != *_raid_member ]] && continue
 
         UUID=$(
-            /sbin/mdadm --examine --export "$dev" \
+            mdadm --examine --export "$dev" \
                 | while read -r line || [[ "$line" ]]; do
                     [[ ${line#MD_UUID=} == "$line" ]] && continue
                     printf "%s" "${line#MD_UUID=} "
@@ -67,8 +67,8 @@ cmdline() {
 install() {
     inst_multiple cat expr
     inst_multiple -o mdmon
-    inst "$(command -v partx)" /sbin/partx
-    inst "$(command -v mdadm)" /sbin/mdadm
+    inst partx /sbin/partx
+    inst mdadm /sbin/mdadm
 
     if [[ $hostonly_cmdline == "yes" ]]; then
         local _raidconf

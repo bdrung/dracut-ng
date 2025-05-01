@@ -1111,7 +1111,7 @@ drivers_dir="${drivers_dir%"${drivers_dir##*[!/]}"}"
 [[ $ro_mnt_l ]] && ro_mnt="yes"
 [[ $early_microcode_l ]] && early_microcode=$early_microcode_l
 [[ $early_microcode ]] || early_microcode=yes
-[[ $early_microcode_image_dir ]] || early_microcode_image_dir=('/boot')
+[[ $early_microcode_image_dir ]] || early_microcode_image_dir=("$dracutsysrootdir"/boot)
 [[ $early_microcode_image_name ]] \
     || early_microcode_image_name=('intel-uc.img' 'intel-ucode.img' 'amd-uc.img' 'amd-ucode.img' 'early_ucode.cpio' 'microcode.cpio')
 [[ $logfile_l ]] && logfile="$logfile_l"
@@ -1324,10 +1324,10 @@ if findmnt --raw -n --target "$tmpdir" --output=options | grep -q noexec; then
     noexec=1
 fi
 
-DRACUT_TMPDIR="$(mktemp -p "$TMPDIR/" -d -t dracut.XXXXXX)"
+DRACUT_TMPDIR="$(mktemp -p "$TMPDIR/" -d -t dracut.dXXXXXX)"
 readonly DRACUT_TMPDIR
 [ -d "$DRACUT_TMPDIR" ] || {
-    printf "%s\n" "dracut[F]: mktemp -p '$TMPDIR/' -d -t dracut.XXXXXX failed." >&2
+    printf "%s\n" "dracut[F]: mktemp -p '$TMPDIR/' -d -t dracut.dXXXXXX failed." >&2
     exit 1
 }
 
@@ -1436,16 +1436,16 @@ dracutfunctions=$dracutbasedir/dracut-functions.sh
 export dracutfunctions
 
 ((${#drivers_l[@]})) && drivers="${drivers_l[*]}"
-drivers=${drivers/-/_}
+drivers=${drivers//-/_}
 
 ((${#add_drivers_l[@]})) && add_drivers+=" ${add_drivers_l[*]} "
-add_drivers=${add_drivers/-/_}
+add_drivers=${add_drivers//-/_}
 
 ((${#force_drivers_l[@]})) && force_drivers+=" ${force_drivers_l[*]} "
-force_drivers=${force_drivers/-/_}
+force_drivers=${force_drivers//-/_}
 
 ((${#omit_drivers_l[@]})) && omit_drivers+=" ${omit_drivers_l[*]} "
-omit_drivers=${omit_drivers/-/_}
+omit_drivers=${omit_drivers//-/_}
 
 ((${#kernel_cmdline_l[@]})) && kernel_cmdline+=" ${kernel_cmdline_l[*]} "
 
@@ -2373,6 +2373,12 @@ if dracut_module_included "squash-lib"; then
     compress="cat"
 fi
 
+# protect existing output file against build errors
+if [[ -e $outfile ]]; then
+    outfile_final="$outfile"
+    outfile="${outfile}.tmp"
+fi
+
 dinfo "*** Creating image file '$outfile' ***"
 
 if [[ $uefi == yes ]]; then
@@ -2632,30 +2638,21 @@ if [[ $uefi == yes ]]; then
     cp "$uefi_stub" "$tmp_uefi_stub"
     objcopy --remove-section .sbat "$tmp_uefi_stub" &> /dev/null
 
-    if objcopy \
-        ${DRACUT_REPRODUCIBLE:+--enable-deterministic-archives --preserve-dates} \
-        ${uefi_osrelease:+--add-section .osrel="$uefi_osrelease" --change-section-vma .osrel=$(printf 0x%x "$uefi_osrelease_offs")} \
-        ${uefi_cmdline:+--add-section .cmdline="$uefi_cmdline" --change-section-vma .cmdline=$(printf 0x%x "$uefi_cmdline_offs")} \
-        ${uefi_splash_image:+--add-section .splash="$uefi_splash_image" --change-section-vma .splash=$(printf 0x%x "$uefi_splash_offs")} \
-        --add-section .sbat="$sbat_out" --change-section-vma .sbat="$(printf 0x%x "$uefi_sbat_offs")" \
-        --add-section .linux="$kernel_image" --change-section-vma .linux="$(printf 0x%x "$uefi_linux_offs")" \
-        --add-section .initrd="${DRACUT_TMPDIR}/initramfs.img" --change-section-vma .initrd="$(printf 0x%x "$uefi_initrd_offs")" \
-        --image-base="$(printf 0x%x "$base_image")" \
-        "$tmp_uefi_stub" "${uefi_outdir}/linux.efi"; then
-        if [[ -n ${uefi_secureboot_key} && -n ${uefi_secureboot_cert} ]]; then
-            if sbsign \
-                ${uefi_secureboot_engine:+--engine "$uefi_secureboot_engine"} \
-                --key "${uefi_secureboot_key}" \
-                --cert "${uefi_secureboot_cert}" \
-                --output "$outfile" "${uefi_outdir}/linux.efi" \
-                && sbverify --cert "${uefi_secureboot_cert}" "$outfile" > /dev/null 2>&1; then
-                dinfo "*** Creating signed UEFI image file '$outfile' done ***"
-            else
-                rm -f -- "$outfile"
-                dfatal "*** Creating signed UEFI image file '$outfile' failed ***"
-                exit 1
-            fi
-        else
+    if command -v ukify &> /dev/null; then
+        dinfo "*** Using ukify to create UKI ***"
+        if ukify build \
+            --linux "$kernel_image" \
+            --initrd "${DRACUT_TMPDIR}/initramfs.img" \
+            ${uefi_cmdline:+--cmdline @"$uefi_cmdline"} \
+            ${uefi_osrelease:+--os-release @"$uefi_osrelease"} \
+            ${uefi_splash_image:+--splash "$uefi_splash_image"} \
+            --stub "$uefi_stub" \
+            --sbat "$sbat_out" \
+            ${uefi_secureboot_engine:+--signing-engine "$uefi_secureboot_engine"} \
+            ${uefi_secureboot_key:+--secureboot-private-key "$uefi_secureboot_key"} \
+            ${uefi_secureboot_cert:+--secureboot-certificate "$uefi_secureboot_cert"} \
+            --output "${uefi_outdir}/linux.efi"; then
+
             if cp --reflink=auto "${uefi_outdir}/linux.efi" "$outfile"; then
                 dinfo "*** Creating UEFI image file '$outfile' done ***"
             else
@@ -2663,11 +2660,49 @@ if [[ $uefi == yes ]]; then
                 dfatal "Creation of $outfile failed"
                 exit 1
             fi
+        else
+            rm -f -- "$outfile"
+            dfatal "*** Creating UEFI image file '$outfile' failed ***"
+            exit 1
         fi
     else
-        rm -f -- "$outfile"
-        dfatal "*** Creating UEFI image file '$outfile' failed ***"
-        exit 1
+        if objcopy \
+            ${DRACUT_REPRODUCIBLE:+--enable-deterministic-archives --preserve-dates} \
+            ${uefi_osrelease:+--add-section .osrel="$uefi_osrelease" --change-section-vma .osrel=$(printf 0x%x "$uefi_osrelease_offs")} \
+            ${uefi_cmdline:+--add-section .cmdline="$uefi_cmdline" --change-section-vma .cmdline=$(printf 0x%x "$uefi_cmdline_offs")} \
+            ${uefi_splash_image:+--add-section .splash="$uefi_splash_image" --change-section-vma .splash=$(printf 0x%x "$uefi_splash_offs")} \
+            --add-section .sbat="$sbat_out" --change-section-vma .sbat="$(printf 0x%x "$uefi_sbat_offs")" \
+            --add-section .linux="$kernel_image" --change-section-vma .linux="$(printf 0x%x "$uefi_linux_offs")" \
+            --add-section .initrd="${DRACUT_TMPDIR}/initramfs.img" --change-section-vma .initrd="$(printf 0x%x "$uefi_initrd_offs")" \
+            --image-base="$(printf 0x%x "$base_image")" \
+            "$tmp_uefi_stub" "${uefi_outdir}/linux.efi"; then
+            if [[ -n ${uefi_secureboot_key} && -n ${uefi_secureboot_cert} ]]; then
+                if sbsign \
+                    ${uefi_secureboot_engine:+--engine "$uefi_secureboot_engine"} \
+                    --key "${uefi_secureboot_key}" \
+                    --cert "${uefi_secureboot_cert}" \
+                    --output "$outfile" "${uefi_outdir}/linux.efi" \
+                    && sbverify --cert "${uefi_secureboot_cert}" "$outfile" > /dev/null 2>&1; then
+                    dinfo "*** Creating signed UEFI image file '$outfile' done ***"
+                else
+                    rm -f -- "$outfile"
+                    dfatal "*** Creating signed UEFI image file '$outfile' failed ***"
+                    exit 1
+                fi
+            else
+                if cp --reflink=auto "${uefi_outdir}/linux.efi" "$outfile"; then
+                    dinfo "*** Creating UEFI image file '$outfile' done ***"
+                else
+                    rm -f -- "$outfile"
+                    dfatal "Creation of $outfile failed"
+                    exit 1
+                fi
+            fi
+        else
+            rm -f -- "$outfile"
+            dfatal "*** Creating UEFI image file '$outfile' failed ***"
+            exit 1
+        fi
     fi
 else
     if cp --reflink=auto "${DRACUT_TMPDIR}/initramfs.img" "$outfile"; then
@@ -2675,6 +2710,18 @@ else
     else
         rm -f -- "$outfile"
         dfatal "Creation of $outfile failed"
+        exit 1
+    fi
+fi
+
+if [[ $outfile_final ]]; then
+    dinfo "*** Moving image file '$outfile' to '$outfile_final' ***"
+    if mv -f "$outfile" "$outfile_final"; then
+        dinfo "*** Moving image file '$outfile' to '$outfile_final' done ***"
+        outfile="$outfile_final"
+    else
+        rm -f -- "$outfile_final"
+        dfatal "Move of $outfile_final failed"
         exit 1
     fi
 fi

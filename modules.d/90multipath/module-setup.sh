@@ -25,7 +25,7 @@ check() {
     require_binaries multipath || return 1
     require_binaries kpartx || return 1
 
-    [[ $hostonly ]] || [[ $mount_needs ]] && {
+    [[ $hostonly_mode == "strict" ]] || [[ $mount_needs ]] && {
         for_each_host_dev_and_slaves is_mpath || return 255
     }
 
@@ -61,7 +61,7 @@ installkernel() {
 }
 
 mpathconf_installed() {
-    command -v mpathconf &> /dev/null
+    find_binary mpathconf &> /dev/null
 }
 
 # called by dracut
@@ -91,6 +91,7 @@ install() {
     [[ -d $config_dir ]] || config_dir=/etc/multipath/conf.d
 
     inst_multiple \
+        "$systemdsystemunitdir"/multipathd.service \
         pkill \
         kpartx \
         dmsetup \
@@ -122,7 +123,7 @@ install() {
         fi
     }
 
-    [[ $hostonly ]] || {
+    [[ $hostonly ]] || mpathconf_installed || {
         for_each_host_dev_and_slaves is_mpath \
             || [[ -f /etc/multipath.conf ]] || {
             cat > "${initdir}"/etc/multipath.conf << EOF
@@ -135,7 +136,7 @@ EOF
         }
     }
 
-    inst "$(command -v partx)" /sbin/partx
+    inst partx /sbin/partx
 
     inst_libdir_file "libmultipath*" "multipath/*"
     inst_libdir_file 'libgcc_s.so*'
@@ -151,7 +152,7 @@ EOF
             inst_simple "${moddir}/multipathd-configure.service" "${systemdsystemunitdir}/multipathd-configure.service"
             $SYSTEMCTL -q --root "$initdir" enable multipathd-configure.service
         fi
-        inst_simple "${moddir}/multipathd.service" "${systemdsystemunitdir}/multipathd.service"
+        inst_simple "$moddir/multipathd-dracut.conf" "$systemdsystemunitdir/multipathd.service.d/multipathd-dracut.conf"
         $SYSTEMCTL -q --root "$initdir" enable multipathd.service
     else
         inst_hook pre-trigger 02 "$moddir/multipathd.sh"

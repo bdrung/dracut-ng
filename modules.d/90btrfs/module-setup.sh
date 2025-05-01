@@ -6,7 +6,7 @@ check() {
     # no point in trying to support it in the initramfs.
     require_binaries btrfs || return 1
 
-    [[ $hostonly ]] || [[ $mount_needs ]] && {
+    [[ $hostonly_mode == "strict" ]] || [[ $mount_needs ]] && {
         for fs in "${host_fs_types[@]}"; do
             [[ $fs == "btrfs" ]] && return 0
         done
@@ -55,6 +55,6 @@ install() {
         inst_hook initqueue/timeout 10 "$moddir/btrfs_timeout.sh"
     fi
 
-    inst_multiple -o btrfsck btrfs-zero-log
-    inst "$(command -v btrfs)" /sbin/btrfs
+    inst_multiple -o btrfsck btrfs-zero-log btrfstune
+    inst btrfs /sbin/btrfs
 }

@@ -6,9 +6,9 @@ check() {
     require_binaries iscsi-iname iscsiadm iscsid || return 1
     require_kernel_modules iscsi_tcp || return 1
 
-    # If hostonly was requested, fail the check if we are not actually
+    # If hostonly strict was requested, fail the check if we are not actually
     # booting from root.
-    [[ $hostonly ]] || [[ $mount_needs ]] && {
+    [[ $hostonly_mode == "strict" ]] || [[ $mount_needs ]] && {
         pushd . > /dev/null
         for_each_host_dev_and_slaves block_is_iscsi
         local _is_iscsi=$?
@@ -220,7 +220,7 @@ install() {
             "$systemdsystemunitdir"/iscsiuio.socket \
             "$systemdsystemunitdir"/sockets.target.wants/iscsid.socket \
             "$systemdsystemunitdir"/sockets.target.wants/iscsiuio.socket
-        if grep -q '^ExecStartPre=/usr/lib/open-iscsi/startup-checks.sh$' "$systemdsystemunitdir/iscsid.service"; then
+        if grep -q '^ExecStartPre=/usr/lib/open-iscsi/startup-checks.sh$' "$dracutsysrootdir$systemdsystemunitdir/iscsid.service"; then
             inst_simple /usr/lib/open-iscsi/startup-checks.sh
         fi
 
@@ -234,8 +234,8 @@ install() {
         {
             echo "[Unit]"
             echo "DefaultDependencies=no"
-            echo "Conflicts=shutdown.target"
-            echo "Before=shutdown.target"
+            echo "Conflicts=shutdown.target initrd-cleanup.service"
+            echo "Before=shutdown.target initrd-cleanup.service"
         } > "${initdir}/$systemdsystemunitdir/iscsid.service.d/dracut.conf"
 
         mkdir -p "${initdir}/$systemdsystemunitdir/iscsid.socket.d"
@@ -250,8 +250,8 @@ install() {
         {
             echo "[Unit]"
             echo "DefaultDependencies=no"
-            echo "Conflicts=shutdown.target"
-            echo "Before=shutdown.target"
+            echo "Conflicts=shutdown.target initrd-cleanup.service"
+            echo "Before=shutdown.target initrd-cleanup.service"
         } > "${initdir}/$systemdsystemunitdir/iscsiuio.service.d/dracut.conf"
 
         mkdir -p "${initdir}/$systemdsystemunitdir/iscsiuio.socket.d"

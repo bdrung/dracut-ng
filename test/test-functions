@@ -11,15 +11,14 @@ echo "TESTDIR=\"$TESTDIR\"" > .testdir${TEST_RUN_ID:+-$TEST_RUN_ID}
 export TESTDIR
 export BOOT_ROOT="$TESTDIR"
 
-[ -z "$USE_NETWORK" ] && USE_NETWORK="network"
-[ -z "$TEST_FSTYPE" ] && TEST_FSTYPE="ext4"
-
 if [[ -z $basedir ]]; then basedir="$(realpath ../..)"; fi
 
 DRACUT=${DRACUT-dracut}
 PKGLIBDIR=${PKGLIBDIR-$basedir}
 
-[[ -f /etc/machine-id ]] && read -r TOKEN < /etc/machine-id
+if [[ -f /etc/machine-id ]]; then
+    read -r TOKEN < /etc/machine-id || true
+fi
 [ -z "$TOKEN" ] && . /etc/os-release && TOKEN="$ID"
 
 TEST_KERNEL_CMDLINE+=" root=LABEL=dracut panic=1 oops=panic softlockup_panic=1 systemd.crash_reboot $DEBUGFAIL "
@@ -225,7 +224,7 @@ qemu_add_drive() {
         -device "scsi-hd,bus=scsi${index}.0,drive=drive-data${index},id=data${index},${bootindex:+bootindex=$bootindex,}serial=${name}" \
         ')'
 
-    [ $(("${1}++")) -ne 0 ]
+    : $(("${1}++"))
 }
 
 test_marker_reset() {

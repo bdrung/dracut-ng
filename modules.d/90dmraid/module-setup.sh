@@ -10,7 +10,7 @@ check() {
     require_binaries dmraid || return 1
     require_binaries kpartx || return 1
 
-    [[ $hostonly ]] || [[ $mount_needs ]] && {
+    [[ $hostonly_mode == "strict" ]] || [[ $mount_needs ]] && {
         for dev in "${!host_fs_types[@]}"; do
             [[ ${host_fs_types[$dev]} != *_raid_member ]] && continue
 
@@ -73,7 +73,7 @@ install() {
 
     inst_multiple dmraid
     inst_multiple -o kpartx
-    inst "$(command -v partx)" /sbin/partx
+    inst partx /sbin/partx
 
     inst "$moddir/dmraid.sh" /sbin/dmraid_scan
 

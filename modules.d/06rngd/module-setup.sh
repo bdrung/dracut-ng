@@ -6,7 +6,7 @@
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
+# the Free Software Foundation, either version 2 of the License, or
 # (at your option) any later version.
 #
 # This program is distributed in the hope that it will be useful,
@@ -21,7 +21,7 @@
 check() {
     # if there's no rngd binary, no go.
     require_binaries rngd || return 1
-    require_binaries "${systemdsystemunitdir}/rngd.service" || return 1
+    [[ -e "${systemdsystemunitdir}/rngd.service" ]] || return 1
 
     return 0
 }

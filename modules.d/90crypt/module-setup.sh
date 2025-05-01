@@ -6,7 +6,7 @@ check() {
     # if cryptsetup is not installed, then we cannot support encrypted devices.
     require_any_binary "$systemdutildir"/systemd-cryptsetup cryptsetup || return 1
 
-    [[ $hostonly ]] || [[ $mount_needs ]] && {
+    [[ $hostonly_mode == "strict" ]] || [[ $mount_needs ]] && {
         for fs in "${host_fs_types[@]}"; do
             [[ $fs == "crypto_LUKS" ]] && return 0
         done
@@ -23,12 +23,18 @@ depends() {
 
 # called by dracut
 installkernel() {
-    hostonly="" instmods drbg dm_crypt
+    local _arch=${DRACUT_ARCH:-$(uname -m)}
+    local _s390drivers=
+    if [[ $_arch == "s390" ]] || [[ $_arch == "s390x" ]]; then
+        _s390drivers="=drivers/s390/crypto"
+    fi
+
+    hostonly="" instmods drbg dm_crypt ${_s390drivers:+"$_s390drivers"}
 
     # in case some of the crypto modules moved from compiled in
     # to module based, try to install those modules
     # best guess
-    if [[ $hostonly ]] || [[ $mount_needs ]]; then
+    if [[ $hostonly_mode == "strict" ]] || [[ $mount_needs ]]; then
         # dmsetup returns s.th. like
         # cryptvol: 0 2064384 crypt aes-xts-plain64 :64:logon:cryptsetup:....
         dmsetup table | while read -r name _ _ is_crypt cipher _; do

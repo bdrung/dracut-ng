@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -e
 
 # This file is part of dracut.
 # SPDX-License-Identifier: GPL-2.0-or-later
@@ -16,8 +17,8 @@ test_check() {
 test_setup() {
     ln -sfnr "$PKGLIBDIR"/dracut-util "$TESTDIR"/dracut-getarg
     ln -sfnr "$PKGLIBDIR"/dracut-util "$TESTDIR"/dracut-getargs
-    ln -sfnr "$PKGLIBDIR"/modules.d/99base/dracut-lib.sh "$TESTDIR"/dracut-lib.sh
-    ln -sfnr "$PKGLIBDIR"/modules.d/99base/dracut-dev-lib.sh "$TESTDIR"/dracut-dev-lib.sh
+    ln -sfnr "$PKGLIBDIR"/modules.d/[0-9][0-9]base/dracut-lib.sh "$TESTDIR"/dracut-lib.sh
+    ln -sfnr "$PKGLIBDIR"/modules.d/[0-9][0-9]base/dracut-dev-lib.sh "$TESTDIR"/dracut-dev-lib.sh
     return 0
 }
 
@@ -59,9 +60,7 @@ test_run() {
 
         INVALIDKEYS=("key" "4" "5" "6" "key8" "9" '"' "baz")
         for key in "${INVALIDKEYS[@]}"; do
-            val=$(./dracut-getarg "$key")
-            # shellcheck disable=SC2181
-            if (($? == 0)); then
+            if val=$(./dracut-getarg "$key"); then
                 echo "key '$key' should not be found"
                 ret=$((ret + 1))
             fi

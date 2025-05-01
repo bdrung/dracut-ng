@@ -58,7 +58,7 @@ if ! [[ $kernel ]]; then
     export kernel
 fi
 
-srcmods="$dracutsysrootdir/lib/modules/$kernel/"
+srcmods="$(realpath -e "$dracutsysrootdir/lib/modules/$kernel")"
 
 [[ $drivers_dir ]] && {
     if ! command -v kmod &> /dev/null && vercmp "$(modprobe --version | cut -d' ' -f3)" lt 3.7; then
@@ -275,7 +275,11 @@ inst_simple() {
         shift
     fi
     [[ -e ${dstdir}/"${2:-$1}" ]] && return 0 # already there
-    [[ -e $1 ]] || return 1                   # no source
+    if [[ $1 == /* ]]; then
+        [[ -e $dracutsysrootdir/${1#"$dracutsysrootdir"} ]] || return 1 # no source
+    else
+        [[ -e $1 ]] || return 1 # no source
+    fi
     if $DRACUT_INSTALL ${dracutsysrootdir:+-r "$dracutsysrootdir"} ${dstdir:+-D "$dstdir"} ${loginstall:+-L "$loginstall"} ${_hostonly_install:+-H} "$@"; then
         return 0
     else
@@ -534,7 +538,7 @@ build_ld_cache() {
     local dstdir="${dstdir:-"$initdir"}"
 
     for f in "$dracutsysrootdir"/etc/ld.so.conf "$dracutsysrootdir"/etc/ld.so.conf.d/*; do
-        [[ -f $f ]] && inst_simple "${f#"$dracutsysrootdir"}"
+        [[ -f $f ]] && inst_simple "${f}"
     done
     if ! $DRACUT_LDCONFIG -r "$initdir" -f /etc/ld.so.conf; then
         if [[ $EUID == 0 ]]; then
@@ -985,6 +989,70 @@ for_each_module_dir() {
 dracut_kernel_post() {
     local dstdir="${dstdir:-"$initdir"}"
 
+    if [ -d "${dstdir}"/lib/firmware/amdgpu/ ]; then
+        # AMDGPU firmware stripping: Remove unlikely or impossible firmware on
+        # a platform-specific basis to save space - this is the largest set of
+        # firmware in the linux-firmware.git tree.
+        #
+        # To update the list of prefixes below:
+        #
+        #   1. Look for (grep) MODULE_FIRMWARE in /drivers/gpu/drm/amd (please
+        #      note that AMD does not always use the file name to the firmware
+        #      as parameter to this macro.
+        #   2. Reference "Misc AMDGPU driver information"[^1], Wikipedia, and
+        #      TechPowerUp to determine which class certain set(s) of firmware
+        #      belong out of the list below.
+        #   3. Refer to manufacturers and/or OEM contacts for state of support
+        #      (some should be obvious - there is no non-x86 APUs - yet?).
+        #
+        # [^1]: https://docs.kernel.org/gpu/amdgpu/driver-misc.html
+
+        # APU-specific firmware.
+        _apu_prefix=" \
+            cyan_skillfish2 kabini kaveri mullins picasso raven renoir vangogh"
+        # AMD Instinct firmware.
+        _mi_prefix="aldebaran arcturus"
+        # Mobile firmware.
+        _mobile_prefix="hainan stoney topaz"
+        # Some firmware (non-x86/ARM platforms with no x86-64 GOP support/
+        # emulation) are unlikely to support post-GCN 4.0 cards. Firmware found on
+        # MIPS-based Loongson 3 boards with x86 GOP emulation support are known to
+        # crash with these cards installed.
+        _post_gcn4_prefix=" \
+            beige_goby dcn dimgrey_cavefish gc green_sardine navi navy_flounder \
+            psp sdma_4 sdma_5 sdma_6 sdma_7 sienna_cichlid vega vpe yellow_carp"
+
+        # To avoid the directory being removed if for some reason a prefix variable
+        # was not defined.
+        cd "${dstdir}"/lib/firmware/amdgpu/ \
+            || dfatal "AMDGPU firmware directory exists but is inaccessible!"
+
+        # Using `rm -f' below as some distribution may not ship all firmware.
+
+        # Non-x86 APU is not a thing (yet).
+        if [[ ${DRACUT_ARCH:-$(uname -m)} != x86_64 ]]; then
+            ddebug "Removing AMDGPU firmware unused by non-x86-64 systems ..."
+            for _amdgpu_prefix in ${_apu_prefix}; do
+                rm -f "${_amdgpu_prefix}"*
+            done
+        fi
+
+        if [[ ${DRACUT_ARCH:-$(uname -m)} == arm64 ]]; then
+            ddebug "Removing AMDGPU firmware unused by AArch64 systems ..."
+            for _amdgpu_prefix in ${_mobile_prefix}; do
+                rm -f "${_amdgpu_prefix}"*
+            done
+        elif [[ ${DRACUT_ARCH:-$(uname -m)} == mips64 ]]; then
+            # No post-GCN 4.0 support - crashes firmware.
+            # Mobile AMD GPUs likely.
+            ddebug "Removing AMDGPU firmware unused by MIPS64 (Loongson 3) systems ..."
+            for _amdgpu_prefix in \
+                ${_mi_prefix} ${_post_gcn4_prefix}; do
+                rm -f "${_amdgpu_prefix}"*
+            done
+        fi
+    fi
+
     for _f in modules.builtin modules.builtin.alias modules.builtin.modinfo modules.order; do
         [[ -e $srcmods/$_f ]] && inst_simple "$srcmods/$_f" "/lib/modules/$kernel/$_f"
     done
@@ -1079,6 +1147,10 @@ is_qemu_virtualized() {
     # 0 if a virt environment was detected
     # 1 if a virt environment could not be detected
     # 255 if any error was encountered
+
+    # do not consult /sys and do not detect virt environment in non-hostonly mode
+    ! [[ $hostonly ]] && return 1
+
     if type -P systemd-detect-virt > /dev/null 2>&1; then
         if ! vm=$(systemd-detect-virt --vm 2> /dev/null); then
             return 255

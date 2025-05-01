@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -e
 
 # shellcheck disable=SC2034
 TEST_DESCRIPTION="UEFI boot (ukify, kernel-install)"
@@ -24,6 +25,7 @@ client_run() {
     echo "CLIENT TEST START: $test_name"
 
     declare -a disk_args=()
+    # shellcheck disable=SC2034  # disk_index used in qemu_add_drive
     declare -i disk_index=1
     qemu_add_drive disk_index disk_args "$TESTDIR"/marker.img marker
     qemu_add_drive disk_index disk_args "$TESTDIR"/squashfs.img root
@@ -33,18 +35,18 @@ client_run() {
         -drive file=fat:rw:"$TESTDIR"/ESP,format=vvfat,label=EFI \
         -global driver=cfi.pflash01,property=secure,value=on \
         -drive if=pflash,format=raw,unit=0,file="$(ovmf_code)",readonly=on
-    test_marker_check || return 1
+    test_marker_check
 }
 
 test_run() {
-    client_run "UEFI with UKI and squashfs root" || return 1
+    client_run "UEFI with UKI and squashfs root"
 }
 
 test_setup() {
     # Create what will eventually be our root filesystem
     "$DRACUT" -N --keep --tmpdir "$TESTDIR" \
         --add-confdir test-root \
-        "$TESTDIR"/tmp-initramfs.root "$KVERSION" || return 1
+        "$TESTDIR"/tmp-initramfs.root "$KVERSION"
 
     mksquashfs "$TESTDIR"/dracut.*/initramfs/ "$TESTDIR"/squashfs.img -quiet -no-progress
 

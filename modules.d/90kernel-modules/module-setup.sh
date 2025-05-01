@@ -39,12 +39,15 @@ installkernel() {
         hostonly='' instmods \
             hid_generic unix
 
+        # xhci-pci-renesas is needed for the USB to be available during
+        # initrd on platforms with such USB controllers since Linux
+        # 6.12-rc1 (commit 25f51b76f90f).
         hostonly=$(optional_hostonly) instmods \
             ehci-hcd ehci-pci ehci-platform \
             ohci-hcd ohci-pci \
             uhci-hcd \
             usbhid \
-            xhci-hcd xhci-pci xhci-plat-hcd \
+            xhci-hcd xhci-pci xhci-pci-renesas xhci-plat-hcd \
             "=drivers/hid" \
             "=drivers/tty/serial" \
             "=drivers/input/serio" \
@@ -117,9 +120,9 @@ installkernel() {
             fi
         fi
 
-        # if not on hostonly mode, install all known filesystems,
+        # if not on strict hostonly mode, install all known filesystems,
         # if the required list is not set via the filesystems variable
-        if ! [[ $hostonly ]]; then
+        if [[ $hostonly_mode != "strict" ]]; then
             if [[ -z $filesystems ]]; then
                 dracut_instmods -o -P ".*/(kernel/fs/nfs|kernel/fs/nfsd|kernel/fs/lockd)/.*" '=fs'
             fi
