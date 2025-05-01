@@ -1,5 +1,4 @@
 udevsettle
 debian-initramfs-post-update.patch
 Default-initrdname-to-initrd.img-kernel.patch
-test-use-persistent-names-for-network-devices.patch
 fix-dracut-install-install-compressed-blobs-that-match-wi.patch
