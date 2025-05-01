@@ -61,6 +61,7 @@ usr/lib/dracut/modules.d/09dbus
 usr/lib/dracut/modules.d/10i18n
 usr/lib/dracut/modules.d/30convertfs
 usr/lib/dracut/modules.d/45drm
+usr/lib/dracut/modules.d/45simpledrm
 usr/lib/dracut/modules.d/45plymouth
 usr/lib/dracut/modules.d/99systemd-sysusers
 usr/lib/dracut/modules.d/62bluetooth
