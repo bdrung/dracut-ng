@@ -1,4 +1,5 @@
 debian/09console-setup          usr/lib/dracut/modules.d
+debian/10-debian.conf           usr/lib/dracut/dracut.conf.d
 etc/dracut.conf                 etc
 usr/bin/dracut
 usr/bin/dracut-catimages
