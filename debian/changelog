@@ -1,8 +1,11 @@
-dracut (107-1~beta1) unstable; urgency=medium
+dracut (107-1~beta2) unstable; urgency=medium
 
-  * try build
+  * new upstream 107
+  * refresh patches, drop patches included upstream
+  * rename module systemd-sysusers
+  * add module 45simpledrm
 
- -- Thomas Lange <lange@debian.org>  Thu, 01 May 2025 18:16:33 +0200
+ -- Thomas Lange <lange@debian.org>  Fri, 02 May 2025 11:14:36 +0200
 
 dracut (106-6) unstable; urgency=medium
 
