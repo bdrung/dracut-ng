@@ -3,8 +3,8 @@ Section: utils
 Priority: optional
 Maintainer: Thomas Lange <lange@debian.org>
 Uploaders: Benjamin Drung <bdrung@debian.org>
-Build-Depends: asciidoc-base,
-               debhelper-compat (= 13),
+Build-Depends: debhelper-compat (= 13),
+               asciidoc-base,
                docbook-xml,
                docbook-xsl,
                libkmod-dev,
