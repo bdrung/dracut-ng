@@ -1,11 +1,12 @@
 dracut (107-1~beta2) unstable; urgency=medium
 
   * new upstream 107
+  * drop 90overlay-root in favor of the overlayfs, Closes: #1017039
   * refresh patches, drop patches included upstream
   * rename module systemd-sysusers
   * add module 45simpledrm
 
- -- Thomas Lange <lange@debian.org>  Fri, 02 May 2025 11:14:36 +0200
+ -- Thomas Lange <lange@debian.org>  Fri, 02 May 2025 17:52:19 +0200
 
 dracut (106-6) unstable; urgency=medium
 
