@@ -1,3 +1,4 @@
 udevsettle
 debian-initramfs-post-update.patch
 Default-initrdname-to-initrd.img-kernel.patch
+test-skip-using-kernel-install-due-to-bug-1104848.patch
