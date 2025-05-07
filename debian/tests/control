@@ -1,5 +1,6 @@
 # Skip following test cases:
 # * TEST-23-IMSM: dmraid was removed from Debian
+# * TEST-43-KERNEL-INSTALL: kernel-install issue, see https://bugs.debian.org/1104848
 # * TEST-61-MULTINIC: disabled in upstream CI since 2023-01-02
 # * TEST-62-BONDBRIDGEVLAN: https://github.com/dracutdevs/dracut/issues/2328
 # * TEST-70-ISCSI: iscsiuio.socket missing, see https://bugs.debian.org/1056733
