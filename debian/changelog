@@ -1,10 +1,19 @@
 dracut (107-1~beta2) unstable; urgency=medium
 
+  [ Thomas Lange ]
   * new upstream 107
   * drop 90overlay-root in favor of the overlayfs, Closes: #1017039
   * refresh patches, drop patches included upstream
   * rename module systemd-sysusers
   * add module 45simpledrm
+
+  [ Benjamin Drung ]
+  * Stop shipping the dmraid module (Closes: #1099698)
+  * Set -H --hostonly-mode=sloppy as default arguments via a config file
+  * d/copyright: fix lintian's old-fsf-address-in-copyright-file
+  * autopkgtest:
+    - enable test 12 but skip using kernel-install due to bug #1104848
+    - Remove possible masked systemd-udevd to avoid test 10 to fail
 
  -- Thomas Lange <lange@debian.org>  Fri, 02 May 2025 17:52:19 +0200
 
