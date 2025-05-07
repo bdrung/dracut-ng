@@ -25,6 +25,9 @@ if test "$ARCH" = "ppc64el"; then
 	export NO_KVM=1
 fi
 
+# Workaround masked systemd-udevd bug: https://github.com/dracut-ng/dracut-ng/issues/1318
+rm -f /etc/systemd/system/systemd-udevd.service
+
 # Prapare out-of-tree test directory
 TESTDIR="$(mktemp -d -t dracut-test.XXXXXXXXXX)"
 cp -r test/* "$TESTDIR"

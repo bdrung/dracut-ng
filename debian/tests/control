@@ -6,7 +6,7 @@
 # * TEST-71-ISCSI-MULTI: iscsiuio.socket missing, see https://bugs.debian.org/1056733
 # arm64, armhf, ppc64el, and s390x need upstream support: https://github.com/dracutdevs/dracut/issues/2493
 Features: test-name=upstream-dracut-core
-Test-Command: debian/tests/run-upstream-tests SKIP="10 23 30 43 60 61 62 70 71 72"
+Test-Command: debian/tests/run-upstream-tests SKIP="23 30 43 60 61 62 70 71 72"
 Architecture: amd64
 Restrictions: allow-stderr, needs-root
 Depends: btrfs-progs,
