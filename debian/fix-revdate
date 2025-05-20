@@ -1,10 +1,10 @@
-sed -i -e '3i:revdate: 2024-09-28' man/dracut-catimages.8.adoc
-sed -i -e '3i:revdate: 2024-09-28' man/dracut.8.adoc
-sed -i -e '3i:revdate: 2024-09-28' man/dracut.bootup.7.adoc
-sed -i -e '3i:revdate: 2024-10-09' man/dracut.cmdline.7.adoc
-sed -i -e '3i:revdate: 2024-10-09' man/dracut.conf.5.adoc
-sed -i -e '3i:revdate: 2024-09-28' man/dracut.modules.7.adoc
-sed -i -e '3i:revdate: 2024-09-28' man/lsinitrd.1.adoc
+sed -i -e '3i:revdate: 2024-11-03' man/dracut-catimages.8.adoc
+sed -i -e '3i:revdate: 2024-11-19' man/dracut.8.adoc
+sed -i -e '3i:revdate: 2024-11-03' man/dracut.bootup.7.adoc
+sed -i -e '3i:revdate: 2025-04-12' man/dracut.cmdline.7.adoc
+sed -i -e '3i:revdate: 2024-11-19' man/dracut.conf.5.adoc
+sed -i -e '3i:revdate: 2024-11-03' man/dracut.modules.7.adoc
+sed -i -e '3i:revdate: 2024-11-03' man/lsinitrd.1.adoc
 sed -i -e '3i:revdate: 2024-09-28' modules.d/98dracut-systemd/dracut-cmdline.service.8.adoc
 sed -i -e '3i:revdate: 2024-09-28' modules.d/98dracut-systemd/dracut-initqueue.service.8.adoc
 sed -i -e '3i:revdate: 2024-09-28' modules.d/98dracut-systemd/dracut-mount.service.8.adoc
