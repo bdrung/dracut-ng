@@ -1,4 +1,4 @@
-dracut (107-1~beta2) unstable; urgency=medium
+dracut (107-1) unstable; urgency=medium
 
   [ Thomas Lange ]
   * new upstream 107
@@ -6,6 +6,7 @@ dracut (107-1~beta2) unstable; urgency=medium
   * refresh patches, drop patches included upstream
   * rename module systemd-sysusers
   * add module 45simpledrm
+  * update revdate for man pages
 
   [ Benjamin Drung ]
   * Stop shipping the dmraid module (Closes: #1099698)
@@ -15,7 +16,7 @@ dracut (107-1~beta2) unstable; urgency=medium
     - enable test 12 but skip using kernel-install due to bug #1104848
     - Remove possible masked systemd-udevd to avoid test 10 to fail
 
- -- Thomas Lange <lange@debian.org>  Fri, 02 May 2025 17:52:19 +0200
+ -- Thomas Lange <lange@debian.org>  Tue, 20 May 2025 11:21:44 +0200
 
 dracut (106-6) unstable; urgency=medium
 
