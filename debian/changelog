@@ -1,3 +1,27 @@
+dracut (107-1ubuntu1) questing; urgency=medium
+
+  * Merge with Debian unstable (LP: #2111570). Remaining changes:
+    - drop udevsettle patch (these kind of patches should be applied upstream)
+    - dracut-core:
+      - demote cryptsetup, systemd-cryptsetup, dmsetup, kpartx, lvm2,
+        and mdadm to suggests
+      - demote binutils to suggests. its only needed when using UEFI executables
+    - Include all packages with dracut modules in Apport bug reports
+    - autopkgtest: enable tests for s390x again
+    - autopkgtest: add TEST-70-ISCSI and TEST-71-ISCSI-MULTI
+    - Plymouth hook: Use alternatives instead of plymouth-set-default-theme
+    - run upstream-dracut-live autopkgtest on armhf and ppc64el
+    - Add update-initramfs (derived from initramfs-tools)
+    - Drop debian-initramfs-post-update.patch. Let update-initramfs call the
+      bootloader hooks instead of dracut itself.
+    - Add bash completion for update-initramfs
+    - Avoid updating the initramfs twice for some cases
+    - plymouth: Only pull in the SimpleDRM driver by default
+  * autopkgtest: depend on curl for test 60-NFS
+  * fix(simpledrm): add =drivers/gpu/drm/panel (LP: #2107477)
+
+ -- Benjamin Drung <bdrung@ubuntu.com>  Fri, 23 May 2025 14:54:03 +0200
+
 dracut (107-1) unstable; urgency=medium
 
   [ Thomas Lange ]
