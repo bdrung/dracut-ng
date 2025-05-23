@@ -5,7 +5,7 @@ Restrictions: needs-root, superficial
 
 # Skip following test cases:
 # * TEST-43-KERNEL-INSTALL: kernel-install issue, see https://bugs.debian.org/1117563
-# arm64, armhf, ppc64el, and s390x need upstream support: https://github.com/dracutdevs/dracut/issues/2493
+# arm64, armhf, and ppc64el need upstream support: https://github.com/dracutdevs/dracut/issues/2493
 
 Tests: 10-basic,
        11-usr-mount,
@@ -17,7 +17,7 @@ Tests: 10-basic,
        42-systemd-initrd,
        80-getarg,
        81-skipcpio
-Architecture: amd64
+Architecture: amd64 s390x
 Restrictions: allow-stderr, needs-root
 Depends: btrfs-progs,
          busybox,
@@ -30,7 +30,7 @@ Depends: btrfs-progs,
          systemd-boot-efi [amd64 arm64 armhf riscv64]
 
 Tests: 30-dmsquash
-Architecture: amd64
+Architecture: amd64 s390x
 Restrictions: allow-stderr, needs-root
 Depends: btrfs-progs,
          busybox,
@@ -68,7 +68,7 @@ Restrictions: allow-stderr, needs-root
 Depends: dracut-network, dracut-test
 
 Tests: 60-nfs
-Architecture: amd64
+Architecture: amd64 s390x
 Restrictions: allow-stderr, needs-root
 Depends: curl,
          dracut-live,
@@ -79,12 +79,12 @@ Depends: curl,
          procps
 
 Tests: 70-iscsi, 71-iscsi-multi
-Architecture: amd64
+Architecture: amd64 s390x
 Restrictions: allow-stderr, needs-root
 Depends: dracut-network, dracut-test, isc-dhcp-server, open-iscsi, procps, tgt
 
 Tests: 72-nbd
-Architecture: amd64
+Architecture: amd64 s390x
 Restrictions: allow-stderr, needs-root
 Depends: dracut-network,
          dracut-test,
