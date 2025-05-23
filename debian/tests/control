@@ -68,7 +68,8 @@ Features: test-name=upstream-dracut-network-nfs
 Test-Command: debian/tests/run-upstream-tests TESTS="60"
 Architecture: amd64
 Restrictions: allow-stderr, needs-root
-Depends: dracut-live,
+Depends: curl,
+         dracut-live,
          dracut-network,
          dracut-test,
          iproute2,
