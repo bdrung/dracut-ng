@@ -1,7 +1,8 @@
 Source: dracut
 Section: utils
 Priority: optional
-Maintainer: Thomas Lange <lange@debian.org>
+Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
+XSBC-Original-Maintainer: Thomas Lange <lange@debian.org>
 Uploaders: Benjamin Drung <bdrung@debian.org>
 Build-Depends: debhelper-compat (= 13),
                dh-apport,
