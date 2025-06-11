@@ -9,8 +9,6 @@ export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 DEB_HOST_ARCH ?= $(shell dpkg-architecture -qDEB_HOST_ARCH)
 export DRACUT_MAIN_VERSION=$(DEB_VERSION_UPSTREAM_REVISION)
 export DRACUT_FULL_VERSION=$(DEB_VERSION)
-# For "make install" to not install files needed for tests
-export enable_test=no
 
 deb_systemdsystemunitdir = $(shell pkg-config --variable=systemdsystemunitdir systemd | sed s,^/,,)
 
