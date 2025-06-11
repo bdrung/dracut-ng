@@ -28,23 +28,23 @@ index 98cfaed..a2413f7 100755
          echo "No initramfs image found to restore!"
          exit 1
 diff --git a/dracut.sh b/dracut.sh
-index 5416417..69df7cb 100755
+index f22bec3..365d564 100755
 --- a/dracut.sh
 +++ b/dracut.sh
-@@ -1172,7 +1172,7 @@ if ! [[ $outfile ]]; then
-         outfile="$dracutsysrootdir$efidir/Linux/linux-$kernel${MACHINE_ID:+-${MACHINE_ID}}${BUILD_ID:+-${BUILD_ID}}.efi"
+@@ -1205,7 +1205,7 @@ if ! [[ $outfile ]]; then
+         outfile="${dracutsysrootdir-}$efidir/Linux/linux-$kernel${MACHINE_ID:+-${MACHINE_ID}}${BUILD_ID:+-${BUILD_ID}}.efi"
      else
          if ! [[ $initrdname ]]; then
 -            initrdname="initramfs-${kernel}.img"
 +            initrdname="initrd.img-${kernel}"
          fi
-         if [[ -d "$dracutsysrootdir"/efi/loader/entries || -L "$dracutsysrootdir"/efi/loader/entries ]] \
+         if [[ -d "${dracutsysrootdir-}"/efi/loader/entries || -L "${dracutsysrootdir-}"/efi/loader/entries ]] \
              && [[ $MACHINE_ID ]] \
 diff --git a/man/dracut.conf.5.adoc b/man/dracut.conf.5.adoc
-index ae8a690..4de56e4 100644
+index 88713f0..a25cf8a 100644
 --- a/man/dracut.conf.5.adoc
 +++ b/man/dracut.conf.5.adoc
-@@ -350,7 +350,7 @@ The initrdname configuration option is required to match the
+@@ -363,7 +363,7 @@ The initrdname configuration option is required to match the
  _initr*$\{kernel\}*_ file pattern and only one file with this pattern should
  exists in the directory where initramfs is loaded from.
  +
