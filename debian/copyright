@@ -17,10 +17,10 @@ Copyright:
   2025 Benjamin Drung <bdrung@debian.org>
 License: GPL-2+
 
-Files: modules.d/97masterkey/masterkey.sh
- modules.d/98ecryptfs/ecryptfs-mount.sh
- modules.d/98integrity/evm-enable.sh
- modules.d/98integrity/ima-policy-load.sh
+Files: modules.d/76masterkey/masterkey.sh
+ modules.d/77ecryptfs/ecryptfs-mount.sh
+ modules.d/77integrity/evm-enable.sh
+ modules.d/77integrity/ima-policy-load.sh
 Copyright: 2011 Politecnico di Torino, Italy
  Roberto Sassu
 License: GPL-2+
