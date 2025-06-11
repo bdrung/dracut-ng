@@ -18,7 +18,7 @@ deb_systemdsystemunitdir = $(shell pkg-config --variable=systemdsystemunitdir sy
 	dh $@
 
 override_dh_auto_configure:
-	dh_auto_configure -- --systemdsystemunitdir=/$(deb_systemdsystemunitdir) --libdir=/usr/lib
+	dh_auto_configure -- --configprofile= --systemdsystemunitdir=/$(deb_systemdsystemunitdir) --libdir=/usr/lib
 	$(SHELL) debian/fix-revdate
 	mv dracut-version.sh dracut-version.sh.orig
 	echo '#!/bin/sh' > dracut-version.sh
