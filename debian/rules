@@ -39,6 +39,7 @@ else
 endif
 
 override_dh_auto_test:
+	make -C test check TESTS="80 81"
 	make syncheck
 
 override_dh_install:

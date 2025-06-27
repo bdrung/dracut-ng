@@ -2,3 +2,5 @@ Default-initrdname-to-initrd.img-kernel.patch
 test-skip-using-kernel-install-due-to-bug-1104848.patch
 alternatives-not-set-default-theme.patch
 plymouth-Only-pull-in-the-SimpleDRM-driver-by-default.patch
+test-rename-set_test_envonment_variables-to-set_kversion_.patch
+test-setup-test-environment-variables-only-when-needed.patch

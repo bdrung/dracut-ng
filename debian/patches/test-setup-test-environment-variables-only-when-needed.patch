@@ -1,0 +1,266 @@
+From: Benjamin Drung <benjamin.drung@canonical.com>
+Date: Fri, 27 Jun 2025 15:10:51 +0200
+Subject: test: setup test environment variables only when needed
+
+The test environment variables `KVERSION` and `VMLINUZ` are only needed
+when calling `run-qemu` or using them directly. They are not needed for
+TEST-80-GETARG and TEST-81-SKIPCPIO.
+
+So move the `set_kversion_and_vmlinux` call to the relevant `test_check`
+functions.
+
+Forwarded: https://github.com/dracut-ng/dracut-ng/pull/1398
+---
+ test/TEST-10-BASIC/test.sh          | 4 ++++
+ test/TEST-11-USR-MOUNT/test.sh      | 1 +
+ test/TEST-12-UEFI/test.sh           | 1 +
+ test/TEST-20-STORAGE/test.sh        | 1 +
+ test/TEST-26-ENC-RAID-LVM/test.sh   | 1 +
+ test/TEST-30-DMSQUASH/test.sh       | 1 +
+ test/TEST-40-SYSTEMD/test.sh        | 1 +
+ test/TEST-41-FULL-SYSTEMD/test.sh   | 1 +
+ test/TEST-42-SYSTEMD-INITRD/test.sh | 1 +
+ test/TEST-43-KERNEL-INSTALL/test.sh | 1 +
+ test/TEST-60-NFS/test.sh            | 1 +
+ test/TEST-61-MULTINIC/test.sh       | 1 +
+ test/TEST-62-BONDBRIDGEVLAN/test.sh | 1 +
+ test/TEST-70-ISCSI/test.sh          | 1 +
+ test/TEST-71-ISCSI-MULTI/test.sh    | 1 +
+ test/TEST-72-NBD/test.sh            | 1 +
+ test/TEST-82-DRACUT-CPIO/test.sh    | 1 +
+ test/test-functions                 | 3 ---
+ 18 files changed, 20 insertions(+), 3 deletions(-)
+
+diff --git a/test/TEST-10-BASIC/test.sh b/test/TEST-10-BASIC/test.sh
+index 312391a..873a0bc 100755
+--- a/test/TEST-10-BASIC/test.sh
++++ b/test/TEST-10-BASIC/test.sh
+@@ -3,6 +3,10 @@ set -e
+ # shellcheck disable=SC2034
+ TEST_DESCRIPTION="root filesystem on ext4 filesystem"
+ 
++test_check() {
++    set_kversion_and_vmlinux
++}
++
+ test_run() {
+     declare -a disk_args=()
+     # shellcheck disable=SC2034  # disk_index used in qemu_add_drive
+diff --git a/test/TEST-11-USR-MOUNT/test.sh b/test/TEST-11-USR-MOUNT/test.sh
+index 353ad35..d62948c 100755
+--- a/test/TEST-11-USR-MOUNT/test.sh
++++ b/test/TEST-11-USR-MOUNT/test.sh
+@@ -8,6 +8,7 @@ TEST_DESCRIPTION="root filesystem on a btrfs filesystem with /usr subvolume"
+ #DEBUGFAIL="rd.shell rd.break"
+ 
+ test_check() {
++    set_kversion_and_vmlinux
+     if ! type -p mkfs.btrfs &> /dev/null; then
+         echo "Test needs mkfs.btrfs.. Skipping"
+         return 1
+diff --git a/test/TEST-12-UEFI/test.sh b/test/TEST-12-UEFI/test.sh
+index 749c7ae..582d1ce 100755
+--- a/test/TEST-12-UEFI/test.sh
++++ b/test/TEST-12-UEFI/test.sh
+@@ -5,6 +5,7 @@ set -e
+ TEST_DESCRIPTION="UEFI boot (ukify, kernel-install)"
+ 
+ test_check() {
++    set_kversion_and_vmlinux
+     if ! type -p mksquashfs &> /dev/null; then
+         echo "Test needs mksquashfs... Skipping"
+         return 1
+diff --git a/test/TEST-20-STORAGE/test.sh b/test/TEST-20-STORAGE/test.sh
+index 5bb04d3..fcaf469 100755
+--- a/test/TEST-20-STORAGE/test.sh
++++ b/test/TEST-20-STORAGE/test.sh
+@@ -7,6 +7,7 @@ set -e
+ TEST_DESCRIPTION="root filesystem on multiple device $TEST_FSTYPE (on top of RAID and LUKS)"
+ 
+ test_check() {
++    set_kversion_and_vmlinux
+     (command -v zfs || (command -v lvm && command -v "mkfs.$TEST_FSTYPE")) &> /dev/null
+ }
+ 
+diff --git a/test/TEST-26-ENC-RAID-LVM/test.sh b/test/TEST-26-ENC-RAID-LVM/test.sh
+index f10202f..a5c2ace 100755
+--- a/test/TEST-26-ENC-RAID-LVM/test.sh
++++ b/test/TEST-26-ENC-RAID-LVM/test.sh
+@@ -9,6 +9,7 @@ TEST_DESCRIPTION="root filesystem on LVM on encrypted partitions of a RAID"
+ #DEBUGFAIL="rd.shell loglevel=70 systemd.log_target=kmsg systemd.log_target=debug"
+ 
+ test_check() {
++    set_kversion_and_vmlinux
+     if ! type -p cryptsetup &> /dev/null; then
+         echo "Test needs cryptsetup for crypt module... Skipping"
+         return 1
+diff --git a/test/TEST-30-DMSQUASH/test.sh b/test/TEST-30-DMSQUASH/test.sh
+index 0f1ffba..1514767 100755
+--- a/test/TEST-30-DMSQUASH/test.sh
++++ b/test/TEST-30-DMSQUASH/test.sh
+@@ -8,6 +8,7 @@ TEST_DESCRIPTION="live root on a squash filesystem"
+ #DEBUGFAIL="rd.shell rd.debug rd.live.debug loglevel=7"
+ 
+ test_check() {
++    set_kversion_and_vmlinux
+     if ! type -p mksquashfs &> /dev/null; then
+         echo "Test needs mksquashfs... Skipping"
+         return 1
+diff --git a/test/TEST-40-SYSTEMD/test.sh b/test/TEST-40-SYSTEMD/test.sh
+index 6223828..a5405ff 100755
+--- a/test/TEST-40-SYSTEMD/test.sh
++++ b/test/TEST-40-SYSTEMD/test.sh
+@@ -4,6 +4,7 @@ set -e
+ TEST_DESCRIPTION="root filesystem on a ext4 filesystem"
+ 
+ test_check() {
++    set_kversion_and_vmlinux
+     command -v systemctl &> /dev/null
+ }
+ 
+diff --git a/test/TEST-41-FULL-SYSTEMD/test.sh b/test/TEST-41-FULL-SYSTEMD/test.sh
+index 1dfdb8b..472aa0e 100755
+--- a/test/TEST-41-FULL-SYSTEMD/test.sh
++++ b/test/TEST-41-FULL-SYSTEMD/test.sh
+@@ -5,6 +5,7 @@ set -e
+ TEST_DESCRIPTION="Full systemd serialization/deserialization test with /usr mount"
+ 
+ test_check() {
++    set_kversion_and_vmlinux
+     if ! type -p mkfs.btrfs &> /dev/null; then
+         echo "Test needs mkfs.btrfs.. Skipping"
+         return 1
+diff --git a/test/TEST-42-SYSTEMD-INITRD/test.sh b/test/TEST-42-SYSTEMD-INITRD/test.sh
+index 34ddcbd..3fd7a86 100755
+--- a/test/TEST-42-SYSTEMD-INITRD/test.sh
++++ b/test/TEST-42-SYSTEMD-INITRD/test.sh
+@@ -5,6 +5,7 @@ set -e
+ TEST_DESCRIPTION="root filesystem on a ext4 filesystem with systemd but without dracut-systemd"
+ 
+ test_check() {
++    set_kversion_and_vmlinux
+     command -v systemctl &> /dev/null
+ }
+ 
+diff --git a/test/TEST-43-KERNEL-INSTALL/test.sh b/test/TEST-43-KERNEL-INSTALL/test.sh
+index e84f7e9..709dfa9 100755
+--- a/test/TEST-43-KERNEL-INSTALL/test.sh
++++ b/test/TEST-43-KERNEL-INSTALL/test.sh
+@@ -4,6 +4,7 @@ set -e
+ TEST_DESCRIPTION="kernel-install with root filesystem on ext4 filesystem"
+ 
+ test_check() {
++    set_kversion_and_vmlinux
+     if command -v systemd-detect-virt > /dev/null && ! systemd-detect-virt -c &> /dev/null; then
+         echo "This test assumes that it runs inside a CI container."
+         return 1
+diff --git a/test/TEST-60-NFS/test.sh b/test/TEST-60-NFS/test.sh
+index cd1689e..4d84ad8 100755
+--- a/test/TEST-60-NFS/test.sh
++++ b/test/TEST-60-NFS/test.sh
+@@ -7,6 +7,7 @@ set -e
+ TEST_DESCRIPTION="root filesystem on NFS with $USE_NETWORK"
+ 
+ test_check() {
++    set_kversion_and_vmlinux
+     if ! type -p dhclient &> /dev/null; then
+         echo "Test needs dhclient for server networking... Skipping"
+         return 1
+diff --git a/test/TEST-61-MULTINIC/test.sh b/test/TEST-61-MULTINIC/test.sh
+index 367d7d2..0333171 100755
+--- a/test/TEST-61-MULTINIC/test.sh
++++ b/test/TEST-61-MULTINIC/test.sh
+@@ -13,6 +13,7 @@ TEST_DESCRIPTION="root filesystem on NFS with multiple nics with $USE_NETWORK"
+ 
+ # skip the test if ifcfg dracut module can not be installed
+ test_check() {
++    set_kversion_and_vmlinux
+     if ! type -p dhclient &> /dev/null; then
+         echo "Test needs dhclient for server networking... Skipping"
+         return 1
+diff --git a/test/TEST-62-BONDBRIDGEVLAN/test.sh b/test/TEST-62-BONDBRIDGEVLAN/test.sh
+index 5188c09..fe34319 100755
+--- a/test/TEST-62-BONDBRIDGEVLAN/test.sh
++++ b/test/TEST-62-BONDBRIDGEVLAN/test.sh
+@@ -15,6 +15,7 @@ TEST_DESCRIPTION="root filesystem on NFS with bridging/bonding/vlan with $USE_NE
+ 
+ # skip the test if ifcfg dracut module can not be installed
+ test_check() {
++    set_kversion_and_vmlinux
+     if ! type -p dhclient &> /dev/null; then
+         echo "Test needs dhclient for server networking... Skipping"
+         return 1
+diff --git a/test/TEST-70-ISCSI/test.sh b/test/TEST-70-ISCSI/test.sh
+index ff27da5..c647860 100755
+--- a/test/TEST-70-ISCSI/test.sh
++++ b/test/TEST-70-ISCSI/test.sh
+@@ -118,6 +118,7 @@ test_run() {
+ }
+ 
+ test_check() {
++    set_kversion_and_vmlinux
+     if ! type -p dhclient &> /dev/null; then
+         echo "Test needs dhclient for server networking... Skipping"
+         return 1
+diff --git a/test/TEST-71-ISCSI-MULTI/test.sh b/test/TEST-71-ISCSI-MULTI/test.sh
+index 2950fc1..d6d0174 100755
+--- a/test/TEST-71-ISCSI-MULTI/test.sh
++++ b/test/TEST-71-ISCSI-MULTI/test.sh
+@@ -125,6 +125,7 @@ test_run() {
+ }
+ 
+ test_check() {
++    set_kversion_and_vmlinux
+     if ! type -p dhclient &> /dev/null; then
+         echo "Test needs dhclient for server networking... Skipping"
+         return 1
+diff --git a/test/TEST-72-NBD/test.sh b/test/TEST-72-NBD/test.sh
+index e25f449..b650779 100755
+--- a/test/TEST-72-NBD/test.sh
++++ b/test/TEST-72-NBD/test.sh
+@@ -13,6 +13,7 @@ TEST_DESCRIPTION="root filesystem on NBD with $USE_NETWORK"
+ #SERIAL="tcp:127.0.0.1:9999"
+ 
+ test_check() {
++    set_kversion_and_vmlinux
+     if ! type -p dhclient &> /dev/null; then
+         echo "Test needs dhclient for server networking... Skipping"
+         return 1
+diff --git a/test/TEST-82-DRACUT-CPIO/test.sh b/test/TEST-82-DRACUT-CPIO/test.sh
+index ff1f130..19f9213 100755
+--- a/test/TEST-82-DRACUT-CPIO/test.sh
++++ b/test/TEST-82-DRACUT-CPIO/test.sh
+@@ -8,6 +8,7 @@ TEST_DESCRIPTION="kernel cpio extraction tests for dracut-cpio"
+ # see dracut-cpio source for unit tests
+ 
+ test_check() {
++    set_kversion_and_vmlinux
+     if ! [[ -x "$PKGLIBDIR/dracut-cpio" ]]; then
+         echo "Test needs dracut-cpio... Skipping"
+         return 1
+diff --git a/test/test-functions b/test/test-functions
+index 713089b..3a8292c 100644
+--- a/test/test-functions
++++ b/test/test-functions
+@@ -244,13 +244,11 @@ while (($# > 0)); do
+     case $1 in
+         --run)
+             echo "TEST RUN: $TEST_DESCRIPTION"
+-            set_kversion_and_vmlinux
+             test_check && test_run
+             exit $?
+             ;;
+         --setup)
+             echo "TEST SETUP: $TEST_DESCRIPTION"
+-            set_kversion_and_vmlinux
+             test_check && test_setup
+             exit $?
+             ;;
+@@ -262,7 +260,6 @@ while (($# > 0)); do
+             exit $?
+             ;;
+         --all)
+-            set_kversion_and_vmlinux
+             if ! test_check 2 &> test${TEST_RUN_ID:+-$TEST_RUN_ID}.log; then
+                 if [[ $V == "1" || $V == "2" ]]; then
+                     cat test${TEST_RUN_ID:+-$TEST_RUN_ID}.log
