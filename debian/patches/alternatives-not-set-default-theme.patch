@@ -36,7 +36,7 @@ This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
  PLYMOUTH_LOGO_FILE="/usr/share/pixmaps/system-logo-white.png"
 -PLYMOUTH_THEME=$(plymouth-set-default-theme)
 +PLYMOUTH_THEME_PATH="$(update-alternatives --query default.plymouth 2>/dev/null | sed -e '/^Value:/!d' -e 's/^Value: \(.*\)/\1/')"
-+PLYMOUTH_THEME="$(basename ${PLYMOUTH_THEME_PATH:-none} .plymouth || true)"
++PLYMOUTH_THEME="$(basename "${PLYMOUTH_THEME_PATH:-none}" .plymouth || true)"
  
  inst_multiple plymouthd plymouth
  
