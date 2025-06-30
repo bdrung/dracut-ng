@@ -1,3 +1,9 @@
+dracut (107+git20250630-0ubuntu1) questing; urgency=medium
+
+  * New upstream snapshot.
+
+ -- Benjamin Drung <bdrung@ubuntu.com>  Mon, 30 Jun 2025 23:37:20 +0200
+
 dracut (107-1ubuntu1) questing; urgency=medium
 
   * Merge with Debian unstable (LP: #2111570). Remaining changes:
