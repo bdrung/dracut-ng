@@ -108,3 +108,9 @@ Depends: cryptsetup,
          nbd-server,
          procps,
          systemd-cryptsetup
+
+# Dummy test so that linux-firmware updates trigger our other autopkgtests
+Features: test-name=hint-testsuite-triggers
+Test-Command: false
+Depends: linux-firmware
+Restrictions: hint-testsuite-triggers
