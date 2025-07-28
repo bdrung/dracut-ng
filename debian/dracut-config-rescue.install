@@ -1,1 +1,1 @@
-dracut.conf.d/rescue/50-rescue.conf       usr/lib/dracut/dracut.conf.d
+dracut.conf.d/rescue/10-rescue.conf       usr/lib/dracut/dracut.conf.d
