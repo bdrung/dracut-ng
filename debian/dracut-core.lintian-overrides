@@ -4,3 +4,6 @@ dracut-core: executable-in-usr-lib [usr/lib/dracut/*]
 dracut-core: executable-in-usr-lib [usr/lib/kernel/install.d/*]
 # These services run in the initrd and are allowed to linger until the very end of shutdown sequence
 dracut-core: systemd-service-file-shutdown-problems [usr/lib/systemd/system/*dracut-*.service]
+# URLs and long parameters were line breaks would be misleading (LP: #2115494)
+dracut-core: groff-message troff:* warning *: cannot break line [usr/share/man/man7/dracut.cmdline.7.gz:*]
+dracut-core: groff-message troff:* warning *: cannot break line [usr/share/man/man7/dracut.kernel.7.gz:*]
