@@ -1,3 +1,19 @@
+dracut (107-2) unstable; urgency=medium
+
+  * autopkgtest: depend on curl for test 60-NFS
+  * Bump Standards-Version to 4.7.2
+  * Add update-initramfs (derived from initramfs-tools) (LP: #2098525)
+  * Add bash completion for update-initramfs (LP: #2103540)
+  * autopkgtest: replace qemu-kvm by qemu-system-native
+  * Fix shellcheck in Debian packaging scripts
+  * fix(lsinitrd): resolve initrd to real path (LP: #2116183)
+  * Add autopkgtest for lsinitrd
+  * dracut-network: default to systemd-networkd as network manager
+  * dracut-core: silence "cannot break line" groff warnings
+  * Run syncheck on package test phase
+
+ -- Benjamin Drung <bdrung@debian.org>  Tue, 29 Jul 2025 23:31:39 +0200
+
 dracut (107-1) unstable; urgency=medium
 
   [ Thomas Lange ]
