@@ -20,9 +20,8 @@ deb_systemdsystemunitdir = $(shell pkg-config --variable=systemdsystemunitdir sy
 override_dh_auto_configure:
 	dh_auto_configure -- --systemdsystemunitdir=/$(deb_systemdsystemunitdir) --libdir=/usr/lib
 	$(SHELL) debian/fix-revdate
-	mv dracut-version.sh dracut-version.sh.orig
-	echo '#!/bin/sh' > dracut-version.sh
-	echo "DRACUT_VERSION=$${DRACUT_FULL_VERSION}" >> dracut-version.sh
+	cp dracut-version.sh dracut-version.sh.orig
+	sed -i 's;^\(DRACUT_VERSION=\).*;\1$(DRACUT_FULL_VERSION);' dracut-version.sh
 
 override_dh_fixperms-arch:
 	dh_fixperms
