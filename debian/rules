@@ -15,7 +15,7 @@ export enable_test=no
 deb_systemdsystemunitdir = $(shell pkg-config --variable=systemdsystemunitdir systemd | sed s,^/,,)
 
 %:
-	dh $@
+	dh $@ --with bash-completion
 
 override_dh_auto_configure:
 	dh_auto_configure -- --systemdsystemunitdir=/$(deb_systemdsystemunitdir) --libdir=/usr/lib
