@@ -1,3 +1,7 @@
+Tests: lsinitrd
+Depends: dracut, linux-image-generic, zstd
+Restrictions: needs-root, superficial
+
 # Skip following test cases:
 # * TEST-23-IMSM: dmraid was removed from Debian
 # * TEST-43-KERNEL-INSTALL: kernel-install issue, see https://bugs.debian.org/1104848
