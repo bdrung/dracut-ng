@@ -43,6 +43,7 @@ else
 endif
 
 override_dh_auto_test:
+	make syncheck
 
 override_dh_install:
 	dh_install

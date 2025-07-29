@@ -10,6 +10,8 @@ Build-Depends: debhelper-compat (= 13),
                docbook-xsl,
                libkmod-dev,
                pkgconf,
+               shellcheck [!i386 !m68k !powerpc !sh4 !x32] <!nocheck>,
+               shfmt [!i386 !m68k !powerpc !sh4 !x32] <!nocheck>,
                systemd-dev,
                xsltproc
 Rules-Requires-Root: no
