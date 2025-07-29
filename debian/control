@@ -25,6 +25,7 @@ Depends: cpio,
          dracut-install,
          e2fsprogs,
          kmod,
+         systemd-sysv | initscripts | sysvinit-core,
          udev,
          ${misc:Depends},
          ${shlibs:Depends}
@@ -37,7 +38,6 @@ Recommends: binutils,
             mdadm,
             systemd,
             systemd-cryptsetup,
-            systemd-sysv,
             zstd
 Breaks: dracut-live (<< 059-2), dracut-network (<< 057+157-2)
 Replaces: dracut-live (<< 059-2), dracut-network (<< 057+157-2)
