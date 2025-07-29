@@ -80,7 +80,7 @@ Package: dracut-network
 Architecture: all
 Depends: dracut-core,
          iputils-arping,
-         isc-dhcp-client | systemd | connman | network-manager,
+         systemd | network-manager | isc-dhcp-client | connman,
          ${misc:Depends}
 Recommends: curl, iscsiuio, nbd-client, nfs-common, open-iscsi
 Breaks: dracut-core (<< 105)
