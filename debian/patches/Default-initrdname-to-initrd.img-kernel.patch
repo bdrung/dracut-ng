@@ -12,10 +12,10 @@ Signed-off-by: Benjamin Drung <benjamin.drung@canonical.com>
  3 files changed, 4 insertions(+), 4 deletions(-)
 
 diff --git a/dracut.sh b/dracut.sh
-index f22bec3..365d564 100755
+index 74d11c5..92eb848 100755
 --- a/dracut.sh
 +++ b/dracut.sh
-@@ -1205,7 +1205,7 @@ if ! [[ $outfile ]]; then
+@@ -1213,7 +1213,7 @@ if ! [[ $outfile ]]; then
          outfile="${dracutsysrootdir-}$efidir/Linux/linux-$kernel${MACHINE_ID:+-${MACHINE_ID}}${BUILD_ID:+-${BUILD_ID}}.efi"
      else
          if ! [[ $initrdname ]]; then
@@ -25,10 +25,10 @@ index f22bec3..365d564 100755
          if [[ -d "${dracutsysrootdir-}"/efi/loader/entries || -L "${dracutsysrootdir-}"/efi/loader/entries ]] \
              && [[ $MACHINE_ID ]] \
 diff --git a/man/dracut.conf.5.adoc b/man/dracut.conf.5.adoc
-index 88713f0..a25cf8a 100644
+index 9290758..47a1e01 100644
 --- a/man/dracut.conf.5.adoc
 +++ b/man/dracut.conf.5.adoc
-@@ -363,7 +363,7 @@ The initrdname configuration option is required to match the
+@@ -370,7 +370,7 @@ The initrdname configuration option is required to match the
  _initr*$\{kernel\}*_ file pattern and only one file with this pattern should
  exists in the directory where initramfs is loaded from.
  +
