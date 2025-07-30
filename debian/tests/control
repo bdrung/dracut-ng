@@ -1,4 +1,5 @@
 Tests: lsinitrd
+Architecture: !armel !i386
 Depends: dracut, linux-image-generic, zstd
 Restrictions: needs-root, superficial
 
