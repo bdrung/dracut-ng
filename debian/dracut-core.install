@@ -1,5 +1,4 @@
 debian/09console-setup          usr/lib/dracut/modules.d
-debian/10-debian.conf           usr/lib/dracut/dracut.conf.d
 etc/dracut.conf                 etc
 usr/bin/dracut
 usr/bin/dracut-catimages
@@ -11,6 +10,7 @@ usr/lib/dracut/dracut-initramfs-restore
 usr/lib/dracut/dracut-logger.sh
 usr/lib/dracut/dracut-util
 usr/lib/dracut/dracut-version.sh
+usr/lib/dracut/dracut.conf.d/10-debian.conf
 usr/lib/dracut/dracut.conf.d/fips
 usr/lib/dracut/dracut.conf.d/generic
 usr/lib/dracut/dracut.conf.d/hostonly
