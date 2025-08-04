@@ -1,1 +1,1 @@
-dracut.conf.d/generic/50-generic.conf       usr/lib/dracut/dracut.conf.d
+dracut.conf.d/generic/11-generic.conf       usr/lib/dracut/dracut.conf.d
