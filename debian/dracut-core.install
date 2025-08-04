@@ -110,6 +110,7 @@ usr/lib/dracut/modules.d/76masterkey
 usr/lib/dracut/modules.d/76systemd-emergency
 usr/lib/dracut/modules.d/77dracut-systemd
 usr/lib/dracut/modules.d/77ecryptfs
+usr/lib/dracut/modules.d/77initqueue
 usr/lib/dracut/modules.d/77integrity
 usr/lib/dracut/modules.d/77pollcdrom
 usr/lib/dracut/modules.d/77selinux
