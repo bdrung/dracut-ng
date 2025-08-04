@@ -4,16 +4,13 @@ Priority: optional
 Maintainer: Thomas Lange <lange@debian.org>
 Uploaders: Benjamin Drung <bdrung@debian.org>
 Build-Depends: debhelper-compat (= 13),
-               asciidoc-base,
+               asciidoctor,
                bash-completion,
-               docbook-xml,
-               docbook-xsl,
                libkmod-dev,
                pkgconf,
                shellcheck [!i386 !m68k !powerpc !sh4 !x32] <!nocheck>,
                shfmt [!i386 !m68k !powerpc !sh4 !x32] <!nocheck>,
-               systemd-dev,
-               xsltproc
+               systemd-dev
 Rules-Requires-Root: no
 Standards-Version: 4.7.2
 Vcs-Browser: https://salsa.debian.org/debian/dracut
