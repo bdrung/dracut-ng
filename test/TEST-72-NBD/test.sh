@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -e
+set -eu
 
 [ -z "${USE_NETWORK-}" ] && USE_NETWORK="network"
 
@@ -46,12 +46,12 @@ run_server() {
         -serial "${SERIAL:-"file:$TESTDIR/server.log"}" \
         -net nic,macaddr=52:54:00:12:34:56,model=virtio \
         -net socket,listen=127.0.0.1:12340 \
-        -append "panic=1 oops=panic softlockup_panic=1 rd.luks=0 systemd.crash_reboot quiet root=/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_serverroot rootfstype=ext4 rw console=ttyS0,115200n81 $SERVER_DEBUG" \
+        -append "panic=1 oops=panic softlockup_panic=1 rd.luks=0 systemd.crash_reboot quiet root=/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_serverroot rootfstype=ext4 rw console=ttyS0,115200n81 ${SERVER_DEBUG-}" \
         -initrd "$TESTDIR"/initramfs.server \
         -pidfile "$TESTDIR"/server.pid -daemonize
     chmod 644 "$TESTDIR"/server.pid
 
-    if ! [[ $SERIAL ]]; then
+    if ! [[ ${SERIAL-} ]]; then
         wait_for_server_startup
     else
         echo Sleeping 10 seconds to give the server a head start
@@ -63,12 +63,9 @@ client_test() {
     local test_name="$1"
     local mac=$2
     local cmdline="$3"
-    local fstype=$4
-    local fsopt=$5
+    local fstype=${4-ext4}
+    local fsopt=${5-ro}
     local found opts nbdinfo
-
-    [[ $fstype ]] || fstype=ext4
-    [[ $fsopt ]] || fsopt="ro"
 
     echo "CLIENT TEST START: $test_name"
 
@@ -194,7 +191,7 @@ make_encrypted_root() {
         --add-confdir test-root \
         -I "ip grep" \
         --no-hostonly --no-hostonly-cmdline --nohardlink \
-        -f "$TESTDIR"/initramfs.root "$KVERSION"
+        -f "$TESTDIR"/initramfs.root
     mkdir -p "$TESTDIR"/overlay/source && mv "$TESTDIR"/dracut.*/initramfs/* "$TESTDIR"/overlay/source && rm -rf "$TESTDIR"/dracut.*
     cp ./client-init.sh "$TESTDIR"/overlay/source/sbin/init
 

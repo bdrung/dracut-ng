@@ -24,7 +24,7 @@ else
 
     if ! grep -qF 'rd.luks=0' /proc/cmdline && command -v cryptsetup > /dev/null; then
         printf test > keyfile
-        cryptsetup -q luksFormat /dev/md0 /keyfile
+        cryptsetup --pbkdf pbkdf2 -q luksFormat /dev/md0 /keyfile
         echo "The passphrase is test"
         cryptsetup luksOpen /dev/md0 dracut_crypt_test < /keyfile
         lvm pvcreate -ff -y /dev/mapper/dracut_crypt_test
@@ -86,5 +86,5 @@ fi
     echo "ID_FS_UUID=$ID_FS_UUID"
 } | dd oflag=direct,dsync of=/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_marker status=none
 
-sync
+sync /dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_marker
 poweroff -f

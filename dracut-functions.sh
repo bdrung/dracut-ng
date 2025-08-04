@@ -44,6 +44,12 @@ trim() {
     printf "%s" "$var"
 }
 
+# is_elf <path>
+# Returns success if the given path is an ELF. Only checks the first 4 bytes.
+is_elf() {
+    [[ $(head --bytes=4 "$1") == $'\x7fELF' ]]
+}
+
 # find a binary.  If we were not passed the full path directly,
 # search in the usual places to find the binary.
 find_binary() {
@@ -56,33 +62,33 @@ find_binary() {
     if [[ $1 == *.so* ]]; then
         for l in $libdirs; do
             _path="${l}${_delim}${1}"
-            if { $DRACUT_LDD "${dracutsysrootdir}${_path}" &> /dev/null; }; then
+            if is_elf "${dracutsysrootdir-}${_path}"; then
                 printf "%s\n" "${_path}"
                 return 0
             fi
         done
         _path="${_delim}${1}"
-        if { $DRACUT_LDD "${dracutsysrootdir}${_path}" &> /dev/null; }; then
+        if is_elf "${dracutsysrootdir-}${_path}"; then
             printf "%s\n" "${_path}"
             return 0
         fi
     fi
     if [[ $1 == */* ]]; then
         _path="${_delim}${1}"
-        if [[ -L ${dracutsysrootdir}${_path} ]] || [[ -x ${dracutsysrootdir}${_path} ]]; then
+        if [[ -L ${dracutsysrootdir-}${_path} ]] || [[ -x ${dracutsysrootdir-}${_path} ]]; then
             printf "%s\n" "${_path}"
             return 0
         fi
     fi
-    for p in $DRACUT_PATH; do
+    while read -r -d ':' p; do
         _path="${p}${_delim}${1}"
-        if [[ -L ${dracutsysrootdir}${_path} ]] || [[ -x ${dracutsysrootdir}${_path} ]]; then
+        if [[ -L ${dracutsysrootdir-}${_path} ]] || [[ -x ${dracutsysrootdir-}${_path} ]]; then
             printf "%s\n" "${_path}"
             return 0
         fi
-    done
+    done <<< "$PATH"
 
-    [[ -n $dracutsysrootdir ]] && return 1
+    [[ -n ${dracutsysrootdir-} ]] && return 1
     type -P "${1##*/}"
 }
 
@@ -388,7 +394,7 @@ find_block_device() {
         } && return 0
     fi
     # fall back to /etc/fstab
-    [[ ! -f "$dracutsysrootdir"/etc/fstab ]] && return 1
+    [[ ! -f "${dracutsysrootdir-}"/etc/fstab ]] && return 1
 
     findmnt -e --fstab -v -n -o 'MAJ:MIN,SOURCE' --target "$_find_mpt" | {
         while read -r _majmin _dev || [ -n "$_dev" ]; do
@@ -439,7 +445,7 @@ find_mp_fstype() {
         } && return 0
     fi
 
-    [[ ! -f "$dracutsysrootdir"/etc/fstab ]] && return 1
+    [[ ! -f "${dracutsysrootdir-}"/etc/fstab ]] && return 1
 
     findmnt --fstab -e -v -n -o 'FSTYPE' --target "$1" | {
         while read -r _fs || [ -n "$_fs" ]; do
@@ -481,7 +487,7 @@ find_dev_fstype() {
         } && return 0
     fi
 
-    [[ ! -f "$dracutsysrootdir"/etc/fstab ]] && return 1
+    [[ ! -f "${dracutsysrootdir-}"/etc/fstab ]] && return 1
 
     findmnt --fstab -e -v -n -o 'FSTYPE' --source "$_find_dev" | {
         while read -r _fs || [ -n "$_fs" ]; do
@@ -509,7 +515,7 @@ find_mp_fsopts() {
         findmnt -e -v -n -o 'OPTIONS' --target "$1" 2> /dev/null && return 0
     fi
 
-    [[ ! -f "$dracutsysrootdir"/etc/fstab ]] && return 1
+    [[ ! -f "${dracutsysrootdir-}"/etc/fstab ]] && return 1
 
     findmnt --fstab -e -v -n -o 'OPTIONS' --target "$1"
 }
@@ -534,7 +540,7 @@ find_dev_fsopts() {
         findmnt -e -v -n -o 'OPTIONS' --source "$_find_dev" 2> /dev/null && return 0
     fi
 
-    [[ ! -f "$dracutsysrootdir"/etc/fstab ]] && return 1
+    [[ ! -f "${dracutsysrootdir-}"/etc/fstab ]] && return 1
 
     findmnt --fstab -e -v -n -o 'OPTIONS' --source "$_find_dev"
 }
@@ -685,7 +691,7 @@ check_vol_slaves() {
 }
 
 check_vol_slaves_all() {
-    local _vg _pv _majmin _dm
+    local _vg _pv _majmin _dm _ret=1
     _majmin="$2"
     _dm=$(get_lvm_dm_dev "$_majmin")
     [[ -z $_dm ]] && return 1 # not an LVM device-mapper device
@@ -699,11 +705,10 @@ check_vol_slaves_all() {
         fi
 
         for _pv in $(lvm vgs --noheadings -o pv_name "$_vg" 2> /dev/null); do
-            check_block_and_slaves_all "$1" "$(get_maj_min "$_pv")"
+            check_block_and_slaves_all "$1" "$(get_maj_min "$_pv")" && _ret=0
         done
-        return 0
     fi
-    return 1
+    return $_ret
 }
 
 # fs_get_option <filesystem options> <search for option>
@@ -745,7 +750,7 @@ check_kernel_config() {
     )
 
     for _config in "${_config_paths[@]}"; do
-        if [[ -f $dracutsysrootdir$_config ]]; then
+        if [[ -f ${dracutsysrootdir-}$_config ]]; then
             _config_file="$_config"
             break
         fi
@@ -754,7 +759,7 @@ check_kernel_config() {
     # no kernel config file, so return true
     [[ $_config_file ]] || return 0
 
-    grep -q "^${_config_opt}=" "$dracutsysrootdir$_config_file"
+    grep -q "^${_config_opt}=" "${dracutsysrootdir-}$_config_file"
     return $?
 }
 

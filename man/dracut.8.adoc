@@ -40,6 +40,13 @@ Additional debugging info can be produced by adding **rd.debug** to the kernel
 command line. _/run/initramfs/rdsosreport.txt_ contains all logs and the output
 of some tools. It should be attached to any report about dracut problems.
 
+Dracut is expected to run as the root user to have unrestricted access to the
+root filesystem during initramfs generation. Running dracut as any user other
+than root supports only a limited set of functionalities.
+As an example, to facilitate secure sulogin in the emergency console with the
+host password requires read access to /etc/shadow on the host, which is usually
+only allowed for the root user.
+
 USAGE
 -----
 
@@ -358,8 +365,11 @@ Default:
     This is useful when running dracut from a git checkout.
 
 **-H, --hostonly**::
-    Host-only mode: Install only what is needed for booting the local host
-    instead of a generic host and generate host-specific configuration.
+    Host-only mode: Install files from the host root filesystem, including
+    from directories that are customized by system administrators and
+    users such as /etc and generate host-specific configuration (default).
+    Resilience to minor hardware changes of the generated initramfs is
+    controlled by _hostonly-mode_ .
 +
 [WARNING]
 ====
@@ -451,6 +461,9 @@ example:
 # dracut --install "/bin/foo /sbin/bar"  ...
 ----
 ===============================
+
+**--remove** _<file/dir list>_::
+    Remove a space-separated list of files and directories from the initramfs.
 
 **--install-optional** _<file list>_::
     Install the space separated list of files into the initramfs, if they exist.
@@ -648,12 +661,12 @@ _DRACUT_LDCONFIG_::
 Default:
     _ldconfig_
 
-_DRACUT_LDD_::
-    sets the _ldd_ program path and options. Optional.
-    Used for **--sysroot**.
+_PKG_CONFIG_::
+    sets the _pkg-config_ program path and options. Optional.
+    Most useful together with **--sysroot**.
 +
 Default:
-    _ldd_
+    _pkg-config_
 
 _DRACUT_TESTBIN_::
     sets the initially tested binary for detecting library paths.

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -e
+set -eu
 # shellcheck disable=SC2034
 TEST_DESCRIPTION="root filesystem on ext4 filesystem"
 
@@ -24,10 +24,10 @@ test_setup() {
     # create root filesystem
     "$DRACUT" -N --keep --tmpdir "$TESTDIR" \
         --add-confdir test-root \
-        -f "$TESTDIR"/initramfs.root "$KVERSION"
+        -f "$TESTDIR"/initramfs.root
 
-    dd if=/dev/zero of="$TESTDIR"/root.img bs=200MiB count=1 status=none && sync
-    mkfs.ext4 -q -L dracut -d "$TESTDIR"/dracut.*/initramfs/ "$TESTDIR"/root.img && sync
+    dd if=/dev/zero of="$TESTDIR"/root.img bs=200MiB count=1 status=none && sync "$TESTDIR"/root.img
+    mkfs.ext4 -q -L dracut -d "$TESTDIR"/dracut.*/initramfs/ "$TESTDIR"/root.img && sync "$TESTDIR"/root.img
 
     test_dracut
 }

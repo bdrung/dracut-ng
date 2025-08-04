@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -e
+set -eu
 
 # shellcheck disable=SC2034
 TEST_DESCRIPTION="live root on a squash filesystem"
@@ -83,7 +83,7 @@ test_setup() {
     "$DRACUT" -N --keep --tmpdir "$TESTDIR" \
         --add-confdir test-root \
         -i ./test-init.sh /sbin/init-persist \
-        -f "$TESTDIR"/initramfs.root "$KVERSION"
+        -f "$TESTDIR"/initramfs.root
     mkdir -p "$TESTDIR"/rootfs && mv "$TESTDIR"/dracut.*/initramfs/* "$TESTDIR"/rootfs && rm -rf "$TESTDIR"/dracut.*
 
     # test to make sure /proc /sys and /dev is not needed inside the generated initrd
@@ -102,9 +102,9 @@ test_setup() {
 2048,652688
 EOF
 
-    sync
-    dd if=/dev/zero of="$TESTDIR"/ext4.img bs=512 count=652688 status=none && sync
-    mkfs.ext4 -q -L dracut -d "$TESTDIR"/rootfs/ "$TESTDIR"/ext4.img && sync
+    sync "$TESTDIR"/root.img
+    dd if=/dev/zero of="$TESTDIR"/ext4.img bs=512 count=652688 status=none && sync "$TESTDIR"/ext4.img
+    mkfs.ext4 -q -L dracut -d "$TESTDIR"/rootfs/ "$TESTDIR"/ext4.img && sync "$TESTDIR"/ext4.img
     dd if="$TESTDIR"/ext4.img of="$TESTDIR"/root.img bs=512 seek=2048 conv=noerror,sync,notrunc
 
     # erofs drive
@@ -122,7 +122,7 @@ EOF
     if command -v xorriso &> /dev/null; then
         mkdir "$TESTDIR"/iso
         xorriso -as mkisofs -output "$TESTDIR"/iso/linux.iso "$TESTDIR"/live/ -volid "ISO" -iso-level 3
-        mkfs.ext4 -q -L dracut_iso -d "$TESTDIR"/iso/ "$TESTDIR"/root_iso.img && sync
+        mkfs.ext4 -q -L dracut_iso -d "$TESTDIR"/iso/ "$TESTDIR"/root_iso.img && sync "$TESTDIR"/root_iso.img
     fi
 
     test_dracut \

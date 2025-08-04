@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-set -e
+set -eu
 
-[ -z "$TEST_FSTYPE" ] && TEST_FSTYPE="ext4"
+[ -z "${TEST_FSTYPE-}" ] && TEST_FSTYPE="ext4"
 
 # shellcheck disable=SC2034
 TEST_DESCRIPTION="root filesystem on multiple device $TEST_FSTYPE (on top of RAID and LUKS)"
@@ -10,6 +10,9 @@ test_check() {
     (command -v zfs || (command -v lvm && command -v "mkfs.$TEST_FSTYPE")) &> /dev/null
 }
 
+USE_LVM=
+HAVE_RAID=
+HAVE_CRYPT=
 if [ "$TEST_FSTYPE" != "zfs" ] && [ "$TEST_FSTYPE" != "btrfs" ]; then
     # test fips mode
     [ -f /usr/share/crypto-policies/default-fips-config ] && TEST_KERNEL_CMDLINE+=" fips=1 rd.fips.skipkernel boot=LABEL=dracut "
@@ -113,7 +116,7 @@ test_setup() {
     # Create what will eventually be our root filesystem onto an overlay
     "$DRACUT" -N --keep --tmpdir "$TESTDIR" \
         --add-confdir test-root \
-        -f "$TESTDIR"/initramfs.root "$KVERSION"
+        -f "$TESTDIR"/initramfs.root
     mkdir -p "$TESTDIR"/overlay/source && mv "$TESTDIR"/dracut.*/initramfs/* "$TESTDIR"/overlay/source && rm -rf "$TESTDIR"/dracut.*
 
     # pass enviroment variables to make the root filesystem
@@ -133,7 +136,7 @@ test_setup() {
         $(if command -v cryptsetup > /dev/null; then echo "-a crypt -I cryptsetup"; fi) \
         $(if [ "$TEST_FSTYPE" = "zfs" ]; then echo "-a zfs"; else echo "-I mkfs.${TEST_FSTYPE} --add-drivers ${TEST_FSTYPE}"; fi) \
         -i ./create-root.sh /lib/dracut/hooks/initqueue/01-create-root.sh \
-        -f "$TESTDIR"/initramfs.makeroot "$KVERSION"
+        -f "$TESTDIR"/initramfs.makeroot
 
     # LVM
     test_makeroot "$TEST_FSTYPE" "disk" "rd.md=0 rd.luks=0"
@@ -166,7 +169,7 @@ test_setup() {
         -a "lvm" \
         $(if command -v mdadm > /dev/null; then echo "-a mdraid"; fi) \
         $(if command -v cryptsetup > /dev/null; then echo "-a crypt"; fi) \
-        $(if [ "$TEST_FSTYPE" = "zfs" ]; then echo "-a zfs"; else echo "--add-drivers ${TEST_FSTYPE}"; fi) \
+        --add-drivers "${TEST_FSTYPE}" \
         -i "/tmp/crypttab" "/etc/crypttab" \
         -i "/tmp/key" "/etc/key"
 }

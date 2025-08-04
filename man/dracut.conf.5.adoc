@@ -75,6 +75,19 @@ This option forces dracut to only include the specified kernel modules.
 In most cases the "--add-drivers" option is what you want to use.
 This option is not recommended to use (use at your own risk).
 
+*add_dlopen_features+=*" __<pattern>:<feature>__[__,<feature>__...] ... "::
+Specify a space-separated list of binaries matching _pattern_ against a
+comma-separated list of features to install dependencies for. For example,
+"libsystemd-shared-*.so:idn,ip4tc" will install the dependencies for systemd's
+international domain name and iptables support. _pattern_ should match the
+soname for libraries or the filename for executables.
+
+*omit_dlopen_features+=*" __<pattern>:<feature>__[__,<feature>__...] ... "::
+Specify a space-separated list of binaries matching _pattern_ against a
+comma-separated list of features to omit dependencies for. Some dracut modules
+add certain features by default. This takes precedence over add_dlopen_features
+above.
+
 *filesystems+=*" __<filesystem names>__ "::
 Specify a space-separated list of kernel filesystem modules to exclusively
 include in the generic initramfs.
@@ -91,6 +104,13 @@ Specify a space-separated list of directories where to look for libraries.
 
 *install_items+=*" __<file>__[ __<file>__ ...] "::
 Specify additional files to include in the initramfs, separated by spaces.
+
+*remove_items+=*" __<file/dir>__[ __<file/dir>__ ...] "::
+Specify additional files or directories to remove from the generated initramfs,
+separated by spaces.
+Warning: Avoid manually removing files or directories, as you may inadvertently
+remove essential ones that dracut won't detect or warn you about.
+Using this option is not recommended and is at your own risk.
 
 *install_optional_items+=*" __<file>__[ __<file>__ ...] "::
 Specify additional files to include in the initramfs, separated by spaces,
@@ -134,7 +154,7 @@ Prefix initramfs files with __<directory>__.
 *hostonly=*"__{yes|no}__"::
 Host-only mode: Install only what is needed for booting the local host
 instead of a generic host and generate host-specific configuration
-(default=no).
+(default=yes).
 
 *hostonly_mode=*"__{sloppy|strict}__"::
 Specify the host-only mode to use (default=sloppy).
@@ -151,7 +171,7 @@ the image unbootable.
 *hostonly_cmdline=*"__{yes|no}__"::
 If set to "yes", store the kernel command line arguments needed in the
 initramfs. If **hostonly="yes"** and this option is not configured, it's
-automatically set to "yes".
+automatically set to "yes". (default=no)
 
 *hostonly_nics+=*" [__<nic>__[ __<nic>__ ...]] "::
 Only enable listed NICs in the initramfs. The list can be empty, so other
@@ -360,7 +380,8 @@ _/etc/dracut.conf.d/_.
 _/etc/dracut.conf.d/_::
 Any _/etc/dracut.conf.d/*.conf_ file can override the values in
 _/etc/dracut.conf_. The configuration files are read in alphanumerical
-order.
+order. The recommended ordering for distribution or user provided
+configuration is in the range of 50-59.
 
 == AUTHOR
 Harald Hoyer

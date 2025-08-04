@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -e
+set -eu
 
 # shellcheck disable=SC2034
 TEST_DESCRIPTION="UEFI boot (ukify, kernel-install)"
@@ -46,7 +46,9 @@ test_setup() {
     # Create what will eventually be our root filesystem
     "$DRACUT" -N --keep --tmpdir "$TESTDIR" \
         --add-confdir test-root \
-        "$TESTDIR"/tmp-initramfs.root "$KVERSION"
+        "$TESTDIR"/tmp-initramfs.root
+
+    KVERSION=$(determine_kernel_version "$TESTDIR"/tmp-initramfs.root)
 
     mksquashfs "$TESTDIR"/dracut.*/initramfs/ "$TESTDIR"/squashfs.img -quiet -no-progress
 
@@ -91,24 +93,13 @@ test_setup() {
         cp "${basedir}"/dracut.conf.d/uki-virt/* "$TESTDIR"/dracut.conf.d/
     fi
 
-    if command -v ukify &> /dev/null; then
-        echo "Using ukify to create UKI"
-        test_dracut --no-uefi \
-            --drivers 'squashfs'
-
-        ukify build \
-            --linux="$VMLINUZ" \
-            --initrd="$TESTDIR"/initramfs.testing \
-            --cmdline="$TEST_KERNEL_CMDLINE root=/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_root" \
-            --output="$TESTDIR"/ESP/EFI/BOOT/BOOTX64.efi
-    else
-        echo "Using dracut to create UKI"
-        test_dracut \
-            --kernel-cmdline "$TEST_KERNEL_CMDLINE root=/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_root" \
-            --drivers 'squashfs' \
-            --uefi \
-            "$TESTDIR"/ESP/EFI/BOOT/BOOTX64.efi
-    fi
+    echo "Using dracut to create UKI"
+    test_dracut \
+        --kernel-cmdline "$TEST_KERNEL_CMDLINE root=/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_root" \
+        --add-drivers 'squashfs' \
+        --kver "$KVERSION" \
+        --uefi \
+        "$TESTDIR"/ESP/EFI/BOOT/BOOTX64.efi
 }
 
 # shellcheck disable=SC1090

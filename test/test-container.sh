@@ -9,7 +9,7 @@ if command -v systemd-detect-virt > /dev/null && ! systemd-detect-virt -c &> /de
 fi
 
 set -e
-if [ "$V" = "2" ]; then set -x; fi
+if [ "${V-}" = "2" ]; then set -x; fi
 
 [[ -d ${0%/*} ]] && cd "${0%/*}"/../
 
@@ -25,7 +25,7 @@ if [ "$V" = "2" ]; then set -x; fi
 [ -z "$enable_documentation" ] && export enable_documentation=no
 
 # shellcheck disable=SC2086
-./configure $CONFIGURE_ARG
+./configure --enable-test $CONFIGURE_ARG
 
 # treat warnings as error
 # shellcheck disable=SC2086

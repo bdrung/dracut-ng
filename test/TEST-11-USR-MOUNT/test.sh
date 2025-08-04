@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -e
+set -eu
 
 # shellcheck disable=SC2034
 TEST_DESCRIPTION="root filesystem on a btrfs filesystem with /usr subvolume"
@@ -51,7 +51,7 @@ test_setup() {
     "$DRACUT" -N --keep --tmpdir "$TESTDIR" \
         --add-confdir test-root \
         -i ./fstab /etc/fstab \
-        -f "$TESTDIR"/initramfs.root "$KVERSION"
+        -f "$TESTDIR"/initramfs.root
     mkdir -p "$TESTDIR"/overlay/source && mv "$TESTDIR"/dracut.*/initramfs/* "$TESTDIR"/overlay/source && rm -rf "$TESTDIR"/dracut.*
 
     # second, install the files needed to make the root filesystem
@@ -62,7 +62,7 @@ test_setup() {
         --add-confdir test-makeroot \
         -I "mkfs.btrfs" \
         -i ./create-root.sh /lib/dracut/hooks/initqueue/01-create-root.sh \
-        -f "$TESTDIR"/initramfs.makeroot "$KVERSION"
+        -f "$TESTDIR"/initramfs.makeroot
 
     # Create the blank file to use as a root filesystem
     declare -a disk_args=()
@@ -84,7 +84,7 @@ test_setup() {
     fi
 
     test_dracut \
-        -d "btrfs"
+        --add-drivers "btrfs"
 }
 
 # shellcheck disable=SC1090

@@ -27,6 +27,23 @@ CFLAGS ?= -O2 -g -Wall -std=gnu99 -D_FILE_OFFSET_BITS=64 -Wformat -Werror=format
 bashcompletiondir ?= ${datadir}/bash-completion/completions
 pkgconfigdatadir ?= $(datadir)/pkgconfig
 
+configs = \
+	fips/10-fips.conf \
+	generic/11-generic.conf \
+	hostonly/10-hostonly.conf \
+	ima/10-ima.conf \
+	no-network/10-no-network.conf \
+	no-xattr/10-no-xattr.conf \
+	rescue/10-rescue.conf \
+	uki-virt/10-uki-virt.conf \
+	$(NULL)
+
+test_configs = \
+	test-makeroot/test-makeroot.conf \
+	test-root/test-root.conf \
+	test/test.conf \
+	$(NULL)
+
 man1pages = man/lsinitrd.1
 
 man5pages = man/dracut.conf.5
@@ -37,14 +54,14 @@ man7pages = man/dracut.cmdline.7 \
 
 man8pages = man/dracut.8 \
             man/dracut-catimages.8 \
-            modules.d/98dracut-systemd/dracut-cmdline.service.8 \
-            modules.d/98dracut-systemd/dracut-initqueue.service.8 \
-            modules.d/98dracut-systemd/dracut-mount.service.8 \
-            modules.d/98dracut-systemd/dracut-shutdown.service.8 \
-            modules.d/98dracut-systemd/dracut-pre-mount.service.8 \
-            modules.d/98dracut-systemd/dracut-pre-pivot.service.8 \
-            modules.d/98dracut-systemd/dracut-pre-trigger.service.8 \
-            modules.d/98dracut-systemd/dracut-pre-udev.service.8
+            modules.d/77dracut-systemd/dracut-cmdline.service.8 \
+            modules.d/77dracut-systemd/dracut-mount.service.8 \
+            modules.d/77dracut-systemd/dracut-shutdown.service.8 \
+            modules.d/77dracut-systemd/dracut-pre-mount.service.8 \
+            modules.d/77dracut-systemd/dracut-pre-pivot.service.8 \
+            modules.d/77dracut-systemd/dracut-pre-trigger.service.8 \
+            modules.d/77dracut-systemd/dracut-pre-udev.service.8 \
+            modules.d/77initqueue/dracut-initqueue.service.8
 
 manpages = $(man1pages) $(man5pages) $(man7pages) $(man8pages)
 
@@ -53,7 +70,7 @@ manpages = $(man1pages) $(man5pages) $(man7pages) $(man8pages)
 all: dracut.pc dracut-install src/skipcpio/skipcpio dracut-util
 
 %.o : %.c
-	$(CC) -c $(CFLAGS) $(CPPFLAGS) $(KMOD_CFLAGS) $< -o $@
+	$(CC) -c $(CFLAGS) $(CPPFLAGS) $(KMOD_CFLAGS) $(SYSTEMD_CFLAGS) $(if $(SYSTEMD_LIBS),-DHAVE_SYSTEMD) $< -o $@
 
 DRACUT_INSTALL_OBJECTS = \
         src/install/dracut-install.o \
@@ -72,7 +89,7 @@ src/install/util.o: src/install/util.c src/install/util.h src/install/macro.h sr
 src/install/strv.o: src/install/strv.c src/install/strv.h src/install/util.h src/install/macro.h src/install/log.h
 
 src/install/dracut-install: $(DRACUT_INSTALL_OBJECTS)
-	$(CC) $(LDFLAGS) -o $@ $(DRACUT_INSTALL_OBJECTS) $(LDLIBS) $(FTS_LIBS) $(KMOD_LIBS)
+	$(CC) $(LDFLAGS) -o $@ $(DRACUT_INSTALL_OBJECTS) $(LDLIBS) $(FTS_LIBS) $(KMOD_LIBS) $(SYSTEMD_LIBS)
 
 dracut-install: src/install/dracut-install
 	ln -fs $< $@
@@ -114,6 +131,8 @@ ifneq ($(enable_documentation),no)
 all: doc
 endif
 
+ifeq ($(disable_asciidoctor),yes)
+$(warning *** Building with asciidoc deprecated)
 %: %.xml
 	@rm -f -- "$@"
 	xsltproc -o "$@" -nonet http://docbook.sourceforge.net/release/xsl/current/manpages/docbook.xsl $<
@@ -121,6 +140,20 @@ endif
 %.xml: %.adoc
 	@rm -f -- "$@"
 	asciidoc -f man/asciidoc.conf -a "version=$(DRACUT_FULL_VERSION)" -d manpage -b docbook -o "$@" $<
+else
+define ASCIIDOC_MANPAGE
+	asciidoctor -a "version=$(DRACUT_FULL_VERSION)" -b manpage $<
+endef
+
+%.1: %.1.adoc
+	$(ASCIIDOC_MANPAGE)
+%.5: %.5.adoc
+	$(ASCIIDOC_MANPAGE)
+%.7: %.7.adoc
+	$(ASCIIDOC_MANPAGE)
+%.8: %.8.adoc
+	$(ASCIIDOC_MANPAGE)
+endif
 
 # If ANOTRA_BIN not set, default to look for "npx" to run "npx antora".  If we
 # end up with undefined ANTORA_BIN (i.e. not set and npx not found), we'll give
@@ -171,15 +204,20 @@ install: all
 	ln -fs dracut-functions.sh $(DESTDIR)$(pkglibdir)/dracut-functions
 	install -m 0755 dracut-logger.sh $(DESTDIR)$(pkglibdir)/dracut-logger.sh
 	install -m 0755 dracut-initramfs-restore.sh $(DESTDIR)$(pkglibdir)/dracut-initramfs-restore
-	rm -rf $(DESTDIR)$(pkglibdir)/modules.d/80test*
-	cp -arx modules.d dracut.conf.d $(DESTDIR)$(pkglibdir)
+	cp -arx modules.d $(DESTDIR)$(pkglibdir)
+	for conf in $(configs); do \
+		install -D -m 0644 "dracut.conf.d/$$conf" "$(DESTDIR)$(pkglibdir)/dracut.conf.d/$$conf"; \
+	done
 	for i in $(configprofile) ; do \
 		cp -arx dracut.conf.d/$$i/* $(DESTDIR)$(pkglibdir)/dracut.conf.d/ ;\
 	done
-ifneq ($(enable_test),no)
+ifeq ($(enable_test),yes)
 	cp -arx test $(DESTDIR)$(pkglibdir)
+	for conf in $(test_configs); do \
+		install -D -m 0644 "dracut.conf.d/$$conf" "$(DESTDIR)$(pkglibdir)/dracut.conf.d/$$conf"; \
+	done
 else
-	rm -rf $(DESTDIR)$(pkglibdir)/modules.d/80test*
+	rm -rf $(DESTDIR)$(pkglibdir)/modules.d/70test*
 endif
 ifneq ($(enable_documentation),no)
 	for i in $(man1pages); do install -m 0644 $$i $(DESTDIR)$(mandir)/man1/$${i##*/}; done
@@ -190,25 +228,27 @@ ifneq ($(enable_documentation),no)
 endif
 	if [ -n "$(systemdsystemunitdir)" ]; then \
 		mkdir -p $(DESTDIR)$(systemdsystemunitdir); \
-		ln -srf $(DESTDIR)$(pkglibdir)/modules.d/98dracut-systemd/dracut-shutdown-onfailure.service $(DESTDIR)$(systemdsystemunitdir)/dracut-shutdown-onfailure.service; \
-		ln -srf $(DESTDIR)$(pkglibdir)/modules.d/98dracut-systemd/dracut-shutdown.service $(DESTDIR)$(systemdsystemunitdir)/dracut-shutdown.service; \
+		ln -srf $(DESTDIR)$(pkglibdir)/modules.d/77dracut-systemd/dracut-shutdown-onfailure.service $(DESTDIR)$(systemdsystemunitdir)/dracut-shutdown-onfailure.service; \
+		ln -srf $(DESTDIR)$(pkglibdir)/modules.d/77dracut-systemd/dracut-shutdown.service $(DESTDIR)$(systemdsystemunitdir)/dracut-shutdown.service; \
 		mkdir -p $(DESTDIR)$(systemdsystemunitdir)/sysinit.target.wants; \
 		ln -sf ../dracut-shutdown.service \
 		$(DESTDIR)$(systemdsystemunitdir)/sysinit.target.wants/dracut-shutdown.service; \
 		mkdir -p $(DESTDIR)$(systemdsystemunitdir)/initrd.target.wants; \
 		for i in \
 		    dracut-cmdline.service \
-		    dracut-initqueue.service \
 		    dracut-mount.service \
 		    dracut-pre-mount.service \
 		    dracut-pre-pivot.service \
 		    dracut-pre-trigger.service \
 		    dracut-pre-udev.service \
 		    ; do \
-			ln -srf $(DESTDIR)$(pkglibdir)/modules.d/98dracut-systemd/$$i $(DESTDIR)$(systemdsystemunitdir); \
+			ln -srf $(DESTDIR)$(pkglibdir)/modules.d/77dracut-systemd/$$i $(DESTDIR)$(systemdsystemunitdir); \
 			ln -sf ../$$i \
 			$(DESTDIR)$(systemdsystemunitdir)/initrd.target.wants/$$i; \
-		done \
+		done; \
+		ln -srf $(DESTDIR)$(pkglibdir)/modules.d/77initqueue/dracut-initqueue.service $(DESTDIR)$(systemdsystemunitdir); \
+		ln -sf ../dracut-initqueue.service \
+		$(DESTDIR)$(systemdsystemunitdir)/initrd.target.wants/dracut-initqueue.service; \
 	fi
 	if [ -f src/install/dracut-install ]; then \
 		install -m 0755 src/install/dracut-install $(DESTDIR)$(pkglibdir)/dracut-install; \
@@ -233,7 +273,7 @@ endif
 	if ! [ -n "$(systemdsystemunitdir)" ]; then \
 		rm -rf $(DESTDIR)$(pkglibdir)/test/TEST-[0-9][0-9]-*SYSTEMD* ;\
 		rm -rf $(DESTDIR)$(pkglibdir)/modules.d/*systemd* $(DESTDIR)$(mandir)/*.service.* ; \
-		for i in bluetooth connman dbus* fido2 lvmmerge lvmthinpool-monitor memstrack network-manager pcsc pkcs11 rngd squash* tpm2-tss; do \
+		for i in bluetooth connman dbus* fido2 lvmmerge lvmthinpool-monitor memstrack pcsc pkcs11 rngd squash* tpm2-tss; do \
 			rm -rf $(DESTDIR)$(pkglibdir)/modules.d/[0-9][0-9]$${i}; \
 		done \
 	fi

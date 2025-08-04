@@ -3,8 +3,8 @@
 trap 'poweroff -f' EXIT
 set -ex
 printf test > keyfile
-cryptsetup -q luksFormat /dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_disk1 /keyfile
-cryptsetup -q luksFormat /dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_disk2 /keyfile
+cryptsetup --pbkdf pbkdf2 -q luksFormat /dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_disk1 /keyfile
+cryptsetup --pbkdf pbkdf2 -q luksFormat /dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_disk2 /keyfile
 cryptsetup luksOpen /dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_disk1 dracut_disk1 < /keyfile
 cryptsetup luksOpen /dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_disk2 dracut_disk2 < /keyfile
 mdadm --create /dev/md0 --run --auto=yes --level=1 --metadata=0.90 --raid-devices=2 /dev/mapper/dracut_disk1 /dev/mapper/dracut_disk2
@@ -33,5 +33,5 @@ cryptsetup luksClose /dev/mapper/dracut_disk2
         udevadm info --query=property --name="$i" | grep -F 'ID_FS_UUID='
     done
 } | dd oflag=direct,dsync of=/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_marker status=none
-sync
+sync /dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_marker
 poweroff -f

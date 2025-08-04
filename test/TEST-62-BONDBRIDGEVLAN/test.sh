@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
 # ex: ts=8 sw=4 sts=4 et filetype=sh
-set -e
+set -eu
 
 [ -z "${USE_NETWORK-}" ] && USE_NETWORK="network"
 
@@ -66,7 +66,7 @@ run_server() {
         -pidfile "$TESTDIR"/server.pid -daemonize
     chmod 644 -- "$TESTDIR"/server.pid
 
-    if ! [[ $SERIAL ]]; then
+    if ! [[ ${SERIAL-} ]]; then
         wait_for_server_startup
     else
         echo Sleeping 10 seconds to give the server a head start
@@ -214,8 +214,10 @@ bootdev=br0
 }
 
 test_setup() {
+    DRACUT_PATH=${DRACUT_PATH:-/sbin /bin /usr/sbin /usr/bin}
     # shellcheck disable=SC2153
     export kernel=$KVERSION
+    export no_kernel=
     rm -rf -- "$TESTDIR"/overlay
     (
         mkdir -p "$TESTDIR"/overlay/source
@@ -268,7 +270,7 @@ test_setup() {
         inst_libdir_file 'libnfsidmap*.so*'
 
         _nsslibs=$(
-            cat "$dracutsysrootdir"/{,usr/}etc/nsswitch.conf 2> /dev/null \
+            cat "${dracutsysrootdir-}"/{,usr/}etc/nsswitch.conf 2> /dev/null \
                 | sed -e '/^#/d' -e 's/^.*://' -e 's/\[NOTFOUND=return\]//' \
                 | tr -s '[:space:]' '\n' | sort -u | tr -s '[:space:]' '|'
         )
@@ -315,7 +317,7 @@ test_setup() {
         inst_libdir_file 'libnfsidmap*.so*'
 
         _nsslibs=$(
-            cat "$dracutsysrootdir"/{,usr/}etc/nsswitch.conf 2> /dev/null \
+            cat "${dracutsysrootdir-}"/{,usr/}etc/nsswitch.conf 2> /dev/null \
                 | sed -e '/^#/d' -e 's/^.*://' -e 's/\[NOTFOUND=return\]//' \
                 | tr -s '[:space:]' '\n' | sort -u | tr -s '[:space:]' '|'
         )
@@ -373,7 +375,6 @@ test_setup() {
         # shellcheck disable=SC1090
         . "$PKGLIBDIR"/dracut-init.sh
         inst_multiple poweroff shutdown
-        inst_hook emergency 000 ./hard-off.sh
         inst_simple ./client.link /etc/systemd/network/01-client.link
     )
     # Make client's dracut image

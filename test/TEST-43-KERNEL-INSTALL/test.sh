@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -e
+set -eu
 # shellcheck disable=SC2034
 TEST_DESCRIPTION="kernel-install with root filesystem on ext4 filesystem"
 
@@ -52,10 +52,12 @@ test_setup() {
     # shellcheck disable=SC2153
     "$DRACUT" -N --keep --tmpdir "$TESTDIR" \
         --add-confdir test-root \
-        -f "$TESTDIR"/initramfs.root "$KVERSION"
+        -f "$TESTDIR"/initramfs.root
 
-    dd if=/dev/zero of="$TESTDIR"/root.img bs=200MiB count=1 status=none && sync
-    mkfs.ext4 -q -L dracut -d "$TESTDIR"/dracut.*/initramfs/ "$TESTDIR"/root.img && sync
+    KVERSION=$(determine_kernel_version "$TESTDIR"/initramfs.root)
+
+    dd if=/dev/zero of="$TESTDIR"/root.img bs=200MiB count=1 status=none && sync "$TESTDIR"/root.img
+    mkfs.ext4 -q -L dracut -d "$TESTDIR"/dracut.*/initramfs/ "$TESTDIR"/root.img && sync "$TESTDIR"/root.img
 
     mkdir -p /run/kernel
     echo 'initrd_generator=dracut' >> /run/kernel/install.conf
@@ -64,7 +66,7 @@ test_setup() {
     cp /usr/lib/dracut/test/dracut.conf.d/test/test.conf /usr/lib/dracut/dracut.conf.d/
 
     # enable rescue boot config
-    cp /usr/lib/dracut/dracut.conf.d/rescue/50-rescue.conf /usr/lib/dracut/dracut.conf.d/
+    cp /usr/lib/dracut/dracut.conf.d/rescue/*.conf /usr/lib/dracut/dracut.conf.d/
 
     # using kernell-install to invoke dracut
     mkdir -p "$BOOT_ROOT/$TOKEN/$KVERSION" "$BOOT_ROOT/loader/entries" "$BOOT_ROOT/$TOKEN/0-rescue/loader/entries"

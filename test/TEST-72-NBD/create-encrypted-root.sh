@@ -4,7 +4,7 @@ trap 'poweroff -f' EXIT
 set -ex
 
 printf test > keyfile
-cryptsetup -q luksFormat /dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_root /keyfile
+cryptsetup --pbkdf pbkdf2 -q luksFormat /dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_root /keyfile
 echo "The passphrase is test"
 cryptsetup luksOpen /dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_root dracut_crypt_test < /keyfile
 lvm pvcreate -ff -y /dev/mapper/dracut_crypt_test
@@ -28,5 +28,5 @@ eval "$(udevadm info --query=property --name=/dev/disk/by-id/scsi-0QEMU_QEMU_HAR
     echo "dracut-root-block-created"
     echo "ID_FS_UUID=$ID_FS_UUID"
 } | dd oflag=direct,dsync of=/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_marker status=none
-sync
+sync /dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_marker
 poweroff -f
