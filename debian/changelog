@@ -1,3 +1,20 @@
+dracut (108-1) unstable; urgency=medium
+
+  * New upstream release
+  * Drop patches applied upstream and refresh remaining patches
+  * Skip lsinitrd autopkgtest on armel and i386
+  * Switch to asciidoctor for man generation (LP: #2115494)
+  * Drop fix-revdate script (asciidoctor honors SOURCE_DATE_EPOCH)
+  * Follow upstream's module and configuration renumbering
+  * Add factored out initqueue and rootfs-block-fallback modules to dracut-core
+  * Use debian config profile
+  * fix(dracut): do not call uname -r in chroot environments
+  * Run TEST-80-GETARGS and TEST-81-SKIPCPIO during build
+  * Drop removing obsolete 11-ifcfg.conf on upgrades
+  * Update initrdname patch
+
+ -- Benjamin Drung <bdrung@debian.org>  Mon, 04 Aug 2025 17:21:16 +0200
+
 dracut (107-2) unstable; urgency=medium
 
   * autopkgtest: depend on curl for test 60-NFS
