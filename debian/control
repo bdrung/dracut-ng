@@ -6,6 +6,7 @@ Uploaders: Benjamin Drung <bdrung@debian.org>
 Build-Depends: debhelper-compat (= 13),
                asciidoctor,
                bash-completion,
+               cpio <!nocheck>,
                libkmod-dev,
                pkgconf,
                shellcheck [!i386 !m68k !powerpc !sh4 !x32] <!nocheck>,
