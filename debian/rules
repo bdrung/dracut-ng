@@ -34,10 +34,10 @@ override_dh_fixperms-indep:
 ifneq ($(DEB_HOST_ARCH), s390x)
 	for m in 68cms 69cio_ignore 73zipl 74dasd 74dasd_mod \
 		74dcssblk 74zfcp 74znet; do \
-		rm -rf debian/*/usr/lib/dracut/modules.d/$$m ; \
+		rm -r debian/*/usr/lib/dracut/modules.d/$$m ; \
 	done
 else
-	rm -rf debian/*/usr/lib/dracut/modules.d/00warpclock
+	rm -r debian/*/usr/lib/dracut/modules.d/00warpclock
 endif
 
 override_dh_auto_test:
