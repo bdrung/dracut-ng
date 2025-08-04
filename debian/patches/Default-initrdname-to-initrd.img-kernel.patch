@@ -7,44 +7,28 @@ The initrd is named `initrd.img-${kernel}` in Debian and Ubuntu.
 Forwarded: not-needed
 Signed-off-by: Benjamin Drung <benjamin.drung@canonical.com>
 ---
- dracut-initramfs-restore.sh | 4 ++--
- dracut.sh                   | 2 +-
- man/dracut.conf.5.adoc      | 2 +-
- 3 files changed, 4 insertions(+), 4 deletions(-)
+ dracut.sh              | 2 +-
+ man/dracut.conf.5.adoc | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/dracut-initramfs-restore.sh b/dracut-initramfs-restore.sh
-index 98cfaed..a2413f7 100755
---- a/dracut-initramfs-restore.sh
-+++ b/dracut-initramfs-restore.sh
-@@ -56,8 +56,8 @@ mount -o ro /boot &> /dev/null || true
- 
- IMG=$(find_initrd_for_kernel_version "$KERNEL_VERSION")
- if [ -z "$IMG" ]; then
--    if [[ -f /boot/initramfs-linux.img ]]; then
--        IMG="/boot/initramfs-linux.img"
-+    if [[ -f /boot/initrd.img ]]; then
-+        IMG="/boot/initrd.img"
-     else
-         echo "No initramfs image found to restore!"
-         exit 1
 diff --git a/dracut.sh b/dracut.sh
-index 5416417..69df7cb 100755
+index e6adffe..fad5e3a 100755
 --- a/dracut.sh
 +++ b/dracut.sh
-@@ -1172,7 +1172,7 @@ if ! [[ $outfile ]]; then
-         outfile="$dracutsysrootdir$efidir/Linux/linux-$kernel${MACHINE_ID:+-${MACHINE_ID}}${BUILD_ID:+-${BUILD_ID}}.efi"
+@@ -1213,7 +1213,7 @@ if ! [[ $outfile ]]; then
+         outfile="${dracutsysrootdir-}$efidir/Linux/linux-$kernel${MACHINE_ID:+-${MACHINE_ID}}${BUILD_ID:+-${BUILD_ID}}.efi"
      else
          if ! [[ $initrdname ]]; then
 -            initrdname="initramfs-${kernel}.img"
 +            initrdname="initrd.img-${kernel}"
          fi
-         if [[ -d "$dracutsysrootdir"/efi/loader/entries || -L "$dracutsysrootdir"/efi/loader/entries ]] \
+         if [[ -d "${dracutsysrootdir-}"/efi/loader/entries || -L "${dracutsysrootdir-}"/efi/loader/entries ]] \
              && [[ $MACHINE_ID ]] \
 diff --git a/man/dracut.conf.5.adoc b/man/dracut.conf.5.adoc
-index ae8a690..4de56e4 100644
+index 9290758..47a1e01 100644
 --- a/man/dracut.conf.5.adoc
 +++ b/man/dracut.conf.5.adoc
-@@ -350,7 +350,7 @@ The initrdname configuration option is required to match the
+@@ -370,7 +370,7 @@ The initrdname configuration option is required to match the
  _initr*$\{kernel\}*_ file pattern and only one file with this pattern should
  exists in the directory where initramfs is loaded from.
  +

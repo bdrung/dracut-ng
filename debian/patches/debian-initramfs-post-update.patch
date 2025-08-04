@@ -9,7 +9,7 @@ Last-Update: 2022-11-17
 
 --- a/dracut.sh
 +++ b/dracut.sh
-@@ -2790,4 +2790,10 @@
+@@ -2873,4 +2873,10 @@ if [[ -d ${dracutsysrootdir-}/run/systemd/system ]]; then
      fi
  fi
  

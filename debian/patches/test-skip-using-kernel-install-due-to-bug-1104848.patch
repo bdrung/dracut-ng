@@ -24,10 +24,10 @@ Forwarded: not-needed
  1 file changed, 3 insertions(+), 1 deletion(-)
 
 diff --git a/test/TEST-12-UEFI/test.sh b/test/TEST-12-UEFI/test.sh
-index 2e55e3b..749c7ae 100755
+index 37bc4c4..d636871 100755
 --- a/test/TEST-12-UEFI/test.sh
 +++ b/test/TEST-12-UEFI/test.sh
-@@ -55,7 +55,9 @@ test_setup() {
+@@ -57,7 +57,9 @@ test_setup() {
      # This is the preferred way to build uki with dracut on a systenmd based system
      # Currently this only works in a few distributions and architectures, but it is here
      # for reference
