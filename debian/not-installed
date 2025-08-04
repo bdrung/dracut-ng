@@ -1,5 +1,3 @@
-usr/lib/dracut/dracut.conf.d/*.conf.example
-usr/lib/dracut/dracut.conf.d/test*
 # dmraid was removed, see https://bugs.debian.org/1056944
 usr/lib/dracut/modules.d/70dmraid
 # dh_missing is complaining about some symlinks
