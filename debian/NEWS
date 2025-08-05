@@ -1,3 +1,22 @@
+dracut (108-2) unstable; urgency=medium
+
+  The dracut-config-generic and dracut-config-rescue packages were removed.
+  To change the default Dracut configuration copy (or symlink) the desired
+  configuration files into /etc/dracut.conf.d. For dracut-config-generic:
+
+    cp /lib/dracut/dracut.conf.d/generic/*.conf /etc/dracut.conf.d/
+
+  For dracut-config-rescue:
+
+    cp /lib/dracut/dracut.conf.d/rescue/*.conf /etc/dracut.conf.d/
+
+  To apply those configurations only for specific Dracut invocations, use
+  --add-confdir. Example:
+
+    dracut --add-confdir generic
+
+ -- Benjamin Drung <bdrung@debian.org>  Tue, 05 Aug 2025 10:49:21 +0200
+
 dracut (059-1) unstable; urgency=low
 
   - build generic initrd by default as upstream does it
