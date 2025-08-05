@@ -78,6 +78,7 @@ Description: dracut is an event driven initramfs infrastructure (dracut-install)
 
 Package: dracut-network
 Architecture: all
+Multi-Arch: foreign
 Depends: dracut-core,
          iputils-arping,
          systemd | network-manager | isc-dhcp-client | connman,
@@ -91,6 +92,7 @@ Description: dracut is an event driven initramfs infrastructure (network modules
 
 Package: dracut-squash
 Architecture: all
+Multi-Arch: foreign
 Depends: dracut-core, squashfs-tools, ${misc:Depends}
 Breaks: dracut-core (<< 050-1)
 Replaces: dracut-core (<< 050-1)
@@ -103,6 +105,7 @@ Description: dracut is an event driven initramfs infrastructure (squashfs module
 
 Package: dracut-live
 Architecture: all
+Multi-Arch: foreign
 Depends: dmsetup, dracut-core, ${misc:Depends}
 Recommends: dracut-network
 Suggests: isomd5sum
@@ -116,6 +119,7 @@ Description: dracut is an event driven initramfs infrastructure (live image modu
 
 Package: dracut-test
 Architecture: all
+Multi-Arch: foreign
 Depends: dracut-core, ${misc:Depends}
 Breaks: dracut-core (<< 105)
 Replaces: dracut-core (<< 105)
