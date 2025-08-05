@@ -80,6 +80,7 @@ Package: dracut-network
 Architecture: all
 Multi-Arch: foreign
 Depends: dracut-core,
+         iproute2,
          iputils-arping,
          systemd | network-manager | isc-dhcp-client | connman,
          ${misc:Depends}
