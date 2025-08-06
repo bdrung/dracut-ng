@@ -8,8 +8,6 @@ Restrictions: needs-root, superficial
 # * TEST-43-KERNEL-INSTALL: kernel-install issue, see https://bugs.debian.org/1104848
 # * TEST-61-MULTINIC: disabled in upstream CI since 2023-01-02
 # * TEST-62-BONDBRIDGEVLAN: https://github.com/dracutdevs/dracut/issues/2328
-# * TEST-70-ISCSI: iscsiuio.socket missing, see https://bugs.debian.org/1056733
-# * TEST-71-ISCSI-MULTI: iscsiuio.socket missing, see https://bugs.debian.org/1056733
 # arm64, armhf, ppc64el, and s390x need upstream support: https://github.com/dracutdevs/dracut/issues/2493
 Features: test-name=upstream-dracut-core
 Test-Command: debian/tests/run-upstream-tests SKIP="23 30 43 60 61 62 70 71 72"
@@ -89,6 +87,34 @@ Depends: curl,
          seabios [ppc64el],
          systemd,
          sysvinit-utils,
+         util-linux,
+         zstd
+
+Features: test-name=upstream-dracut-network-iscsi
+Test-Command: debian/tests/run-upstream-tests TESTS="70 71"
+Architecture: amd64
+Restrictions: allow-stderr, needs-root
+Depends: cryptsetup,
+         dracut-network,
+         dracut-test,
+         ipxe-qemu,
+         isc-dhcp-client,
+         isc-dhcp-server,
+         linux-image-generic,
+         lvm2,
+         make,
+         mdadm,
+         mount,
+         open-iscsi,
+         procps,
+         qemu-efi-aarch64 [arm64],
+         qemu-efi-arm [armhf],
+         qemu-system-native,
+         seabios [ppc64el],
+         systemd,
+         systemd-cryptsetup,
+         sysvinit-utils,
+         tgt,
          util-linux,
          zstd
 

@@ -3,3 +3,4 @@ debian-initramfs-post-update.patch
 test-skip-using-kernel-install-due-to-bug-1104848.patch
 fix-dracut-do-not-call-uname-r-in-chroot-environments.patch
 feat-debian.conf-default-to-initrd.img-kernel-on-Debian-U.patch
+test-drop-requiring-iscsiuio.socket.patch
