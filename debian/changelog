@@ -1,3 +1,9 @@
+dracut (108+git20250807-1) unstable; urgency=medium
+
+  * New upstream snapshot.
+
+ -- Benjamin Drung <bdrung@debian.org>  Thu, 07 Aug 2025 15:52:14 +0200
+
 dracut (108-2) unstable; urgency=medium
 
   * debian/rules: drop obsolete removal of modified adoc line
