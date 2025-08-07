@@ -82,7 +82,7 @@ Multi-Arch: foreign
 Depends: dracut-core,
          iproute2,
          iputils-arping,
-         systemd | network-manager | isc-dhcp-client | connman,
+         network-manager | systemd | connman | isc-dhcp-client,
          ${misc:Depends}
 Recommends: curl, nbd-client, nfs-common, open-iscsi
 Suggests: iscsiuio
