@@ -1,0 +1,51 @@
+#!/usr/bin/make -f
+
+#export DH_VERBOSE=1
+DPKG_EXPORT_BUILDTOOLS=1
+-include /usr/share/dpkg/buildtools.mk
+include /usr/share/dpkg/pkg-info.mk
+
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+DEB_HOST_ARCH ?= $(shell dpkg-architecture -qDEB_HOST_ARCH)
+export DRACUT_MAIN_VERSION=$(DEB_VERSION_UPSTREAM_REVISION)
+export DRACUT_FULL_VERSION=$(DEB_VERSION)
+
+deb_systemdsystemunitdir = $(shell pkg-config --variable=systemdsystemunitdir systemd | sed s,^/,,)
+
+%:
+	dh $@ --with bash-completion
+
+override_dh_auto_configure:
+	dh_auto_configure -- --configprofile=debian --systemdsystemunitdir=/$(deb_systemdsystemunitdir) --libdir=/usr/lib
+
+override_dh_auto_install:
+	dh_auto_install
+	rm debian/tmp/usr/lib/dracut/modules.d/77dracut-systemd/*.adoc
+	rm debian/tmp/usr/lib/dracut/modules.d/77dracut-systemd/*.8
+
+override_dh_fixperms-arch:
+	dh_fixperms
+	find debian/ -name "*.sh" | grep modules.d | xargs chmod 755
+
+override_dh_fixperms-indep:
+	dh_fixperms
+	find debian/ -name "*.sh" | grep modules.d | xargs chmod 755
+ifneq ($(DEB_HOST_ARCH), s390x)
+	for m in 68cms 69cio_ignore 73zipl 74dasd 74dasd_mod \
+		74dcssblk 74zfcp 74znet; do \
+		rm -r debian/*/usr/lib/dracut/modules.d/$$m ; \
+	done
+else
+	rm -r debian/*/usr/lib/dracut/modules.d/00warpclock
+endif
+
+override_dh_auto_test:
+	make -C test check TESTS="80 81"
+	make syncheck
+
+override_dh_install:
+	dh_install
+	dh_install -pdracut-core $(deb_systemdsystemunitdir)
+
+override_dh_clean:
+	dh_clean Makefile.inc
