@@ -5,3 +5,4 @@ test-drop-requiring-iscsiuio.socket.patch
 feat-Makefile-set-Dracut-version-on-install.patch
 alternatives-not-set-default-theme.patch
 plymouth-Only-pull-in-the-SimpleDRM-driver-by-default.patch
+fix-dracut-util-crash-if-CMDLINE-ends-with-quotation-mark.patch
