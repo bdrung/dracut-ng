@@ -46,6 +46,3 @@ override_dh_auto_test:
 override_dh_install:
 	dh_install
 	dh_install -pdracut-core $(deb_systemdsystemunitdir)
-
-override_dh_clean:
-	dh_clean Makefile.inc
