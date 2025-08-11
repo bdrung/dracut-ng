@@ -39,7 +39,6 @@ Depends: btrfs-progs,
          systemd-cryptsetup,
          systemd-repart,
          systemd-ukify,
-         util-linux,
          zstd
 
 Features: test-name=upstream-dracut-live
@@ -62,7 +61,6 @@ Depends: btrfs-progs,
          qemu-system-native,
          seabios [ppc64el],
          squashfs-tools,
-         util-linux,
          zstd
 
 Features: test-name=upstream-dracut-network-nfs
@@ -86,8 +84,6 @@ Depends: curl,
          qemu-system-native,
          seabios [ppc64el],
          systemd,
-         sysvinit-utils,
-         util-linux,
          zstd
 
 Features: test-name=upstream-dracut-network-iscsi
@@ -113,9 +109,7 @@ Depends: cryptsetup,
          seabios [ppc64el],
          systemd,
          systemd-cryptsetup,
-         sysvinit-utils,
          tgt,
-         util-linux,
          zstd
 
 Features: test-name=upstream-dracut-network-nbd
@@ -142,5 +136,4 @@ Depends: cryptsetup,
          seabios [ppc64el],
          systemd,
          systemd-cryptsetup,
-         util-linux,
          zstd
