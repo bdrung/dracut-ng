@@ -15,13 +15,12 @@ Forwarded: https://github.com/dracut-ng/dracut-ng/pull/1484
  2 files changed, 3 insertions(+), 1 deletion(-)
 
 diff --git a/dracut.conf.d/debian/10-debian.conf b/dracut.conf.d/debian/10-debian.conf
-index 0e043fe..c93cc4a 100644
+index 3e2d77a..e035218 100644
 --- a/dracut.conf.d/debian/10-debian.conf
 +++ b/dracut.conf.d/debian/10-debian.conf
-@@ -1,3 +1,4 @@
+@@ -1,2 +1,3 @@
  # Debian/Ubuntu specific Dracut configuration
  hostonly="yes"
- hostonly_cmdline="no"
 +initrdname="initrd.img-${kernel}"
 diff --git a/man/dracut.conf.5.adoc b/man/dracut.conf.5.adoc
 index 9290758..77d5dca 100644
