@@ -14,3 +14,9 @@ fix-ignore-shellcheck-SC2329-in-addition-to-SC2317.patch
 fix-dracut-util-crash-if-CMDLINE-ends-with-quotation-mark.patch
 fix-kernel-modules-add-Cadence-USB-driver-to-base.patch
 fix-lsinitrd-avoid-rechecking-for-squash-images.patch
+refactor-lsinitrd-introduce-cpio_extract-function.patch
+refactor-lsinitrd-introduce-cpio_extract_to_stdout-functi.patch
+refactor-lsinitrd-introduce-cpio_list-function.patch
+feat-lsinitrd-support-3cpio.patch
+refactor-dracut-introduce-cpio_extract-function.patch
+feat-dracut-support-3cpio-for-creating-initrds.patch
