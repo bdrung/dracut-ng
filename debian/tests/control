@@ -1,0 +1,134 @@
+Tests: lsinitrd
+Architecture: !armel !i386
+Depends: dracut, linux-image-generic, zstd
+Restrictions: needs-root, superficial
+
+# Skip following test cases:
+# * TEST-23-IMSM: dmraid was removed from Debian
+# * TEST-43-KERNEL-INSTALL: kernel-install issue, see https://bugs.debian.org/1104848
+# * TEST-61-MULTINIC: disabled in upstream CI since 2023-01-02
+# * TEST-62-BONDBRIDGEVLAN: https://github.com/dracutdevs/dracut/issues/2328
+# arm64, armhf, ppc64el, and s390x need upstream support: https://github.com/dracutdevs/dracut/issues/2493
+Features: test-name=upstream-dracut-core
+Test-Command: debian/tests/run-upstream-tests SKIP="23 30 43 60 61 62 70 71 72"
+Architecture: amd64
+Restrictions: allow-stderr, needs-root
+Depends: btrfs-progs,
+         busybox,
+         cryptsetup,
+         dbus,
+         dracut-core,
+         dracut-test,
+         fdisk,
+         ipxe-qemu,
+         kbd,
+         linux-image-generic,
+         lvm2,
+         make,
+         mdadm,
+         ovmf,
+         qemu-efi-aarch64 [arm64],
+         qemu-efi-arm [armhf],
+         qemu-system-native,
+         seabios [ppc64el],
+         squashfs-tools,
+         systemd-boot-efi [amd64 arm64 armhf riscv64],
+         systemd-container,
+         systemd-coredump,
+         systemd-cryptsetup,
+         systemd-repart,
+         systemd-ukify,
+         zstd
+
+Features: test-name=upstream-dracut-live
+Test-Command: debian/tests/run-upstream-tests TESTS="30"
+Architecture: amd64
+Restrictions: allow-stderr, needs-root
+Depends: btrfs-progs,
+         busybox,
+         dracut-live,
+         dracut-test,
+         fdisk,
+         ipxe-qemu,
+         kbd,
+         linux-image-generic,
+         make,
+         parted,
+         qemu-efi-aarch64 [arm64],
+         qemu-efi-arm [armhf],
+         qemu-system-native,
+         seabios [ppc64el],
+         squashfs-tools,
+         zstd
+
+Features: test-name=upstream-dracut-network-nfs
+Test-Command: debian/tests/run-upstream-tests TESTS="60"
+Architecture: amd64
+Restrictions: allow-stderr, needs-root
+Depends: curl,
+         dracut-live,
+         dracut-network,
+         dracut-test,
+         ipxe-qemu,
+         isc-dhcp-client,
+         isc-dhcp-server,
+         linux-image-generic,
+         make,
+         nfs-kernel-server,
+         procps,
+         qemu-efi-aarch64 [arm64],
+         qemu-efi-arm [armhf],
+         qemu-system-native,
+         seabios [ppc64el],
+         systemd,
+         zstd
+
+Features: test-name=upstream-dracut-network-iscsi
+Test-Command: debian/tests/run-upstream-tests TESTS="70 71"
+Architecture: amd64
+Restrictions: allow-stderr, needs-root
+Depends: cryptsetup,
+         dracut-network,
+         dracut-test,
+         ipxe-qemu,
+         isc-dhcp-client,
+         isc-dhcp-server,
+         linux-image-generic,
+         lvm2,
+         make,
+         mdadm,
+         open-iscsi,
+         procps,
+         qemu-efi-aarch64 [arm64],
+         qemu-efi-arm [armhf],
+         qemu-system-native,
+         seabios [ppc64el],
+         systemd,
+         systemd-cryptsetup,
+         tgt,
+         zstd
+
+Features: test-name=upstream-dracut-network-nbd
+Test-Command: debian/tests/run-upstream-tests TESTS="72"
+Architecture: amd64
+Restrictions: allow-stderr, needs-root
+Depends: cryptsetup,
+         dracut-network,
+         dracut-test,
+         ipxe-qemu,
+         isc-dhcp-client,
+         isc-dhcp-server,
+         linux-image-generic,
+         lvm2,
+         make,
+         mdadm,
+         nbd-client,
+         nbd-server,
+         procps,
+         qemu-efi-aarch64 [arm64],
+         qemu-efi-arm [armhf],
+         qemu-system-native,
+         seabios [ppc64el],
+         systemd,
+         systemd-cryptsetup,
+         zstd

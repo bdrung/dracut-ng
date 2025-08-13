@@ -1,0 +1,81 @@
+From: Benjamin Drung <benjamin.drung@canonical.com>
+Date: Wed, 6 Aug 2025 15:13:06 +0200
+Subject: test: drop requiring iscsiuio.socket
+
+The iscsiuio socket/service is only needed on specific hardware. It is
+not needed for the ISCSI and ISCSI-MULTI test cases. Without this check
+the tests will succeed on Debian and Ubuntu.
+
+Forwarded: https://github.com/dracut-ng/dracut-ng/pull/1528
+---
+ .github/workflows/integration.yml | 2 ++
+ test/TEST-70-ISCSI/test.sh        | 4 ----
+ test/TEST-71-ISCSI-MULTI/test.sh  | 4 ----
+ test/container/Dockerfile-debian  | 3 ++-
+ 4 files changed, 4 insertions(+), 9 deletions(-)
+
+diff --git a/.github/workflows/integration.yml b/.github/workflows/integration.yml
+index efa92b8..313bc3f 100644
+--- a/.github/workflows/integration.yml
++++ b/.github/workflows/integration.yml
+@@ -206,7 +206,9 @@ jobs:
+             fail-fast: false
+             matrix:
+                 container:
++                    - debian:latest
+                     - opensuse:latest
++                    - ubuntu:rolling
+                 test:
+                     - "70"
+                 include:
+diff --git a/test/TEST-70-ISCSI/test.sh b/test/TEST-70-ISCSI/test.sh
+index cbcee91..1334893 100755
+--- a/test/TEST-70-ISCSI/test.sh
++++ b/test/TEST-70-ISCSI/test.sh
+@@ -126,10 +126,6 @@ test_check() {
+         echo "Need tgtd and tgtadm from scsi-target-utils"
+         return 1
+     fi
+-    if ! [ -f /lib/systemd/system/iscsiuio.socket ]; then
+-        echo "Need iscsiuio.socket to run this test"
+-        return 1
+-    fi
+ }
+ 
+ test_setup() {
+diff --git a/test/TEST-71-ISCSI-MULTI/test.sh b/test/TEST-71-ISCSI-MULTI/test.sh
+index 584c73d..3933e10 100755
+--- a/test/TEST-71-ISCSI-MULTI/test.sh
++++ b/test/TEST-71-ISCSI-MULTI/test.sh
+@@ -134,10 +134,6 @@ test_check() {
+         echo "Need tgtd and tgtadm from scsi-target-utils"
+         return 1
+     fi
+-    if ! [ -f /lib/systemd/system/iscsiuio.socket ]; then
+-        echo "Need iscsiuio.socket to run this test"
+-        return 1
+-    fi
+ }
+ 
+ test_setup() {
+diff --git a/test/container/Dockerfile-debian b/test/container/Dockerfile-debian
+index 2c0ec3e..325ea21 100644
+--- a/test/container/Dockerfile-debian
++++ b/test/container/Dockerfile-debian
+@@ -9,7 +9,7 @@
+ # - network: network-legacy, network-manager, systemd-networkd
+ 
+ # Not installed
+-# - iscsiuio, open-iscsi (not yet working with dracut, https://bugs.launchpad.net/ubuntu/+source/open-iscsi/+bug/2072484)
++# - iscsiuio (iscsiuio.socket missing, see https://bugs.debian.org/1056733)
+ # - busybox-static
+ 
+ ARG DISTRIBUTION=debian
+@@ -73,6 +73,7 @@ RUN \
+     nfs-kernel-server \
+     ntfs-3g \
+     nvme-cli \
++    open-iscsi \
+     ovmf \
+     parted \
+     pcscd \
