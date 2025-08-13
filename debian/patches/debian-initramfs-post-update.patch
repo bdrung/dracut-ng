@@ -12,10 +12,10 @@ Forwarded: not-needed
  1 file changed, 6 insertions(+)
 
 diff --git a/dracut.sh b/dracut.sh
-index 45373ef..e6adffe 100755
+index 11da5c2..7aa86cb 100755
 --- a/dracut.sh
 +++ b/dracut.sh
-@@ -2873,4 +2873,10 @@ if [[ -d ${dracutsysrootdir-}/run/systemd/system ]]; then
+@@ -2880,4 +2880,10 @@ if [[ -d ${dracutsysrootdir-}/run/systemd/system ]]; then
      fi
  fi
  

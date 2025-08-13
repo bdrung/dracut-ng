@@ -78,10 +78,10 @@ index 7c075f9..5ee97c0 100755
      fi
  
 diff --git a/lsinitrd.sh b/lsinitrd.sh
-index af7233a..00cfeca 100755
+index 62dec58..7e1807f 100755
 --- a/lsinitrd.sh
 +++ b/lsinitrd.sh
-@@ -471,7 +471,7 @@ type "${CAT%% *}" > /dev/null 2>&1 || {
+@@ -480,7 +480,7 @@ type "${CAT%% *}" > /dev/null 2>&1 || {
      exit 1
  }
  
@@ -90,7 +90,7 @@ index af7233a..00cfeca 100755
  skipcpio() {
      $SKIP "$@" | $ORIG_CAT
  }
-@@ -484,7 +484,7 @@ fi
+@@ -493,7 +493,7 @@ fi
  if ((${#filenames[@]} > 1)); then
      TMPFILE="$TMPDIR/initrd.cpio"
      $CAT "$image" 2> /dev/null > "$TMPFILE"
@@ -113,7 +113,7 @@ index 7358788..0b3b00d 100755
      echo "Something failed. Move back to the original state"
      for dir in "$ROOT/bin" "$ROOT/sbin" "$ROOT/lib" "$ROOT/lib64" \
 diff --git a/modules.d/70kernel-modules/module-setup.sh b/modules.d/70kernel-modules/module-setup.sh
-index e4bfaf6..52d850c 100755
+index 4f40c23..9c98d3a 100755
 --- a/modules.d/70kernel-modules/module-setup.sh
 +++ b/modules.d/70kernel-modules/module-setup.sh
 @@ -5,7 +5,7 @@ installkernel() {
@@ -213,10 +213,10 @@ index 54feffb..552299a 100755
          local _dev=$1
          local trtype
 diff --git a/test/TEST-80-GETARG/test.sh b/test/TEST-80-GETARG/test.sh
-index 48b22db..467ce9d 100755
+index 42349d4..6bee7ce 100755
 --- a/test/TEST-80-GETARG/test.sh
 +++ b/test/TEST-80-GETARG/test.sh
-@@ -94,17 +94,17 @@ test_run() {
+@@ -95,17 +95,17 @@ test_run() {
          . dracut-dev-lib.sh
          . dracut-lib.sh
  
@@ -237,7 +237,7 @@ index 48b22db..467ce9d 100755
          getcmdline() {
              echo "rd.break=cmdline rd.lvm rd.auto=0 rd.auto rd.retry=10"
          }
-@@ -114,7 +114,7 @@ test_run() {
+@@ -115,7 +115,7 @@ test_run() {
          getargbool 1 rd.lvm || ret=$((ret + 1))
          getargbool 0 rd.auto || ret=$((ret + 1))
  
@@ -246,7 +246,7 @@ index 48b22db..467ce9d 100755
          getcmdline() {
              echo "rd.break=cmdlined rd.lvm=0 rd.auto rd.auto=1 rd.auto=0"
          }
-@@ -122,7 +122,7 @@ test_run() {
+@@ -123,7 +123,7 @@ test_run() {
          getargbool 1 rd.lvm && ret=$((ret + 1))
          getargbool 0 rd.auto && ret=$((ret + 1))
  
@@ -255,7 +255,7 @@ index 48b22db..467ce9d 100755
          getcmdline() {
              echo "ip=a ip=b ip=dhcp6"
          }
-@@ -134,7 +134,7 @@ test_run() {
+@@ -135,7 +135,7 @@ test_run() {
              [[ ${args[$i]} == "${RESULT[$i]}" ]] || ret=$((ret + 1))
          done
  
@@ -264,7 +264,7 @@ index 48b22db..467ce9d 100755
          getcmdline() {
              echo "bridge bridge=val"
          }
-@@ -145,7 +145,7 @@ test_run() {
+@@ -146,7 +146,7 @@ test_run() {
              [[ ${args[$i]} == "${RESULT[$i]}" ]] || ret=$((ret + 1))
          done
  

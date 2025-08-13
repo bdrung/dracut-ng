@@ -11,7 +11,7 @@ Forwarded: https://github.com/dracut-ng/dracut-ng/pull/1541
  1 file changed, 23 insertions(+), 3 deletions(-)
 
 diff --git a/lsinitrd.sh b/lsinitrd.sh
-index c06763a..fb34a24 100755
+index 7e1807f..417b171 100755
 --- a/lsinitrd.sh
 +++ b/lsinitrd.sh
 @@ -96,6 +96,11 @@ while (($# > 0)); do
@@ -26,7 +26,7 @@ index c06763a..fb34a24 100755
  if ! [[ $KERNEL_VERSION ]]; then
      if type -P systemd-detect-virt &> /dev/null && ! systemd-detect-virt -c &> /dev/null && ! systemd-detect-virt -r &> /dev/null; then
          KERNEL_VERSION="$(uname -r)"
-@@ -191,17 +196,29 @@ SQUASH_EXTRACT="$TMPDIR/squash-extract"
+@@ -189,17 +194,29 @@ SQUASH_EXTRACT="$TMPDIR/squash-extract"
  
  # Takes optional pattern arguments
  cpio_extract() {
@@ -59,7 +59,7 @@ index c06763a..fb34a24 100755
  }
  
  extract_squash_img() {
-@@ -414,6 +431,7 @@ read -r -N 6 bin < "$image"
+@@ -412,6 +429,7 @@ read -r -N 6 bin < "$image"
  case $bin in
      $'\x71\xc7'* | 070701)
          CAT="cat --"
@@ -67,7 +67,7 @@ index c06763a..fb34a24 100755
          is_early=$(cpio_extract_to_stdout early_cpio 2> /dev/null)
          # Debian mkinitramfs does not create the file 'early_cpio', so let's check if firmware files exist
          [[ "$is_early" ]] || is_early=$(cpio_list 'kernel/*/microcode/*.bin' 2> /dev/null)
-@@ -487,9 +505,11 @@ skipcpio() {
+@@ -485,9 +503,11 @@ skipcpio() {
      $SKIP "$@" | $ORIG_CAT
  }
  
