@@ -1,12 +1,18 @@
-Description: Run bootloader hooks from /etc/initramfs/post-update.d after making
+From: =?utf-8?b?0L3QsNCx?= <nabijaczleweli@nabijaczleweli.xyz>
+Date: Thu, 17 Nov 2022 01:44:32 +0100
+Subject: Run bootloader hooks from /etc/initramfs/post-update.d after making
  the image, and add $NO_POST_UPDATE_HOOKS to disable this
- .
- See <https://kernel-team.pages.debian.net/kernel-handbook/ch-update-hooks.html#s-initramfs-hooks>
-Author: наб <nabijaczleweli@nabijaczleweli.xyz>
+
+See <https://kernel-team.pages.debian.net/kernel-handbook/ch-update-hooks.html#s-initramfs-hooks>
+
 Bug-Debian: https://bugs.debian.org/753752
 Forwarded: not-needed
-Last-Update: 2022-11-17
+---
+ dracut.sh | 6 ++++++
+ 1 file changed, 6 insertions(+)
 
+diff --git a/dracut.sh b/dracut.sh
+index 45373ef..e6adffe 100755
 --- a/dracut.sh
 +++ b/dracut.sh
 @@ -2873,4 +2873,10 @@ if [[ -d ${dracutsysrootdir-}/run/systemd/system ]]; then

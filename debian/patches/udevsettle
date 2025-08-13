@@ -1,3 +1,15 @@
+From: Thomas Lange <lange@debian.org>
+Date: Mon, 4 Aug 2025 13:10:56 +0200
+Subject: udevsettle
+
+In a KVM VM the network is not configured properly, it shows ens3
+(instead of eth0), which is not in status up and no IP address.
+---
+ modules.d/80base/init.sh | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/modules.d/80base/init.sh b/modules.d/80base/init.sh
+index c9090e9..c52b567 100755
 --- a/modules.d/80base/init.sh
 +++ b/modules.d/80base/init.sh
 @@ -161,6 +161,7 @@ udevadm control --reload > /dev/null 2>&1 || :

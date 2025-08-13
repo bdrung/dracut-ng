@@ -16,7 +16,7 @@ Forwarded: https://github.com/dracut-ng/dracut-ng/pull/1483
  2 files changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/dracut.sh b/dracut.sh
-index fad5e3a..7960569 100755
+index e6adffe..d0d8bf2 100755
 --- a/dracut.sh
 +++ b/dracut.sh
 @@ -969,7 +969,7 @@ export DRACUT_LOG_LEVEL=warning
