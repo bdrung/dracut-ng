@@ -1,0 +1,39 @@
+From: Benjamin Drung <benjamin.drung@canonical.com>
+Date: Tue, 12 Aug 2025 16:09:54 +0200
+Subject: refactor(dracut): introduce cpio_extract function
+
+In preparation to support 3cpio as alternative archive tool, move the
+cpio extraction call into `cpio_extract`.
+
+Forwarded: https://github.com/dracut-ng/dracut-ng/pull/1564
+---
+ dracut.sh | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/dracut.sh b/dracut.sh
+index d0d8bf2..47cdc13 100755
+--- a/dracut.sh
++++ b/dracut.sh
+@@ -2286,6 +2286,13 @@ for d in $(ldconfig_paths); do
+     rmdir -p --ignore-fail-on-non-empty "$initdir/$d" > /dev/null 2>&1
+ done
+ 
++# Takes a cpio file and optional pattern arguments
++cpio_extract() {
++    local file="$1"
++    shift
++    cpio --extract --file "$file" --quiet -- "$@"
++}
++
+ if [[ $early_microcode == yes ]]; then
+     dinfo "*** Generating early-microcode cpio image ***"
+     ucode_dir=(amd-ucode intel-ucode)
+@@ -2335,7 +2342,7 @@ if [[ $early_microcode == yes ]]; then
+                 for _ucodedir in "${early_microcode_image_dir[@]}"; do
+                     for _ucodename in "${early_microcode_image_name[@]}"; do
+                         [[ -e "$_ucodedir/$_ucodename" ]] \
+-                            && cpio --extract --file "$_ucodedir/$_ucodename" --quiet \
++                            && cpio_extract "$_ucodedir/$_ucodename" \
+                                 "kernel/x86/microcode/${ucode_dest[$idx]}"
+                         if [[ -e "$_dest_dir/${ucode_dest[$idx]}" ]]; then
+                             dinfo "*** Using microcode found in '$_ucodedir/$_ucodename' ***"
