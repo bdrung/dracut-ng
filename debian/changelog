@@ -1,3 +1,20 @@
+dracut (108-3) unstable; urgency=medium
+
+  * Cherry-pick upstream commits to simplify debian/rules:
+    - feat(Makefile): introduce distclean target
+    - fix(hwdb): make module-setup.sh executable
+    - fix(Makefile): use install for installing files
+  * autopkgtest: drop sysvinit-utils and util-linux dependencies
+  * dracut-test: depend on mount for mount/umount commands
+  * Support shellcheck 0.11
+  * Cherry-pick some upstream fixes:
+    - fix(dracut-util): crash if CMDLINE ends with quotation mark
+    - fix(kernel-modules): add Cadence USB driver to base (Closes: #1108924)
+    - fix(lsinitrd): avoid rechecking for squash images
+  * Support 3cpio for creating and listing initrds
+
+ -- Benjamin Drung <bdrung@debian.org>  Wed, 13 Aug 2025 14:07:00 +0200
+
 dracut (108-2) unstable; urgency=medium
 
   * debian/rules: drop obsolete removal of modified adoc line
