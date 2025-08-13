@@ -11,10 +11,10 @@ Forwarded: https://github.com/dracut-ng/dracut-ng/pull/1564
  1 file changed, 8 insertions(+), 1 deletion(-)
 
 diff --git a/dracut.sh b/dracut.sh
-index d0d8bf2..47cdc13 100755
+index 933f33d..3f62513 100755
 --- a/dracut.sh
 +++ b/dracut.sh
-@@ -2286,6 +2286,13 @@ for d in $(ldconfig_paths); do
+@@ -2301,6 +2301,13 @@ for d in $(ldconfig_paths); do
      rmdir -p --ignore-fail-on-non-empty "$initdir/$d" > /dev/null 2>&1
  done
  
@@ -28,7 +28,7 @@ index d0d8bf2..47cdc13 100755
  if [[ $early_microcode == yes ]]; then
      dinfo "*** Generating early-microcode cpio image ***"
      ucode_dir=(amd-ucode intel-ucode)
-@@ -2335,7 +2342,7 @@ if [[ $early_microcode == yes ]]; then
+@@ -2350,7 +2357,7 @@ if [[ $early_microcode == yes ]]; then
                  for _ucodedir in "${early_microcode_image_dir[@]}"; do
                      for _ucodename in "${early_microcode_image_name[@]}"; do
                          [[ -e "$_ucodedir/$_ucodename" ]] \

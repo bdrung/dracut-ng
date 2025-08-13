@@ -12,7 +12,7 @@ Forwarded: https://github.com/dracut-ng/dracut-ng/pull/1564
  1 file changed, 94 insertions(+), 7 deletions(-)
 
 diff --git a/dracut.sh b/dracut.sh
-index 47cdc13..0b5e3e2 100755
+index 3f62513..59f9b00 100755
 --- a/dracut.sh
 +++ b/dracut.sh
 @@ -270,7 +270,7 @@ Creates initial ramdisk images for preloading modules
@@ -24,7 +24,7 @@ index 47cdc13..0b5e3e2 100755
    --list-modules        List all available dracut modules.
    -M, --show-modules    Print included module's name to standard output during
                           build.
-@@ -1333,6 +1333,7 @@ esac
+@@ -1356,6 +1356,7 @@ hostonly_mode=${hostonly_mode-}
  
  if [[ $reproducible == yes ]] && [[ -z ${SOURCE_DATE_EPOCH-} ]]; then
      SOURCE_DATE_EPOCH=$(stat -c %Y "$dracutbasedir/dracut-functions.sh")
@@ -32,7 +32,7 @@ index 47cdc13..0b5e3e2 100755
  fi
  
  if [[ -z $DRACUT_KMODDIR_OVERRIDE && -n $drivers_dir ]]; then
-@@ -1393,6 +1394,7 @@ trap 'exit 1;' SIGINT
+@@ -1416,6 +1417,7 @@ trap 'exit 1;' SIGINT
  
  readonly initdir="${DRACUT_TMPDIR}/initramfs"
  readonly squashdir="$initdir/squash_root"
@@ -40,7 +40,7 @@ index 47cdc13..0b5e3e2 100755
  mkdir -p "$initdir"
  
  if [[ $early_microcode == yes ]] || { [[ $acpi_override == yes ]] && [[ -d $acpi_table_dir ]]; }; then
-@@ -1436,13 +1438,22 @@ elif [[ -n $persistent_policy && ! -d "/dev/disk/${persistent_policy}" ]]; then
+@@ -1459,13 +1461,22 @@ elif [[ -n $persistent_policy && ! -d "/dev/disk/${persistent_policy}" ]]; then
      unset persistent_policy
  fi
  
@@ -65,7 +65,7 @@ index 47cdc13..0b5e3e2 100755
          unset enhanced_cpio
      fi
  else
-@@ -2290,7 +2301,11 @@ done
+@@ -2305,7 +2316,11 @@ done
  cpio_extract() {
      local file="$1"
      shift
@@ -78,7 +78,7 @@ index 47cdc13..0b5e3e2 100755
  }
  
  if [[ $early_microcode == yes ]]; then
-@@ -2465,7 +2480,7 @@ clamp_mtimes() {
+@@ -2480,7 +2495,7 @@ clamp_mtimes() {
          | xargs -r -0 touch -h -m -c --date="@${SOURCE_DATE_EPOCH?}"
  }
  
@@ -87,7 +87,7 @@ index 47cdc13..0b5e3e2 100755
      clamp_mtimes "$initdir"
  
      if [[ "$(cpio --help)" == *--reproducible* ]]; then
-@@ -2483,17 +2498,31 @@ if [[ $do_hardlink == yes ]] && command -v hardlink > /dev/null; then
+@@ -2498,17 +2513,31 @@ if [[ $do_hardlink == yes ]] && command -v hardlink > /dev/null; then
  
      # Hardlink itself breaks mtimes on directories as we may have added/removed
      # dir entries. Fix those up.
@@ -121,7 +121,7 @@ index 47cdc13..0b5e3e2 100755
          clamp_mtimes "$early_cpio_dir/d"
      fi
  
-@@ -2510,6 +2539,9 @@ if [[ $create_early_cpio == yes ]]; then
+@@ -2525,6 +2554,9 @@ if [[ $create_early_cpio == yes ]]; then
              dfatal "dracut-cpio: creation of $outfile failed"
              exit 1
          fi
@@ -131,7 +131,7 @@ index 47cdc13..0b5e3e2 100755
      else
          if ! (
              umask 077
-@@ -2557,12 +2589,15 @@ case $compress in
+@@ -2572,12 +2604,15 @@ case $compress in
          else
              compress="$DRACUT_COMPRESS_BZIP2 -9"
          fi
@@ -147,7 +147,7 @@ index 47cdc13..0b5e3e2 100755
          ;;
      gzip | pigz)
          if [[ $compress == pigz ]] || command -v "$DRACUT_COMPRESS_PIGZ" &> /dev/null; then
-@@ -2572,18 +2607,59 @@ case $compress in
+@@ -2587,18 +2622,59 @@ case $compress in
          else
              compress="$DRACUT_COMPRESS_GZIP -n -9"
          fi
@@ -207,7 +207,7 @@ index 47cdc13..0b5e3e2 100755
  if [[ -n $enhanced_cpio ]]; then
      if [[ $compress == "cat" ]]; then
          # dracut-cpio appends by default, so any ucode remains
-@@ -2608,6 +2684,17 @@ if [[ -n $enhanced_cpio ]]; then
+@@ -2623,6 +2699,17 @@ if [[ -n $enhanced_cpio ]]; then
          exit 1
      fi
      unset cpio_outfile

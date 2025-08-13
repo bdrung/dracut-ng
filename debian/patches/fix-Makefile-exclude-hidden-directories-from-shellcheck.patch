@@ -14,10 +14,10 @@ Forwarded: https://github.com/dracut-ng/dracut-ng/pull/1568
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/Makefile b/Makefile
-index 73534c2..020d11d 100644
+index 11abdb5..69b5bc6 100644
 --- a/Makefile
 +++ b/Makefile
-@@ -317,7 +317,7 @@ syncheck:
+@@ -315,7 +315,7 @@ syncheck:
  	done;exit $$ret
  ifeq ($(HAVE_SHELLCHECK),yes)
  ifeq ($(HAVE_SHFMT),yes)
