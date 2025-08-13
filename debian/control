@@ -5,9 +5,9 @@ Maintainer: Thomas Lange <lange@debian.org>
 Uploaders: Benjamin Drung <bdrung@debian.org>
 Build-Depends: debhelper-compat (= 13),
                dh-apport,
+               3cpio <!nocheck>,
                asciidoctor,
                bash-completion,
-               cpio <!nocheck>,
                libkmod-dev,
                pkgconf,
                shellcheck [!i386 !m68k !powerpc !sh4 !x32] <!nocheck>,
@@ -22,7 +22,7 @@ Homepage: https://github.com/dracut-ng/dracut-ng/wiki
 Package: dracut-core
 Architecture: any
 Multi-Arch: foreign
-Depends: cpio,
+Depends: 3cpio,
          dracut-install,
          e2fsprogs,
          kmod,
