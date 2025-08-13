@@ -8,3 +8,4 @@ feat-Makefile-set-Dracut-version-on-install.patch
 feat-Makefile-introduce-distclean-target.patch
 fix-hwdb-make-module-setup.sh-executable.patch
 fix-Makefile-use-install-for-installing-files.patch
+fix-Makefile-exclude-hidden-directories-from-shellcheck.patch
