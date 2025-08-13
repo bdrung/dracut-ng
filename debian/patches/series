@@ -6,3 +6,5 @@ feat-debian.conf-default-to-initrd.img-kernel-on-Debian-U.patch
 test-drop-requiring-iscsiuio.socket.patch
 feat-Makefile-set-Dracut-version-on-install.patch
 feat-Makefile-introduce-distclean-target.patch
+fix-hwdb-make-module-setup.sh-executable.patch
+fix-Makefile-use-install-for-installing-files.patch

@@ -23,13 +23,8 @@ override_dh_auto_install:
 	rm debian/tmp/usr/lib/dracut/modules.d/77dracut-systemd/*.adoc
 	rm debian/tmp/usr/lib/dracut/modules.d/77dracut-systemd/*.8
 
-override_dh_fixperms-arch:
-	dh_fixperms
-	find debian/ -name "*.sh" | grep modules.d | xargs chmod 755
-
 override_dh_fixperms-indep:
 	dh_fixperms
-	find debian/ -name "*.sh" | grep modules.d | xargs chmod 755
 ifneq ($(DEB_HOST_ARCH), s390x)
 	for m in 68cms 69cio_ignore 73zipl 74dasd 74dasd_mod \
 		74dcssblk 74zfcp 74znet; do \
