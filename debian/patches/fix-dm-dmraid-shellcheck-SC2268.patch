@@ -1,0 +1,55 @@
+From: Benjamin Drung <benjamin.drung@canonical.com>
+Date: Wed, 13 Aug 2025 12:27:27 +0200
+Subject: fix(dm,dmraid): shellcheck SC2268
+
+Shellcheck 0.11 complains about SC2268 (style): Avoid x-prefix in
+comparisons as it no longer serves a purpose.
+
+Forwarded: https://github.com/dracut-ng/dracut-ng/pull/1569
+---
+ modules.d/70dm/dm-shutdown.sh     | 6 +++---
+ modules.d/70mdraid/md-shutdown.sh | 2 +-
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/modules.d/70dm/dm-shutdown.sh b/modules.d/70dm/dm-shutdown.sh
+index 93b62bb..eeff5be 100755
+--- a/modules.d/70dm/dm-shutdown.sh
++++ b/modules.d/70dm/dm-shutdown.sh
+@@ -46,13 +46,13 @@ _do_dm_shutdown() {
+     info "Disassembling device-mapper devices"
+     for dev in /sys/block/dm-*; do
+         [ -e "${dev}" ] || continue
+-        if [ "x$final" != "x" ]; then
++        if [ -n "$final" ]; then
+             _remove_dm "${dev##*/}" "$final" || ret=$?
+         else
+             _remove_dm "${dev##*/}" "$final" > /dev/null 2>&1 || ret=$?
+         fi
+     done
+-    if [ "x$final" != "x" ]; then
++    if [ -n "$final" ]; then
+         info "dmsetup ls --tree"
+         dmsetup ls --tree 2>&1 | vinfo
+     fi
+@@ -60,7 +60,7 @@ _do_dm_shutdown() {
+ }
+ 
+ if command -v dmsetup > /dev/null \
+-    && [ "x$(dmsetup status)" != "xNo devices found" ]; then
++    && [ "$(dmsetup status)" != "No devices found" ]; then
+     _do_dm_shutdown "$1"
+ else
+     :
+diff --git a/modules.d/70mdraid/md-shutdown.sh b/modules.d/70mdraid/md-shutdown.sh
+index ca768a9..8923f1d 100755
+--- a/modules.d/70mdraid/md-shutdown.sh
++++ b/modules.d/70mdraid/md-shutdown.sh
+@@ -9,7 +9,7 @@ _do_md_shutdown() {
+     info "Disassembling mdraid devices."
+     mdadm -vv --stop --scan | vinfo
+     ret=$((ret + $?))
+-    if [ "x$final" != "x" ]; then
++    if [ -n "$final" ]; then
+         info "/proc/mdstat:"
+         vinfo < /proc/mdstat
+     fi

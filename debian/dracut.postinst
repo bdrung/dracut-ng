@@ -2,7 +2,7 @@
 
 set -e
 
-if [ "x$1" != xtriggered ]; then
+if [ "$1" != triggered ]; then
     # activate trigger
     if dpkg-trigger --no-await update-initramfs; then
         echo "update-initramfs: deferring update (trigger activated)"

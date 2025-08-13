@@ -9,3 +9,5 @@ feat-Makefile-introduce-distclean-target.patch
 fix-hwdb-make-module-setup.sh-executable.patch
 fix-Makefile-use-install-for-installing-files.patch
 fix-Makefile-exclude-hidden-directories-from-shellcheck.patch
+fix-dm-dmraid-shellcheck-SC2268.patch
+fix-ignore-shellcheck-SC2329-in-addition-to-SC2317.patch

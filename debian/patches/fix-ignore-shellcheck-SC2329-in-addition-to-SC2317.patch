@@ -1,0 +1,275 @@
+From: Benjamin Drung <benjamin.drung@canonical.com>
+Date: Wed, 13 Aug 2025 12:33:12 +0200
+Subject: fix: ignore shellcheck SC2329 in addition to SC2317
+
+Shellcheck <= 0.10 complains about SC2317 (info): Command appears to be
+unreachable. Check usage (or ignore if invoked indirectly). Shellcheck
+0.11 changes this complaint to SC2329 (info): This function is never
+invoked. Check usage (or ignored if invoked indirectly).
+
+So ignore shellcheck SC2329 in addition to SC2317 to make both
+shellcheck versions happy.
+
+Forwarded: https://github.com/dracut-ng/dracut-ng/pull/1569
+---
+ dracut-logger.sh                           | 14 +++++++-------
+ lsinitrd.sh                                |  4 ++--
+ modules.d/30convertfs/convertfs.sh         |  2 +-
+ modules.d/70kernel-modules/module-setup.sh |  2 +-
+ modules.d/70multipath/module-setup.sh      |  2 +-
+ modules.d/74fcoe-uefi/module-setup.sh      |  2 +-
+ modules.d/74fcoe/module-setup.sh           |  2 +-
+ modules.d/74iscsi/module-setup.sh          |  2 +-
+ modules.d/74lunmask/module-setup.sh        |  2 +-
+ modules.d/74nvmf/module-setup.sh           |  4 ++--
+ test/TEST-80-GETARG/test.sh                | 14 +++++++-------
+ 11 files changed, 25 insertions(+), 25 deletions(-)
+
+diff --git a/dracut-logger.sh b/dracut-logger.sh
+index 7c075f9..5ee97c0 100755
+--- a/dracut-logger.sh
++++ b/dracut-logger.sh
+@@ -179,40 +179,40 @@ dlog_init() {
+ 
+     if ((stdloglvl < 6)) && ((kmsgloglvl < 6)) && ((fileloglvl < 6)) && ((sysloglvl < 6)); then
+         unset dtrace
+-        # shellcheck disable=SC2317  # exposed via API
++        # shellcheck disable=SC2317,SC2329  # exposed via API
+         dtrace() { :; }
+     fi
+ 
+     if ((stdloglvl < 5)) && ((kmsgloglvl < 5)) && ((fileloglvl < 5)) && ((sysloglvl < 5)); then
+         unset ddebug
+-        # shellcheck disable=SC2317  # exposed via API
++        # shellcheck disable=SC2317,SC2329  # exposed via API
+         ddebug() { :; }
+     fi
+ 
+     if ((stdloglvl < 4)) && ((kmsgloglvl < 4)) && ((fileloglvl < 4)) && ((sysloglvl < 4)); then
+         unset dinfo
+-        # shellcheck disable=SC2317  # exposed via API
++        # shellcheck disable=SC2317,SC2329  # exposed via API
+         dinfo() { :; }
+     fi
+ 
+     if ((stdloglvl < 3)) && ((kmsgloglvl < 3)) && ((fileloglvl < 3)) && ((sysloglvl < 3)); then
+         unset dwarn
+-        # shellcheck disable=SC2317  # exposed via API
++        # shellcheck disable=SC2317,SC2329  # exposed via API
+         dwarn() { :; }
+         unset dwarning
+-        # shellcheck disable=SC2317  # exposed via API
++        # shellcheck disable=SC2317,SC2329  # exposed via API
+         dwarning() { :; }
+     fi
+ 
+     if ((stdloglvl < 2)) && ((kmsgloglvl < 2)) && ((fileloglvl < 2)) && ((sysloglvl < 2)); then
+         unset derror
+-        # shellcheck disable=SC2317  # exposed via API
++        # shellcheck disable=SC2317,SC2329  # exposed via API
+         derror() { :; }
+     fi
+ 
+     if ((stdloglvl < 1)) && ((kmsgloglvl < 1)) && ((fileloglvl < 1)) && ((sysloglvl < 1)); then
+         unset dfatal
+-        # shellcheck disable=SC2317  # exposed via API
++        # shellcheck disable=SC2317,SC2329  # exposed via API
+         dfatal() { :; }
+     fi
+ 
+diff --git a/lsinitrd.sh b/lsinitrd.sh
+index af7233a..00cfeca 100755
+--- a/lsinitrd.sh
++++ b/lsinitrd.sh
+@@ -471,7 +471,7 @@ type "${CAT%% *}" > /dev/null 2>&1 || {
+     exit 1
+ }
+ 
+-# shellcheck disable=SC2317  # assigned to CAT and $CAT called later
++# shellcheck disable=SC2317,SC2329  # assigned to CAT and $CAT called later
+ skipcpio() {
+     $SKIP "$@" | $ORIG_CAT
+ }
+@@ -484,7 +484,7 @@ fi
+ if ((${#filenames[@]} > 1)); then
+     TMPFILE="$TMPDIR/initrd.cpio"
+     $CAT "$image" 2> /dev/null > "$TMPFILE"
+-    # shellcheck disable=SC2317  # assigned to CAT and $CAT called later
++    # shellcheck disable=SC2317,SC2329  # assigned to CAT and $CAT called later
+     pre_decompress() {
+         cat "$TMPFILE"
+     }
+diff --git a/modules.d/30convertfs/convertfs.sh b/modules.d/30convertfs/convertfs.sh
+index 7358788..0b3b00d 100755
+--- a/modules.d/30convertfs/convertfs.sh
++++ b/modules.d/30convertfs/convertfs.sh
+@@ -73,7 +73,7 @@ fi
+ rm -f -- "$testfile"
+ 
+ # clean up after ourselves no matter how we die.
+-# shellcheck disable=SC2317  # called via EXIT trap
++# shellcheck disable=SC2317,SC2329  # called via EXIT trap
+ cleanup() {
+     echo "Something failed. Move back to the original state"
+     for dir in "$ROOT/bin" "$ROOT/sbin" "$ROOT/lib" "$ROOT/lib64" \
+diff --git a/modules.d/70kernel-modules/module-setup.sh b/modules.d/70kernel-modules/module-setup.sh
+index e4bfaf6..52d850c 100755
+--- a/modules.d/70kernel-modules/module-setup.sh
++++ b/modules.d/70kernel-modules/module-setup.sh
+@@ -5,7 +5,7 @@ installkernel() {
+     local _blockfuncs='ahci_platform_get_resources|ata_scsi_ioctl|scsi_add_host|blk_cleanup_queue|register_mtd_blktrans|scsi_esp_register|register_virtio_device|usb_stor_disconnect|mmc_add_host|sdhci_add_host|scsi_add_host_with_dma|blk_alloc_disk|blk_mq_alloc_disk|blk_mq_alloc_request|blk_mq_destroy_queue|blk_cleanup_disk'
+     local -A _hostonly_drvs
+ 
+-    # shellcheck disable=SC2317  # called later by for_each_host_dev_and_slaves
++    # shellcheck disable=SC2317,SC2329  # called later by for_each_host_dev_and_slaves
+     record_block_dev_drv() {
+ 
+         for _mod in $(get_dev_module /dev/block/"$1"); do
+diff --git a/modules.d/70multipath/module-setup.sh b/modules.d/70multipath/module-setup.sh
+index 9ecbbee..fdd7c47 100755
+--- a/modules.d/70multipath/module-setup.sh
++++ b/modules.d/70multipath/module-setup.sh
+@@ -69,7 +69,7 @@ install() {
+     local -A _allow
+     local config_dir
+ 
+-    # shellcheck disable=SC2317  # called later by for_each_host_dev_and_slaves
++    # shellcheck disable=SC2317,SC2329  # called later by for_each_host_dev_and_slaves
+     add_hostonly_mpath_conf() {
+         if is_mpath "$1"; then
+             local _dev
+diff --git a/modules.d/74fcoe-uefi/module-setup.sh b/modules.d/74fcoe-uefi/module-setup.sh
+index 5a9aa83..ae4e011 100755
+--- a/modules.d/74fcoe-uefi/module-setup.sh
++++ b/modules.d/74fcoe-uefi/module-setup.sh
+@@ -2,7 +2,7 @@
+ 
+ # called by dracut
+ check() {
+-    # shellcheck disable=SC2317  # called later by for_each_host_dev_and_slaves
++    # shellcheck disable=SC2317,SC2329  # called later by for_each_host_dev_and_slaves
+     is_fcoe() {
+         block_is_fcoe "$1" || return 1
+     }
+diff --git a/modules.d/74fcoe/module-setup.sh b/modules.d/74fcoe/module-setup.sh
+index 9937a22..2888545 100755
+--- a/modules.d/74fcoe/module-setup.sh
++++ b/modules.d/74fcoe/module-setup.sh
+@@ -2,7 +2,7 @@
+ 
+ # called by dracut
+ check() {
+-    # shellcheck disable=SC2317  # called later by for_each_host_dev_and_slaves
++    # shellcheck disable=SC2317,SC2329  # called later by for_each_host_dev_and_slaves
+     is_fcoe() {
+         block_is_fcoe "$1" || return 1
+     }
+diff --git a/modules.d/74iscsi/module-setup.sh b/modules.d/74iscsi/module-setup.sh
+index c3860cf..fa35a3d 100755
+--- a/modules.d/74iscsi/module-setup.sh
++++ b/modules.d/74iscsi/module-setup.sh
+@@ -135,7 +135,7 @@ install_iscsiroot() {
+ install_softiscsi() {
+     [ -d /sys/firmware/ibft ] && return 0
+ 
+-    # shellcheck disable=SC2317  # called later by for_each_host_dev_and_slaves
++    # shellcheck disable=SC2317,SC2329  # called later by for_each_host_dev_and_slaves
+     is_softiscsi() {
+         local _dev=$1
+         local iscsi_dev
+diff --git a/modules.d/74lunmask/module-setup.sh b/modules.d/74lunmask/module-setup.sh
+index 8bf06be..64688dd 100755
+--- a/modules.d/74lunmask/module-setup.sh
++++ b/modules.d/74lunmask/module-setup.sh
+@@ -4,7 +4,7 @@
+ 
+ # called by dracut
+ cmdline() {
+-    # shellcheck disable=SC2317  # called later by for_each_host_dev_and_slaves
++    # shellcheck disable=SC2317,SC2329  # called later by for_each_host_dev_and_slaves
+     get_lunmask() {
+         local _dev=$1
+         local _devpath _sdev _lun _rport _end_device _classdev _wwpn _sas_address
+diff --git a/modules.d/74nvmf/module-setup.sh b/modules.d/74nvmf/module-setup.sh
+index 54feffb..552299a 100755
+--- a/modules.d/74nvmf/module-setup.sh
++++ b/modules.d/74nvmf/module-setup.sh
+@@ -7,7 +7,7 @@ check() {
+     require_binaries nvme jq || return 1
+     require_kernel_modules nvme_fabrics || return 1
+ 
+-    # shellcheck disable=SC2317  # called later by for_each_host_dev_and_slaves
++    # shellcheck disable=SC2317,SC2329  # called later by for_each_host_dev_and_slaves
+     is_nvmf() {
+         local _dev=$1
+         local trtype
+@@ -79,7 +79,7 @@ cmdline() {
+     local _hostnqn
+     local _hostid
+ 
+-    # shellcheck disable=SC2317  # called later by for_each_host_dev_and_slaves
++    # shellcheck disable=SC2317,SC2329  # called later by for_each_host_dev_and_slaves
+     gen_nvmf_cmdline() {
+         local _dev=$1
+         local trtype
+diff --git a/test/TEST-80-GETARG/test.sh b/test/TEST-80-GETARG/test.sh
+index 48b22db..467ce9d 100755
+--- a/test/TEST-80-GETARG/test.sh
++++ b/test/TEST-80-GETARG/test.sh
+@@ -94,17 +94,17 @@ test_run() {
+         . dracut-dev-lib.sh
+         . dracut-lib.sh
+ 
+-        # shellcheck disable=SC2317  # overwrites debug_off from dracut-lib.sh
++        # shellcheck disable=SC2317,SC2329  # overwrites debug_off from dracut-lib.sh
+         debug_off() {
+             :
+         }
+ 
+-        # shellcheck disable=SC2317  # overwrites debug_on from dracut-lib.sh
++        # shellcheck disable=SC2317,SC2329  # overwrites debug_on from dracut-lib.sh
+         debug_on() {
+             :
+         }
+ 
+-        # shellcheck disable=SC2317  # called later by getarg in dracut-lib.sh
++        # shellcheck disable=SC2317,SC2329  # called later by getarg in dracut-lib.sh
+         getcmdline() {
+             echo "rd.break=cmdline rd.lvm rd.auto=0 rd.auto rd.retry=10"
+         }
+@@ -114,7 +114,7 @@ test_run() {
+         getargbool 1 rd.lvm || ret=$((ret + 1))
+         getargbool 0 rd.auto || ret=$((ret + 1))
+ 
+-        # shellcheck disable=SC2317  # called later by getarg in dracut-lib.sh
++        # shellcheck disable=SC2317,SC2329  # called later by getarg in dracut-lib.sh
+         getcmdline() {
+             echo "rd.break=cmdlined rd.lvm=0 rd.auto rd.auto=1 rd.auto=0"
+         }
+@@ -122,7 +122,7 @@ test_run() {
+         getargbool 1 rd.lvm && ret=$((ret + 1))
+         getargbool 0 rd.auto && ret=$((ret + 1))
+ 
+-        # shellcheck disable=SC2317  # called later by getarg in dracut-lib.sh
++        # shellcheck disable=SC2317,SC2329  # called later by getarg in dracut-lib.sh
+         getcmdline() {
+             echo "ip=a ip=b ip=dhcp6"
+         }
+@@ -134,7 +134,7 @@ test_run() {
+             [[ ${args[$i]} == "${RESULT[$i]}" ]] || ret=$((ret + 1))
+         done
+ 
+-        # shellcheck disable=SC2317  # called later by getarg in dracut-lib.sh
++        # shellcheck disable=SC2317,SC2329  # called later by getarg in dracut-lib.sh
+         getcmdline() {
+             echo "bridge bridge=val"
+         }
+@@ -145,7 +145,7 @@ test_run() {
+             [[ ${args[$i]} == "${RESULT[$i]}" ]] || ret=$((ret + 1))
+         done
+ 
+-        # shellcheck disable=SC2317  # called later by getarg in dracut-lib.sh
++        # shellcheck disable=SC2317,SC2329  # called later by getarg in dracut-lib.sh
+         getcmdline() {
+             echo "rd.break rd.md.uuid=bf96e457:230c9ad4:1f3e59d6:745cf942 rd.md.uuid=bf96e457:230c9ad4:1f3e59d6:745cf943 rd.shell"
+         }
