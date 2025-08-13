@@ -1,0 +1,97 @@
+From: Benjamin Drung <benjamin.drung@canonical.com>
+Date: Wed, 6 Aug 2025 19:50:08 +0200
+Subject: refactor(lsinitrd): introduce cpio_extract_to_stdout function
+
+In preparation to support 3cpio as alternative archive tool, move the
+cpio extraction to stdout call into `cpio_extract_to_stdout`.
+
+Forwarded: https://github.com/dracut-ng/dracut-ng/pull/1530
+---
+ lsinitrd.sh | 25 ++++++++++++-------------
+ 1 file changed, 12 insertions(+), 13 deletions(-)
+
+diff --git a/lsinitrd.sh b/lsinitrd.sh
+index e6b9120..0d45731 100755
+--- a/lsinitrd.sh
++++ b/lsinitrd.sh
+@@ -194,6 +194,11 @@ cpio_extract() {
+     $CAT "$image" 2> /dev/null | cpio -id --quiet $verbose -- "$@"
+ }
+ 
++# Takes optional pattern arguments
++cpio_extract_to_stdout() {
++    $CAT "$image" 2> /dev/null | cpio --extract --verbose --quiet --to-stdout -- "$@" 2> /dev/null
++}
++
+ extract_squash_img() {
+     local _img _tmp
+ 
+@@ -205,8 +210,7 @@ extract_squash_img() {
+     # versions.
+     for _img in squash-root.img squashfs-root.img erofs-root.img; do
+         _tmp="$TMPDIR/$_img"
+-        $CAT "$image" 2> /dev/null | cpio --extract --verbose --quiet --to-stdout -- \
+-            $_img > "$_tmp" 2> /dev/null
++        cpio_extract_to_stdout "$_img" > "$_tmp"
+         [[ -s $_tmp ]] || continue
+ 
+         SQUASH_TMPFILE="$_tmp"
+@@ -252,7 +256,7 @@ extract_files() {
+                 cat "$SQUASH_EXTRACT/$f" 2> /dev/null
+                 ;;
+             *)
+-                $CAT "$image" 2> /dev/null | cpio --extract --verbose --quiet --to-stdout "$f" 2> /dev/null
++                cpio_extract_to_stdout "$f"
+                 ((ret += $?))
+                 ;;
+         esac
+@@ -265,8 +269,7 @@ extract_files() {
+ list_modules() {
+     echo "dracut modules:"
+     # shellcheck disable=SC2046
+-    $CAT "$image" | cpio --extract --verbose --quiet --to-stdout -- \
+-        $(dracutlibdirs modules.txt) 2> /dev/null
++    cpio_extract_to_stdout $(dracutlibdirs modules.txt)
+     ((ret += $?))
+ }
+ 
+@@ -303,9 +306,7 @@ list_squash_content() {
+ list_cmdline() {
+ 
+     echo "dracut cmdline:"
+-    # shellcheck disable=SC2046
+-    $CAT "$image" | cpio --extract --verbose --quiet --to-stdout -- \
+-        etc/cmdline.d/\*.conf 2> /dev/null
++    cpio_extract_to_stdout etc/cmdline.d/\*.conf
+     ((ret += $?))
+ 
+     extract_squash_img || return 0
+@@ -408,7 +409,7 @@ read -r -N 6 bin < "$image"
+ case $bin in
+     $'\x71\xc7'* | 070701)
+         CAT="cat --"
+-        is_early=$(cpio --extract --verbose --quiet --to-stdout -- 'early_cpio' < "$image" 2> /dev/null)
++        is_early=$(cpio_extract_to_stdout early_cpio 2> /dev/null)
+         # Debian mkinitramfs does not create the file 'early_cpio', so let's check if firmware files exist
+         [[ "$is_early" ]] || is_early=$(cpio --list --verbose --quiet --to-stdout -- 'kernel/*/microcode/*.bin' < "$image" 2> /dev/null)
+         if [[ "$is_early" ]]; then
+@@ -504,8 +505,7 @@ elif ((${#filenames[@]} > 0)); then
+     extract_files
+ else
+     # shellcheck disable=SC2046
+-    version=$($CAT "$image" | cpio --extract --verbose --quiet --to-stdout -- \
+-        $(dracutlibdirs 'dracut-*') 2> /dev/null)
++    version=$(cpio_extract_to_stdout $(dracutlibdirs 'dracut-*'))
+     ((ret += $?))
+     echo "Version: $version"
+     echo
+@@ -515,8 +515,7 @@ else
+     else
+         echo -n "Arguments: "
+         # shellcheck disable=SC2046
+-        $CAT "$image" | cpio --extract --verbose --quiet --to-stdout -- \
+-            $(dracutlibdirs build-parameter.txt) 2> /dev/null
++        cpio_extract_to_stdout $(dracutlibdirs build-parameter.txt)
+         echo
+         list_modules
+         list_files

@@ -1,0 +1,80 @@
+From: Benjamin Drung <benjamin.drung@canonical.com>
+Date: Thu, 7 Aug 2025 18:04:01 +0200
+Subject: fix(dracut-util): crash if CMDLINE ends with quotation mark
+
+Sudhakar Verma from the Ubuntu security team found a memory corruption:
+
+```
+$ pwd
+/tmp/dracut-ng/src/util
+$ CC=clang-17 CXX=clang++-17 CFLAGS="-fsanitize=address" cmake .
+-- The C compiler identification is Clang 17.0.6
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/clang-17 - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Configuring done (0.3s)
+-- Generating done (0.0s)
+-- Build files have been written to: /tmp/dracut-ng/src/util
+$ CC=clang-17 CXX=clang++-17 CFLAGS="-fsanitize=address" make
+[ 50%] Building C object CMakeFiles/dracut-util.dir/util.c.o
+[100%] Linking C executable dracut-util
+[100%] Built target dracut-util
+$ ln -s $PWD/dracut-util dracut-getargs
+$ ln -s $PWD/dracut-util dracut-getarg
+
+$ CMDLINE=' "' ./dracut-getarg ' '
+AddressSanitizer:DEADLYSIGNAL
+=================================================================
+==163118==ERROR: AddressSanitizer: SEGV on unknown address 0x50210000001d (pc 0x599a6b7d4c07 bp 0x7ffe44ea9ef0 sp 0x7ffe44ea9da0 T0)
+==163118==The signal is caused by a READ memory access.
+    #0 0x599a6b7d4c07 in next_arg util.c
+    #1 0x599a6b7d3e75 in getarg util.c
+    #2 0x599a6b7d3448 in main (/tmp/dracut-ng/src/util/dracut-util+0x108448) (BuildId: ea28a61b3c6dd0a75c505cd1749f8711779bd819)
+    #3 0x72381be2a1c9 in __libc_start_call_main csu/../sysdeps/nptl/libc_start_call_main.h:58:16
+    #4 0x72381be2a28a in __libc_start_main csu/../csu/libc-start.c:360:3
+    #5 0x599a6b6f7304 in _start (/tmp/dracut-ng/src/util/dracut-util+0x2c304) (BuildId: ea28a61b3c6dd0a75c505cd1749f8711779bd819)
+
+AddressSanitizer can not provide additional info.
+SUMMARY: AddressSanitizer: SEGV util.c in next_arg
+==163118==ABORTING
+```
+
+The variable `i` in `next_arg` is an unsigned integeter. `i - 1` will
+result in an underflow in case `i` is 0.
+
+Forwarded: https://github.com/dracut-ng/dracut-ng/pull/1533
+---
+ src/util/util.c             | 2 +-
+ test/TEST-80-GETARG/test.sh | 3 ++-
+ 2 files changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/src/util/util.c b/src/util/util.c
+index 1d15241..6a6ca2d 100644
+--- a/src/util/util.c
++++ b/src/util/util.c
+@@ -98,7 +98,7 @@ static char *next_arg(char *args, char **param, char **val)
+                                 args[i - 1] = '\0';
+                 }
+         }
+-        if (quoted && args[i - 1] == '"')
++        if (quoted && i > 0 && args[i - 1] == '"')
+                 args[i - 1] = '\0';
+ 
+         if (args[i]) {
+diff --git a/test/TEST-80-GETARG/test.sh b/test/TEST-80-GETARG/test.sh
+index 467ce9d..6bee7ce 100755
+--- a/test/TEST-80-GETARG/test.sh
++++ b/test/TEST-80-GETARG/test.sh
+@@ -26,8 +26,9 @@ test_run() {
+     set -x
+     (
+         cd "$TESTDIR" || exit 1
++        # Intentional trailing quotation mark to test error handling
+         export CMDLINE='key1=0 key2=val key2=val2 key3="  val  3  " "  key 4  ="val4 "key  5=val  5" "key 6=""val  6" key7="foo"bar" baz="end "  key8  =  val 8  "
+-"key 9"="val 9"'
++"key 9"="val 9" "'
+ 
+         ret=0
+ 
