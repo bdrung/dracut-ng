@@ -7,3 +7,4 @@ refactor-dracut-introduce-cpio_extract-function.patch
 feat-dracut-support-3cpio-for-creating-initrds.patch
 alternatives-not-set-default-theme.patch
 plymouth-Only-pull-in-the-SimpleDRM-driver-by-default.patch
+fix-dracut-library-directory-creation-in-kernel-only.patch
