@@ -1,3 +1,9 @@
+dracut (108+git20250815-0ubuntu1) questing; urgency=medium
+
+  * New upstream snapshot.
+
+ -- Benjamin Drung <bdrung@ubuntu.com>  Fri, 15 Aug 2025 09:51:51 +0200
+
 dracut (108-3ubuntu2) questing; urgency=medium
 
   * fix(dracut): library directory creation in --kernel-only
