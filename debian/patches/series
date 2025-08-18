@@ -28,3 +28,4 @@ test-allow-running-UEFI-and-kernel-install-tests-in-chroo.patch
 test-skip-using-kernel-install-due-to-bug-1117563.patch
 alternatives-not-set-default-theme.patch
 plymouth-Only-pull-in-the-SimpleDRM-driver-by-default.patch
+fix-dracut-use-name-to-avoid-find-matching-temporary-dire.patch

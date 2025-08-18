@@ -1,0 +1,30 @@
+From: Deli Zhang <deli.zhang@cloud.com>
+Date: Mon, 18 Aug 2025 01:41:10 +0000
+Subject: fix(dracut): use "-name" to avoid find matching temporary directory
+
+$initdir includes a temporary directory, and the "-path" option of
+find attempts to match the entire path. If the temporary directory
+happens to contain ".ko", e.g.
+  initdir=/var/tmp/dracut.ko79pT/initramfs
+this can lead to a incorrect match, finally all executable files are
+excluded.
+
+Signed-off-by: Deli Zhang <deli.zhang@cloud.com>
+Origin: upstream, https://github.com/dracut-ng/dracut-ng/pull/1593
+---
+ dracut.sh | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/dracut.sh b/dracut.sh
+index c4db0e4..e718b03 100755
+--- a/dracut.sh
++++ b/dracut.sh
+@@ -2214,7 +2214,7 @@ if [[ $kernel_only != yes ]]; then
+     if [[ ${DRACUT_RESOLVE_LAZY-} ]] && [[ $DRACUT_INSTALL ]]; then
+         dinfo "*** Resolving executable dependencies ***"
+         # shellcheck disable=SC2086
+-        find "$initdir" -type f -perm /0111 -not -path '*.ko*' -print0 \
++        find "$initdir" -type f -perm /0111 -not -name '*.ko*' -print0 \
+             | xargs -r -0 $DRACUT_INSTALL ${initdir:+-D "$initdir"} ${dracutsysrootdir:+-r "$dracutsysrootdir"} -R ${DRACUT_FIPS_MODE:+-f} --
+         # shellcheck disable=SC2181
+         if (($? == 0)); then
