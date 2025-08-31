@@ -30,3 +30,4 @@ alternatives-not-set-default-theme.patch
 plymouth-Only-pull-in-the-SimpleDRM-driver-by-default.patch
 fix-dracut-use-name-to-avoid-find-matching-temporary-dire.patch
 fix-systemd-sysusers-increase-ordering-from-68-to-78.patch
+fix-dracut-systemd-avoid-matching-extra-root-substrings-i.patch
