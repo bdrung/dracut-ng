@@ -1,0 +1,29 @@
+From: Alexander Zubkov <green@qrator.net>
+Date: Sun, 31 Aug 2025 10:12:38 +0200
+Subject: fix(resume): avoid matching extra resume= substrings in cmdline
+
+`grep ... 'resume='` matches not only 'resume' parameter, but any alike
+substring. It could be other parameter ending in 'resume' or even parameter
+value. The presense of those could fail the module setup.
+Fix it by checking for a space or the beginning of a line.
+
+Fixes: https://github.com/dracut-ng/dracut-ng/issues/1595
+Signed-off-by: Alexander Zubkov <green@qrator.net>
+Origin: upstream, https://github.com/dracut-ng/dracut-ng/pull/1615
+---
+ modules.d/74resume/module-setup.sh | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/modules.d/74resume/module-setup.sh b/modules.d/74resume/module-setup.sh
+index a2693af..8e06730 100755
+--- a/modules.d/74resume/module-setup.sh
++++ b/modules.d/74resume/module-setup.sh
+@@ -14,7 +14,7 @@ check() {
+     if [[ ${hostonly-} ]] || [[ $mount_needs ]]; then
+         # Resuming won't work if swap is on a netdevice
+         swap_on_netdevice && return 255
+-        if grep -rq 'resume=' /proc/cmdline /etc/cmdline /etc/cmdline.d /etc/kernel/cmdline /usr/lib/kernel/cmdline 2> /dev/null; then
++        if grep -rqE '(^| )resume=' /proc/cmdline /etc/cmdline /etc/cmdline.d /etc/kernel/cmdline /usr/lib/kernel/cmdline 2> /dev/null; then
+             # hibernation support requested on kernel command line
+             return 0
+         else
