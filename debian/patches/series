@@ -8,3 +8,4 @@ test-replace-rev-command-by-sed.patch
 test-use-UEFI-for-QEMU-when-available.patch
 test-run-qemu-support-UEFI-on-ARM.patch
 test-run-qemu-use-hvc0-console-on-s390x.patch
+fix-udev-rules-exclude-udev-rules-from-snapd.patch
