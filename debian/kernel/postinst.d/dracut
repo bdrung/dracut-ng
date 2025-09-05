@@ -33,4 +33,4 @@ fi
 
 # we're good - create initramfs
 echo "dracut: Generating $bootdir/initrd.img-${version}"
-dracut -q --force "$bootdir/initrd.img-${version}" "${version}" >&2
+dracut --force "$bootdir/initrd.img-${version}" "${version}" >&2
