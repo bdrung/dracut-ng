@@ -143,8 +143,8 @@ generate_initramfs()
 {
 	echo "update-initramfs: Generating ${initramfs}"
 	OPTS=""
-	if [ "${verbose}" != 1 ]; then
-		OPTS="-q"
+	if [ "${verbose}" = 1 ]; then
+		OPTS="-v"
 	fi
 	if dracut ${OPTS} --force "${initramfs}.new" "${version}"; then
 		mv -f "${initramfs}.new" "${initramfs}"
