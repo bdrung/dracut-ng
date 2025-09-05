@@ -10,7 +10,7 @@ usr/lib/dracut/dracut-initramfs-restore
 usr/lib/dracut/dracut-logger.sh
 usr/lib/dracut/dracut-util
 usr/lib/dracut/dracut-version.sh
-usr/lib/dracut/dracut.conf.d/10-debian.conf
+usr/lib/dracut/dracut.conf.d/01-debian.conf
 usr/lib/dracut/dracut.conf.d/fips
 usr/lib/dracut/dracut.conf.d/generic
 usr/lib/dracut/dracut.conf.d/hostonly
