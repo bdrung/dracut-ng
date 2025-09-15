@@ -1,3 +1,9 @@
+dracut (108+git20250915-1) unstable; urgency=medium
+
+  * New upstream snapshot.
+
+ -- Benjamin Drung <bdrung@debian.org>  Mon, 15 Sep 2025 14:35:38 +0200
+
 dracut (108-3) unstable; urgency=medium
 
   * Cherry-pick upstream commits to simplify debian/rules:
