@@ -1,0 +1,23 @@
+From: Benjamin Drung <benjamin.drung@canonical.com>
+Date: Fri, 19 Sep 2025 21:23:16 +0200
+Subject: test(NFS): include pidof command in server root fs
+
+The `server-init.sh` script calls `pidof rpc.idmapd` and therefore the
+`pidof` command is needed in the server root file system.
+---
+ test/TEST-60-NFS/test.sh | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/test/TEST-60-NFS/test.sh b/test/TEST-60-NFS/test.sh
+index 2495a57..7d76006 100755
+--- a/test/TEST-60-NFS/test.sh
++++ b/test/TEST-60-NFS/test.sh
+@@ -238,7 +238,7 @@ test_setup() {
+         --add-confdir test-root \
+         -a "bash $USE_NETWORK nfs" \
+         --add-drivers "nfsd sunrpc lockd" \
+-        -I "exportfs rpc.nfsd rpc.mountd dhcpd" \
++        -I "exportfs pidof rpc.nfsd rpc.mountd dhcpd" \
+         --install-optional "/etc/netconfig /etc/nsswitch.conf /etc/rpc /etc/protocols /etc/services /usr/etc/nsswitch.conf /usr/etc/rpc /usr/etc/protocols /usr/etc/services rpc.idmapd /etc/idmapd.conf" \
+         -i "./dhcpd.conf" "/etc/dhcpd.conf" \
+         -f "$TESTDIR"/initramfs.root

@@ -6,3 +6,4 @@ test-drop-requiring-iscsiuio.socket.patch
 feat-lsinitrd-support-3cpio.patch
 feat-dracut-support-3cpio-for-creating-initrds.patch
 fix-lsinitrd-use-lowercase-skip-variable-name.patch
+test-NFS-include-pidof-command-in-server-root-fs.patch
