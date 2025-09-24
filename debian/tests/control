@@ -11,7 +11,6 @@ Restrictions: allow-stderr, needs-root
 Depends: btrfs-progs,
          busybox,
          cryptsetup,
-         dbus,
          dracut-core,
          dracut-test,
          fdisk,
