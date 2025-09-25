@@ -4,13 +4,12 @@ Depends: dracut, linux-image-generic, zstd
 Restrictions: needs-root, superficial
 
 # Skip following test cases:
-# * TEST-23-IMSM: dmraid was removed from Debian
 # * TEST-43-KERNEL-INSTALL: kernel-install issue, see https://bugs.debian.org/1104848
 # * TEST-61-MULTINIC: disabled in upstream CI since 2023-01-02
 # * TEST-62-BONDBRIDGEVLAN: https://github.com/dracutdevs/dracut/issues/2328
 # arm64, armhf, ppc64el, and s390x need upstream support: https://github.com/dracutdevs/dracut/issues/2493
 Features: test-name=upstream-dracut-core
-Test-Command: debian/tests/run-upstream-tests SKIP="23 30 43 60 61 62 70 71 72"
+Test-Command: debian/tests/run-upstream-tests SKIP="30 43 60 61 62 70 71 72"
 Architecture: amd64
 Restrictions: allow-stderr, needs-root
 Depends: btrfs-progs,
