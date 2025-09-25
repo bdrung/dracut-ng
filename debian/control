@@ -4,9 +4,10 @@ Priority: optional
 Maintainer: Thomas Lange <lange@debian.org>
 Uploaders: Benjamin Drung <bdrung@debian.org>
 Build-Depends: debhelper-compat (= 13),
+               3cpio [!alpha !hppa !m68k !sh4] <!nocheck>,
                asciidoctor,
                bash-completion,
-               cpio <!nocheck>,
+               cpio [alpha hppa m68k sh4] <!nocheck>,
                libkmod-dev,
                pkgconf,
                shellcheck [!i386 !m68k !powerpc !sh4 !x32] <!nocheck>,
@@ -21,7 +22,7 @@ Homepage: https://github.com/dracut-ng/dracut-ng/wiki
 Package: dracut-core
 Architecture: any
 Multi-Arch: foreign
-Depends: cpio,
+Depends: 3cpio | cpio,
          dracut-install,
          e2fsprogs,
          kmod,

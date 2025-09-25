@@ -21,3 +21,6 @@ feat-lsinitrd-support-3cpio.patch
 refactor-dracut-introduce-cpio_extract-function.patch
 feat-dracut-support-3cpio-for-creating-initrds.patch
 fix-dracut-library-directory-creation-in-kernel-only.patch
+test-SKIPCPIO-introduce-cpio_list_first-function.patch
+test-SKIPCPIO-introduce-cpio_create-function.patch
+test-SKIPCPIO-support-3cpio.patch
