@@ -1,3 +1,13 @@
+dracut (108-4) unstable; urgency=medium
+
+  * Drop build dependency on shfmt on archs where it is not available
+  * fix(dracut): library directory creation in --kernel-only
+  * dracut-core: Prefer 3cpio over cpio
+  * autopkgtest: install pkgconf for TEST-40-SYSTEMD
+  * fix(lsinitrd): use lowercase skip variable name
+
+ -- Benjamin Drung <bdrung@debian.org>  Thu, 25 Sep 2025 16:23:44 +0200
+
 dracut (108-3) unstable; urgency=medium
 
   * Cherry-pick upstream commits to simplify debian/rules:
