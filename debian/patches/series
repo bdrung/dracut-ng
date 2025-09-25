@@ -24,3 +24,4 @@ fix-dracut-library-directory-creation-in-kernel-only.patch
 test-SKIPCPIO-introduce-cpio_list_first-function.patch
 test-SKIPCPIO-introduce-cpio_create-function.patch
 test-SKIPCPIO-support-3cpio.patch
+fix-lsinitrd-use-lowercase-skip-variable-name.patch

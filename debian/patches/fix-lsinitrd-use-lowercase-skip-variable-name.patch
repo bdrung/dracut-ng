@@ -1,0 +1,76 @@
+From: Benjamin Drung <benjamin.drung@canonical.com>
+Date: Fri, 19 Sep 2025 19:11:42 +0200
+Subject: fix(lsinitrd): use lowercase skip variable name
+
+The test Makefile takes a `SKIP` environment variable to skip tests.
+This variable might leak into `lsinitrd`:
+
+```
+$ make -C test V=1 check SKIP="23 30 43 50 60 70 71 72"
+[...]
+/usr/bin/lsinitrd: line 467: 23: command not found
+```
+
+Rename the `SKIP` variable to use lowercase and unset this variable to
+avoid leaking values into it.
+
+Forwarded: https://github.com/dracut-ng/dracut-ng/pull/1683
+---
+ lsinitrd.sh | 17 +++++++++--------
+ 1 file changed, 9 insertions(+), 8 deletions(-)
+
+diff --git a/lsinitrd.sh b/lsinitrd.sh
+index fb34a24..3d2458b 100755
+--- a/lsinitrd.sh
++++ b/lsinitrd.sh
+@@ -427,6 +427,7 @@ if ((${#filenames[@]} <= 0)) && [[ -z $unpack ]] && [[ -z $unpackearly ]]; then
+     echo "========================================================================"
+ fi
+ 
++unset skip
+ read -r -N 6 bin < "$image"
+ case $bin in
+     $'\x71\xc7'* | 070701)
+@@ -448,13 +449,13 @@ case $bin in
+                 list_files
+             fi
+             if [[ -f "$dracutbasedir/src/skipcpio/skipcpio" ]]; then
+-                SKIP="$dracutbasedir/src/skipcpio/skipcpio"
++                skip="$dracutbasedir/src/skipcpio/skipcpio"
+             else
+-                SKIP="$dracutbasedir/skipcpio"
++                skip="$dracutbasedir/skipcpio"
+             fi
+-            if ! [[ -x $SKIP ]]; then
++            if ! [[ -x $skip ]]; then
+                 echo
+-                echo "'$SKIP' not found, cannot display remaining contents!" >&2
++                echo "'$skip' not found, cannot display remaining contents!" >&2
+                 echo
+                 exit 0
+             fi
+@@ -462,8 +463,8 @@ case $bin in
+         ;;
+ esac
+ 
+-if [[ $SKIP ]]; then
+-    bin="$($SKIP "$image" | { read -r -N 6 bin && echo "$bin"; })"
++if [[ $skip ]]; then
++    bin="$($skip "$image" | { read -r -N 6 bin && echo "$bin"; })"
+ else
+     read -r -N 6 bin < "$image"
+ fi
+@@ -502,11 +503,11 @@ type "${CAT%% *}" > /dev/null 2>&1 || {
+ 
+ # shellcheck disable=SC2317,SC2329  # assigned to CAT and $CAT called later
+ skipcpio() {
+-    $SKIP "$@" | $ORIG_CAT
++    $skip "$@" | $ORIG_CAT
+ }
+ 
+ PARTS="1-"
+-if [[ $SKIP ]]; then
++if [[ $skip ]]; then
+     ORIG_CAT="$CAT"
+     CAT=skipcpio
+     PARTS="2-"
