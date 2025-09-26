@@ -1,3 +1,9 @@
+dracut (108+git20250926-1) unstable; urgency=medium
+
+  * New upstream snapshot.
+
+ -- Benjamin Drung <bdrung@debian.org>  Fri, 26 Sep 2025 12:36:10 +0200
+
 dracut (108-5) unstable; urgency=medium
 
   * autopkgtest: drop skipping removed TEST-23-IMSM
