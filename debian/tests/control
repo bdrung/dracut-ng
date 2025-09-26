@@ -86,6 +86,7 @@ Depends: btrfs-progs,
          systemd-cryptsetup,
          systemd-repart,
          systemd-resolved,
+         systemd-timesyncd,
          systemd-ukify,
          zstd
 
