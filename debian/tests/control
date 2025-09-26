@@ -14,7 +14,6 @@ Tests: 10-basic,
        20-storage,
        26-enc-raid-lvm,
        40-systemd,
-       41-full-systemd,
        42-systemd-initrd,
        80-getarg,
        81-skipcpio
@@ -46,6 +45,26 @@ Depends: btrfs-progs,
          parted,
          squashfs-tools,
          util-linux-extra
+
+Tests: 41-full-systemd
+Architecture: amd64
+Restrictions: allow-stderr, needs-root
+Depends: btrfs-progs,
+         busybox,
+         dracut-network,
+         dracut-test,
+         fdisk,
+         kbd,
+         pkgconf,
+         squashfs-tools,
+         systemd-boot-efi [amd64 arm64 armhf riscv64],
+         systemd-container,
+         systemd-coredump,
+         systemd-cryptsetup,
+         systemd-repart,
+         systemd-resolved,
+         systemd-timesyncd,
+         systemd-ukify
 
 Tests: 50-network
 Architecture: amd64
