@@ -1,0 +1,30 @@
+From: Benjamin Drung <benjamin.drung@canonical.com>
+Date: Fri, 26 Sep 2025 10:31:59 +0200
+Subject: fix(Makefile): exclude hidden directories from shellcheck part 2
+
+`find .` also searches in hidden directories (like `.git` or `.pc`). The
+`.pc` is used on Debian for patch tracking and should not be searched
+for files.
+
+So ignore the top-level hidden directories from shellcheck. See also
+commit 7a65d1a1f372 ("fix(Makefile): exclude hidden directories from
+shellcheck").
+
+Forwarded: https://github.com/dracut-ng/dracut-ng/pull/1709
+---
+ Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Makefile b/Makefile
+index 020d11d..ee1946b 100644
+--- a/Makefile
++++ b/Makefile
+@@ -319,7 +319,7 @@ ifeq ($(HAVE_SHELLCHECK),yes)
+ ifeq ($(HAVE_SHFMT),yes)
+ 	shellcheck $$(shfmt -f *)
+ else
+-	find . -name '*.sh' -print0 | xargs -0 shellcheck
++	find * -name '*.sh' -print0 | xargs -0 shellcheck
+ endif
+ endif
+ 
