@@ -1,3 +1,11 @@
+dracut (108-5) unstable; urgency=medium
+
+  * autopkgtest: drop skipping removed TEST-23-IMSM
+  * Fix kernel-install test cases by avoiding add-all call
+  * fix(Makefile): exclude hidden directories from shellcheck part 2
+
+ -- Benjamin Drung <bdrung@debian.org>  Fri, 26 Sep 2025 10:55:23 +0200
+
 dracut (108-4) unstable; urgency=medium
 
   * Drop build dependency on shfmt on archs where it is not available
