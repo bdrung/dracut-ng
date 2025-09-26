@@ -1,6 +1,5 @@
 udevsettle
 debian-initramfs-post-update.patch
-test-skip-using-kernel-install-due-to-bug-1104848.patch
 fix-dracut-do-not-call-uname-r-in-chroot-environments.patch
 feat-debian.conf-default-to-initrd.img-kernel-on-Debian-U.patch
 test-drop-requiring-iscsiuio.socket.patch
@@ -25,3 +24,4 @@ test-SKIPCPIO-introduce-cpio_list_first-function.patch
 test-SKIPCPIO-introduce-cpio_create-function.patch
 test-SKIPCPIO-support-3cpio.patch
 fix-lsinitrd-use-lowercase-skip-variable-name.patch
+test-avoid-kernel-install-add-all.patch
