@@ -25,3 +25,4 @@ test-SKIPCPIO-introduce-cpio_create-function.patch
 test-SKIPCPIO-support-3cpio.patch
 fix-lsinitrd-use-lowercase-skip-variable-name.patch
 test-avoid-kernel-install-add-all.patch
+fix-Makefile-exclude-hidden-directories-from-shellcheck-p.patch
