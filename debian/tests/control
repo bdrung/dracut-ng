@@ -39,6 +39,7 @@ Restrictions: allow-stderr, needs-root
 Depends: btrfs-progs,
          busybox,
          dracut-live,
+         dracut-network,
          dracut-test,
          fdisk,
          kbd,
