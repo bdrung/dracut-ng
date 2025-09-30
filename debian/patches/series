@@ -26,3 +26,4 @@ test-SKIPCPIO-support-3cpio.patch
 fix-lsinitrd-use-lowercase-skip-variable-name.patch
 test-avoid-kernel-install-add-all.patch
 fix-Makefile-exclude-hidden-directories-from-shellcheck-p.patch
+test-allow-running-UEFI-and-kernel-install-tests-in-chroo.patch
