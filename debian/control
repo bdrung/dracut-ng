@@ -121,9 +121,17 @@ Description: dracut is an event driven initramfs infrastructure (live image modu
  initramfs with dracut, with live image capabilities, like Live CDs.
 
 Package: dracut-test
-Architecture: all
+Architecture: any
 Multi-Arch: foreign
-Depends: dracut-core, mount, ${misc:Depends}
+Depends: dracut-core,
+         ipxe-qemu,
+         mount,
+         ovmf,
+         qemu-efi-aarch64 [arm64],
+         qemu-efi-arm [armhf],
+         qemu-system-native,
+         seabios [ppc64el],
+         ${misc:Depends}
 Breaks: dracut-core (<< 105)
 Replaces: dracut-core (<< 105)
 Description: dracut is an event driven initramfs infrastructure (test modules)
@@ -131,3 +139,8 @@ Description: dracut is an event driven initramfs infrastructure (test modules)
  Dracut test suite. This package is intended for testing Dracut itself
  and is of no use for ordinary users. If you're not sure about this package,
  you don't need it.
+ .
+ This package has following additional dependencies for reducing the amount
+ of dependencies needed in autopkgtest:
+ .
+  * QEMU
