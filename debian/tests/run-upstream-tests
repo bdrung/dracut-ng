@@ -1,6 +1,9 @@
 #!/bin/sh
 set -eu
 
+script_name="${0##*/}"
+test="${script_name%%-*}"
+
 if test -n "${AUTOPKGTEST_TMP-}"; then
 	export TMPDIR="${AUTOPKGTEST_TMP}"
 fi
@@ -31,4 +34,4 @@ rm -f /etc/systemd/system/systemd-udevd.service
 TESTDIR="$(mktemp -d -t dracut-test.XXXXXXXXXX)"
 cp -r test/* "$TESTDIR"
 
-make -C "$TESTDIR" V=1 check "$@"
+make -C "$TESTDIR" V=1 check TESTS="$test"

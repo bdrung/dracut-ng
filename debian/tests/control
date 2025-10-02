@@ -7,8 +7,19 @@ Restrictions: needs-root, superficial
 # * TEST-61-MULTINIC: disabled in upstream CI since 2023-01-02
 # * TEST-62-BONDBRIDGEVLAN: https://github.com/dracutdevs/dracut/issues/2328
 # arm64, armhf, ppc64el, and s390x need upstream support: https://github.com/dracutdevs/dracut/issues/2493
-Features: test-name=upstream-dracut-core
-Test-Command: debian/tests/run-upstream-tests SKIP="30 60 61 62 70 71 72"
+
+Tests: 10-basic,
+       11-usr-mount,
+       12-uefi,
+       13-sysroot,
+       20-storage,
+       26-enc-raid-lvm,
+       40-systemd,
+       41-full-systemd,
+       42-systemd-initrd,
+       43-kernel-install,
+       80-getarg,
+       81-skipcpio
 Architecture: amd64
 Restrictions: allow-stderr, needs-root
 Depends: btrfs-progs,
@@ -26,8 +37,7 @@ Depends: btrfs-progs,
          systemd-repart,
          systemd-ukify
 
-Features: test-name=upstream-dracut-live
-Test-Command: debian/tests/run-upstream-tests TESTS="30"
+Tests: 30-dmsquash
 Architecture: amd64
 Restrictions: allow-stderr, needs-root
 Depends: btrfs-progs,
@@ -39,8 +49,7 @@ Depends: btrfs-progs,
          parted,
          squashfs-tools
 
-Features: test-name=upstream-dracut-network-nfs
-Test-Command: debian/tests/run-upstream-tests TESTS="60"
+Tests: 60-nfs
 Architecture: amd64
 Restrictions: allow-stderr, needs-root
 Depends: curl,
@@ -52,8 +61,7 @@ Depends: curl,
          nfs-kernel-server,
          procps
 
-Features: test-name=upstream-dracut-network-iscsi
-Test-Command: debian/tests/run-upstream-tests TESTS="70 71"
+Tests: 70-iscsi, 71-iscsi-multi
 Architecture: amd64
 Restrictions: allow-stderr, needs-root
 Depends: dracut-network,
@@ -64,8 +72,7 @@ Depends: dracut-network,
          procps,
          tgt
 
-Features: test-name=upstream-dracut-network-nbd
-Test-Command: debian/tests/run-upstream-tests TESTS="72"
+Tests: 72-nbd
 Architecture: amd64
 Restrictions: allow-stderr, needs-root
 Depends: dracut-network,
