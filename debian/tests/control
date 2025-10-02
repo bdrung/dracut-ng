@@ -11,8 +11,7 @@ Features: test-name=upstream-dracut-core
 Test-Command: debian/tests/run-upstream-tests SKIP="30 60 61 62 70 71 72"
 Architecture: amd64
 Restrictions: allow-stderr, needs-root
-Depends: bsdextrautils,
-         btrfs-progs,
+Depends: btrfs-progs,
          busybox,
          dbus,
          dracut-core,
@@ -33,8 +32,7 @@ Features: test-name=upstream-dracut-live
 Test-Command: debian/tests/run-upstream-tests TESTS="30"
 Architecture: amd64
 Restrictions: allow-stderr, needs-root
-Depends: bsdextrautils,
-         btrfs-progs,
+Depends: btrfs-progs,
          busybox,
          dracut-live,
          dracut-test,
@@ -49,8 +47,7 @@ Features: test-name=upstream-dracut-network-nfs
 Test-Command: debian/tests/run-upstream-tests TESTS="60"
 Architecture: amd64
 Restrictions: allow-stderr, needs-root
-Depends: bsdextrautils,
-         curl,
+Depends: curl,
          dracut-live,
          dracut-network,
          dracut-test,
@@ -65,8 +62,7 @@ Features: test-name=upstream-dracut-network-iscsi
 Test-Command: debian/tests/run-upstream-tests TESTS="70 71"
 Architecture: amd64
 Restrictions: allow-stderr, needs-root
-Depends: bsdextrautils,
-         dracut-network,
+Depends: dracut-network,
          dracut-test,
          isc-dhcp-client,
          isc-dhcp-server,
@@ -80,8 +76,7 @@ Features: test-name=upstream-dracut-network-nbd
 Test-Command: debian/tests/run-upstream-tests TESTS="72"
 Architecture: amd64
 Restrictions: allow-stderr, needs-root
-Depends: bsdextrautils,
-         dracut-network,
+Depends: dracut-network,
          dracut-test,
          isc-dhcp-client,
          isc-dhcp-server,
