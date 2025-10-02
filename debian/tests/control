@@ -47,7 +47,8 @@ Depends: btrfs-progs,
          fdisk,
          kbd,
          parted,
-         squashfs-tools
+         squashfs-tools,
+         util-linux-extra
 
 Tests: 60-nfs
 Architecture: amd64
