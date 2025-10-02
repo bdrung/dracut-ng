@@ -14,25 +14,20 @@ Restrictions: allow-stderr, needs-root
 Depends: bsdextrautils,
          btrfs-progs,
          busybox,
-         cryptsetup,
          dbus,
          dracut-core,
          dracut-test,
          fdisk,
          kbd,
          linux-image-generic,
-         lvm2,
          make,
-         mdadm,
          pkgconf,
          squashfs-tools,
          systemd-boot-efi [amd64 arm64 armhf riscv64],
          systemd-container,
          systemd-coredump,
-         systemd-cryptsetup,
          systemd-repart,
-         systemd-ukify,
-         zstd
+         systemd-ukify
 
 Features: test-name=upstream-dracut-live
 Test-Command: debian/tests/run-upstream-tests TESTS="30"
@@ -48,8 +43,7 @@ Depends: bsdextrautils,
          linux-image-generic,
          make,
          parted,
-         squashfs-tools,
-         zstd
+         squashfs-tools
 
 Features: test-name=upstream-dracut-network-nfs
 Test-Command: debian/tests/run-upstream-tests TESTS="60"
@@ -65,48 +59,34 @@ Depends: bsdextrautils,
          linux-image-generic,
          make,
          nfs-kernel-server,
-         procps,
-         systemd,
-         zstd
+         procps
 
 Features: test-name=upstream-dracut-network-iscsi
 Test-Command: debian/tests/run-upstream-tests TESTS="70 71"
 Architecture: amd64
 Restrictions: allow-stderr, needs-root
 Depends: bsdextrautils,
-         cryptsetup,
          dracut-network,
          dracut-test,
          isc-dhcp-client,
          isc-dhcp-server,
          linux-image-generic,
-         lvm2,
          make,
-         mdadm,
          open-iscsi,
          procps,
-         systemd,
-         systemd-cryptsetup,
-         tgt,
-         zstd
+         tgt
 
 Features: test-name=upstream-dracut-network-nbd
 Test-Command: debian/tests/run-upstream-tests TESTS="72"
 Architecture: amd64
 Restrictions: allow-stderr, needs-root
 Depends: bsdextrautils,
-         cryptsetup,
          dracut-network,
          dracut-test,
          isc-dhcp-client,
          isc-dhcp-server,
          linux-image-generic,
-         lvm2,
          make,
-         mdadm,
          nbd-client,
          nbd-server,
-         procps,
-         systemd,
-         systemd-cryptsetup,
-         zstd
+         procps

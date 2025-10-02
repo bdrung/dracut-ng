@@ -123,14 +123,20 @@ Description: dracut is an event driven initramfs infrastructure (live image modu
 Package: dracut-test
 Architecture: any
 Multi-Arch: foreign
-Depends: dracut-core,
+Depends: cryptsetup,
+         dracut-core,
          ipxe-qemu,
+         lvm2,
+         mdadm,
          mount,
          ovmf,
          qemu-efi-aarch64 [arm64],
          qemu-efi-arm [armhf],
          qemu-system-native,
          seabios [ppc64el],
+         systemd,
+         systemd-cryptsetup,
+         zstd,
          ${misc:Depends}
 Breaks: dracut-core (<< 105)
 Replaces: dracut-core (<< 105)
@@ -144,3 +150,4 @@ Description: dracut is an event driven initramfs infrastructure (test modules)
  of dependencies needed in autopkgtest:
  .
   * QEMU
+  * Recommends from dracut-core
