@@ -129,6 +129,7 @@ Depends: bsdextrautils,
          ipxe-qemu,
          linux-image-generic,
          lvm2,
+         make,
          mdadm,
          mount,
          ovmf,
@@ -153,5 +154,6 @@ Description: dracut is an event driven initramfs infrastructure (test modules)
  .
   * bsdextrautils for rev command
   * Linux kernel
+  * make
   * QEMU
   * Recommends from dracut-core
