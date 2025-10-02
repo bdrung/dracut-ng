@@ -127,6 +127,7 @@ Depends: bsdextrautils,
          cryptsetup,
          dracut-core,
          ipxe-qemu,
+         linux-image-generic,
          lvm2,
          mdadm,
          mount,
@@ -151,5 +152,6 @@ Description: dracut is an event driven initramfs infrastructure (test modules)
  of dependencies needed in autopkgtest:
  .
   * bsdextrautils for rev command
+  * Linux kernel
   * QEMU
   * Recommends from dracut-core
