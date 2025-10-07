@@ -5,7 +5,9 @@ script_name="${0##*/}"
 test="${script_name%%-*}"
 
 if test -n "${AUTOPKGTEST_TMP-}"; then
-	export TMPDIR="${AUTOPKGTEST_TMP}"
+	TESTDIR="${AUTOPKGTEST_TMP}"
+else
+	TESTDIR="$(mktemp -d -t dracut-test.XXXXXXXXXX)"
 fi
 
 ARCH=$(dpkg --print-architecture)
@@ -31,7 +33,6 @@ fi
 rm -f /etc/systemd/system/systemd-udevd.service
 
 # Prapare out-of-tree test directory
-TESTDIR="$(mktemp -d -t dracut-test.XXXXXXXXXX)"
-cp -r test/* "$TESTDIR"
+cp -r dracut.conf.d test "$TESTDIR"
 
-make -C "$TESTDIR" V=1 check TESTS="$test"
+make -C "$TESTDIR/test" V=1 check TESTS="$test"
