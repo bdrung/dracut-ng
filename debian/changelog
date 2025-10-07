@@ -1,3 +1,15 @@
+dracut (108-6) unstable; urgency=medium
+
+  * test: allow running UEFI and kernel-install tests in chroot
+  * autopkgtest: depend on bsdextrautils for rev command
+  * Move common autopkgtest dependencies to dracut-test
+  * autopkgtest: run every upstream test as separate test
+  * autopkgtest: depend on util-linux-extra for switch_root in 30-dmsquash
+  * test: skip using kernel-install due to bug #1117563
+  * autopkgtest: copy dracut.conf.d into test directory
+
+ -- Benjamin Drung <bdrung@debian.org>  Tue, 07 Oct 2025 23:45:56 +0200
+
 dracut (108-5) unstable; urgency=medium
 
   * autopkgtest: drop skipping removed TEST-23-IMSM
