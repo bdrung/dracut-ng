@@ -1,0 +1,32 @@
+From: Benjamin Drung <benjamin.drung@canonical.com>
+Date: Tue, 7 Oct 2025 23:30:41 +0200
+Subject: test: skip using kernel-install due to bug #1117563
+
+The Dracut 12-uefi and 43-kernel-install test cases fail. dracut-core
+ships /usr/lib/kernel/install.d/50-dracut.install which generates an
+initrd in KERNEL_INSTALL_STAGING_AREA.
+/usr/lib/kernel/install.d/55-initrd.install (coming from
+debian/extra/kernel-install.d/55-initrd.install) then links to the
+initrd in /boot. This results in two initrd being included in the UKI
+and the content of later one overwrites the former one.
+
+Forwarded: not-needed
+---
+ test/TEST-12-UEFI/test.sh | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/test/TEST-12-UEFI/test.sh b/test/TEST-12-UEFI/test.sh
+index e1936e9..5b8d8b0 100755
+--- a/test/TEST-12-UEFI/test.sh
++++ b/test/TEST-12-UEFI/test.sh
+@@ -58,7 +58,9 @@ test_setup() {
+     # This is the preferred way to build uki with dracut on a systenmd based system
+     # Currently this only works in a few distributions and architectures, but it is here
+     # for reference
+-    if command -v systemd-detect-virt &> /dev/null && systemd-detect-virt -c &> /dev/null \
++
++    # Skip using kernel-install due to https://bugs.debian.org/1117563
++    if false && command -v systemd-detect-virt &> /dev/null && systemd-detect-virt -c &> /dev/null \
+         && command -v kernel-install &> /dev/null \
+         && command -v systemctl &> /dev/null \
+         && command -v ukify &> /dev/null \

@@ -4,6 +4,7 @@ Depends: dracut, linux-image-generic, zstd
 Restrictions: needs-root, superficial
 
 # Skip following test cases:
+# * TEST-43-KERNEL-INSTALL: kernel-install issue, see https://bugs.debian.org/1117563
 # * TEST-61-MULTINIC: disabled in upstream CI since 2023-01-02
 # * TEST-62-BONDBRIDGEVLAN: https://github.com/dracutdevs/dracut/issues/2328
 # arm64, armhf, ppc64el, and s390x need upstream support: https://github.com/dracutdevs/dracut/issues/2493
@@ -17,7 +18,6 @@ Tests: 10-basic,
        40-systemd,
        41-full-systemd,
        42-systemd-initrd,
-       43-kernel-install,
        80-getarg,
        81-skipcpio
 Architecture: amd64
