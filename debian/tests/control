@@ -82,7 +82,8 @@ Depends: curl,
          isc-dhcp-client,
          isc-dhcp-server,
          nfs-kernel-server,
-         procps
+         procps,
+         util-linux-extra
 
 Tests: 70-iscsi, 71-iscsi-multi
 Architecture: amd64
