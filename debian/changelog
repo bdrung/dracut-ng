@@ -1,3 +1,9 @@
+dracut (108-8) unstable; urgency=medium
+
+  * dracut-test: fix dropped dependencies on i386
+
+ -- Benjamin Drung <bdrung@debian.org>  Tue, 14 Oct 2025 18:35:08 +0200
+
 dracut (108-7) unstable; urgency=medium
 
   * dracut-test: drop dependencies on i386 that are not present
