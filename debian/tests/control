@@ -1,0 +1,85 @@
+Tests: lsinitrd
+Architecture: !armel !i386
+Depends: dracut, linux-image-generic, zstd
+Restrictions: needs-root, superficial
+
+# Skip following test cases:
+# * TEST-43-KERNEL-INSTALL: kernel-install issue, see https://bugs.debian.org/1117563
+# * TEST-61-MULTINIC: disabled in upstream CI since 2023-01-02
+# * TEST-62-BONDBRIDGEVLAN: https://github.com/dracutdevs/dracut/issues/2328
+# arm64, armhf, ppc64el, and s390x need upstream support: https://github.com/dracutdevs/dracut/issues/2493
+
+Tests: 10-basic,
+       11-usr-mount,
+       12-uefi,
+       13-sysroot,
+       20-storage,
+       26-enc-raid-lvm,
+       40-systemd,
+       41-full-systemd,
+       42-systemd-initrd,
+       80-getarg,
+       81-skipcpio
+Architecture: amd64
+Restrictions: allow-stderr, needs-root
+Depends: btrfs-progs,
+         busybox,
+         dbus,
+         dracut-core,
+         dracut-test,
+         fdisk,
+         kbd,
+         pkgconf,
+         squashfs-tools,
+         systemd-boot-efi [amd64 arm64 armhf riscv64],
+         systemd-container,
+         systemd-coredump,
+         systemd-repart,
+         systemd-ukify
+
+Tests: 30-dmsquash
+Architecture: amd64
+Restrictions: allow-stderr, needs-root
+Depends: btrfs-progs,
+         busybox,
+         dracut-live,
+         dracut-test,
+         fdisk,
+         kbd,
+         parted,
+         squashfs-tools,
+         util-linux-extra
+
+Tests: 60-nfs
+Architecture: amd64
+Restrictions: allow-stderr, needs-root
+Depends: curl,
+         dracut-live,
+         dracut-network,
+         dracut-test,
+         isc-dhcp-client,
+         isc-dhcp-server,
+         nfs-kernel-server,
+         procps
+
+Tests: 70-iscsi, 71-iscsi-multi
+Architecture: amd64
+Restrictions: allow-stderr, needs-root
+Depends: dracut-network,
+         dracut-test,
+         isc-dhcp-client,
+         isc-dhcp-server,
+         open-iscsi,
+         procps,
+         tgt
+
+Tests: 72-nbd
+Architecture: amd64
+Restrictions: allow-stderr, needs-root
+Depends: dracut-network,
+         dracut-test,
+         isc-dhcp-client,
+         isc-dhcp-server,
+         nbd-client,
+         nbd-server,
+         procps

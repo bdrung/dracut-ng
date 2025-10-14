@@ -1,0 +1,28 @@
+From: Benjamin Drung <benjamin.drung@canonical.com>
+Date: Tue, 30 Sep 2025 14:50:20 +0200
+Subject: test: allow running UEFI and kernel-install tests in chroot
+
+The UEFI and kernel-install tests want to run in an isolated environment
+to avoid modifying the host system. Allow running those tests in a
+chroot (like schroot).
+
+Forwarded: https://github.com/dracut-ng/dracut-ng/pull/1740
+---
+ test/TEST-43-KERNEL-INSTALL/test.sh | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/test/TEST-43-KERNEL-INSTALL/test.sh b/test/TEST-43-KERNEL-INSTALL/test.sh
+index c486844..a41052a 100755
+--- a/test/TEST-43-KERNEL-INSTALL/test.sh
++++ b/test/TEST-43-KERNEL-INSTALL/test.sh
+@@ -4,8 +4,8 @@ set -eu
+ TEST_DESCRIPTION="kernel-install with root filesystem on ext4 filesystem"
+ 
+ test_check() {
+-    if command -v systemd-detect-virt > /dev/null && ! systemd-detect-virt -c &> /dev/null; then
+-        echo "This test assumes that it runs inside a CI container."
++    if command -v systemd-detect-virt > /dev/null && ! systemd-detect-virt -c &> /dev/null && ! systemd-detect-virt -r &> /dev/null; then
++        echo "This test assumes that it runs inside a chroot or CI container."
+         return 1
+     fi
+ 
