@@ -1,3 +1,9 @@
+dracut (108-7) unstable; urgency=medium
+
+  * dracut-test: drop dependencies on i386 that are not present
+
+ -- Benjamin Drung <bdrung@debian.org>  Tue, 14 Oct 2025 17:27:09 +0200
+
 dracut (108-6) unstable; urgency=medium
 
   * test: allow running UEFI and kernel-install tests in chroot
