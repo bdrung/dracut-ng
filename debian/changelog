@@ -1,3 +1,9 @@
+dracut (108+git20251014-1) unstable; urgency=medium
+
+  * New upstream snapshot.
+
+ -- Benjamin Drung <bdrung@debian.org>  Tue, 14 Oct 2025 19:27:07 +0200
+
 dracut (108-8) unstable; urgency=medium
 
   * dracut-test: fix dropped dependencies on i386
