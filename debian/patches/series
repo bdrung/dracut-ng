@@ -14,3 +14,4 @@ fix-dracut-source-dracut-functions.sh-before-calling-dwar.patch
 test-drop-auto-yes-from-mdadm-call.patch
 test-run-QEMU-with-a-timeout-unless-daemonized.patch
 fix-udev-rules-exclude-udev-rules-from-snapd.patch
+feat-dmsquash-live-autooverlay-support-readlink-from-uuti.patch
