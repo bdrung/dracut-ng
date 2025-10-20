@@ -1,0 +1,40 @@
+From: Benjamin Drung <benjamin.drung@canonical.com>
+Date: Mon, 20 Oct 2025 18:07:00 +0200
+Subject: feat(dmsquash-live-autooverlay): support readlink from uutils
+
+The readlink command from GNU coreutils and the one from uutil coreutils
+behave differently in case the path contains symlinks and `..`. GNU
+readlink traverses symlinks first, but uutils resolves `..` first.
+
+Example from Ubuntu 25.10 (questing):
+
+```sh
+$ gnureadlink -f /sys/class/block/nvme0n1p1/..
+/sys/devices/pci0000:00/0000:00:01.0/0000:01:00.0/nvme/nvme0/nvme0n1
+$ /usr/lib/cargo/bin/coreutils/readlink -f /sys/class/block/nvme0n1p1/..
+/sys/class/block
+```
+
+Enforce the correct order by resolving the symlinks before `..`. That
+way the result does not rely on implementation specifics of different
+readlink implementations.
+
+Forwarded: https://github.com/dracut-ng/dracut-ng/pull/1776
+---
+ modules.d/70dmsquash-live-autooverlay/create-overlay.sh | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/modules.d/70dmsquash-live-autooverlay/create-overlay.sh b/modules.d/70dmsquash-live-autooverlay/create-overlay.sh
+index 00d76d6..ab56d24 100755
+--- a/modules.d/70dmsquash-live-autooverlay/create-overlay.sh
++++ b/modules.d/70dmsquash-live-autooverlay/create-overlay.sh
+@@ -51,7 +51,8 @@ gatherData() {
+         info "Skipping overlay creation: unpartitioned or read-only media detected"
+         exit 0
+     fi
+-    fullDriveSysfsPath=$(readlink -f "${rootDeviceSysfsPath}/..")
++    fullSysfsPath=$(readlink -f "${rootDeviceSysfsPath}")
++    fullDriveSysfsPath="${fullSysfsPath%/*}"
+     blockDevice="/dev/${fullDriveSysfsPath##*/}"
+     currentPartitionCount=$(grep --count -E "${blockDevice#/dev/}[0-9]+" /proc/partitions)
+ 

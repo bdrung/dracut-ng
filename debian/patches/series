@@ -1,2 +1,3 @@
 test-exit-with-code-77-if-test-is-skipped.patch
 fix-udev-rules-exclude-udev-rules-from-snapd.patch
+feat-dmsquash-live-autooverlay-support-readlink-from-uuti.patch
