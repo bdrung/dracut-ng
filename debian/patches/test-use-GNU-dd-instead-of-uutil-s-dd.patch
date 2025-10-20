@@ -1,0 +1,53 @@
+From: Benjamin Drung <benjamin.drung@canonical.com>
+Date: Mon, 17 Nov 2025 22:18:20 +0100
+Subject: test: use GNU dd instead of uutil's dd
+
+Tests start to fail on Ubuntu resolute due to rust-coreutils 0.3.0:
+
+```
+dd: IO error: Invalid input
+```
+
+Use GNU dd instead of uutil's dd to this bug in uutil's dd.
+
+Bug-Ubuntu: https://launchpad.net/bugs/2129037
+Forwarded: not-needed
+---
+ test/modules.d/70test-makeroot/module-setup.sh | 7 ++++++-
+ test/modules.d/70test-root/module-setup.sh     | 5 +++++
+ 2 files changed, 11 insertions(+), 1 deletion(-)
+
+diff --git a/test/modules.d/70test-makeroot/module-setup.sh b/test/modules.d/70test-makeroot/module-setup.sh
+index af87bd0..075660d 100755
+--- a/test/modules.d/70test-makeroot/module-setup.sh
++++ b/test/modules.d/70test-makeroot/module-setup.sh
+@@ -13,7 +13,12 @@ install() {
+     inst_multiple cp umount sync mkfs.ext4
+ 
+     # prefer the coreutils version of dd over the busybox version for testing
+-    inst /bin/dd /usr/sbin/dd
++    if [ -x /usr/bin/gnudd ]; then
++        # use GNU dd instead of uutil's dd due to https://launchpad.net/bugs/2129037
++        inst /usr/bin/gnudd /usr/sbin/dd
++    else
++        inst /bin/dd /usr/sbin/dd
++    fi
+ 
+     inst_hook initqueue/finished 01 "$moddir/finished-false.sh"
+ }
+diff --git a/test/modules.d/70test-root/module-setup.sh b/test/modules.d/70test-root/module-setup.sh
+index ac249db..c637507 100755
+--- a/test/modules.d/70test-root/module-setup.sh
++++ b/test/modules.d/70test-root/module-setup.sh
+@@ -20,6 +20,11 @@ depends() {
+ install() {
+     inst_simple /etc/os-release
+ 
++    if [ -x /usr/bin/gnudd ]; then
++        # use GNU dd instead of uutil's dd due to https://launchpad.net/bugs/2129037
++        inst /usr/bin/gnudd /usr/bin/dd
++    fi
++
+     inst_multiple mkdir ln dd mount poweroff umount setsid sync cat grep
+ 
+     if dracut_module_included "systemd"; then
