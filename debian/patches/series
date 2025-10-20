@@ -10,3 +10,4 @@ test-run-qemu-support-UEFI-on-ARM.patch
 test-run-qemu-use-hvc0-console-on-s390x.patch
 fix-udev-rules-exclude-udev-rules-from-snapd.patch
 feat-dmsquash-live-autooverlay-support-readlink-from-uuti.patch
+test-use-GNU-dd-instead-of-uutil-s-dd.patch
