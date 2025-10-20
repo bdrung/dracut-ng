@@ -1,0 +1,48 @@
+From: Benjamin Drung <benjamin.drung@canonical.com>
+Date: Mon, 20 Oct 2025 18:35:58 +0200
+Subject: test: use GNU dd instead of uutil's dd
+
+All dracut autopkgtest fail with:
+
+```
+dd: IO error: Invalid input
+```
+
+Use GNU dd instead of uutil's dd to work around this issue.
+
+Bug-Ubuntu: https://launchpad.net/bugs/2129037
+Forwarded: not-needed
+---
+ test/modules.d/70test-makeroot/module-setup.sh | 4 +++-
+ test/modules.d/70test-root/module-setup.sh     | 3 +++
+ 2 files changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/test/modules.d/70test-makeroot/module-setup.sh b/test/modules.d/70test-makeroot/module-setup.sh
+index a8fda4c..281b15a 100755
+--- a/test/modules.d/70test-makeroot/module-setup.sh
++++ b/test/modules.d/70test-makeroot/module-setup.sh
+@@ -13,7 +13,9 @@ install() {
+     inst_multiple cp umount sync mkfs.ext4
+ 
+     # prefer the coreutils version of dd over the busybox version for testing
+-    inst /bin/dd /usr/sbin/dd
++    #inst /bin/dd /usr/sbin/dd
++    # use GNU dd instead of uutil's dd to work around https://launchpad.net/bugs/2129037
++    inst /usr/bin/gnudd /usr/sbin/dd
+ 
+     inst_hook initqueue/finished 01 "$moddir/finished-false.sh"
+ }
+diff --git a/test/modules.d/70test-root/module-setup.sh b/test/modules.d/70test-root/module-setup.sh
+index ac249db..43dc4a3 100755
+--- a/test/modules.d/70test-root/module-setup.sh
++++ b/test/modules.d/70test-root/module-setup.sh
+@@ -22,6 +22,9 @@ install() {
+ 
+     inst_multiple mkdir ln dd mount poweroff umount setsid sync cat grep
+ 
++    # use GNU dd instead of uutil's dd to work around https://launchpad.net/bugs/2129037
++    inst /usr/bin/gnudd /usr/sbin/dd
++
+     if dracut_module_included "systemd"; then
+         inst_simple "$moddir/testsuite.target" "${systemdsystemunitdir}/testsuite.target"
+         inst_simple "$moddir/testsuite.service" "${systemdsystemunitdir}/testsuite.service"
