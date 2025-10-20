@@ -1,3 +1,30 @@
+dracut (108-8ubuntu1) resolute; urgency=medium
+
+  * Merge with Debian unstable. Remaining changes:
+    - drop udevsettle patch (these kind of patches should be applied upstream)
+    - dracut-core:
+      - demote cryptsetup, systemd-cryptsetup, dmsetup, kpartx, lvm2,
+        and mdadm to suggests
+      - demote binutils to suggests. its only needed when using UEFI executables
+    - Include all packages with dracut modules in Apport bug reports
+    - autopkgtest: enable tests for s390x again
+    - Plymouth hook: Use alternatives instead of plymouth-set-default-theme
+    - run upstream-dracut-live autopkgtest on armhf and ppc64el
+    - Drop debian-initramfs-post-update.patch. Let update-initramfs call the
+      bootloader hooks instead of dracut itself.
+    - plymouth: Only pull in the SimpleDRM driver by default
+    - Let linux-firmware updates trigger the dracut autopkgtest
+    - Cherry-pick some upstream fixes:
+      - fix(dracut): use "-name" to avoid find matching temporary directory
+      - fix(systemd-sysusers): increase ordering from 68 to 78
+      - fix(dracut-systemd): avoid matching extra root= substrings in cmdline
+      - fix(resume): avoid matching extra resume= substrings in cmdline
+    - fix(udev-rules): exclude udev rules from snapd
+  * feat(dmsquash-live-autooverlay): support readlink from uutils
+  * test: use GNU dd instead of uutil's dd (to work around bug LP 2129037)
+
+ -- Benjamin Drung <bdrung@ubuntu.com>  Mon, 20 Oct 2025 18:37:02 +0200
+
 dracut (108-8) unstable; urgency=medium
 
   * dracut-test: fix dropped dependencies on i386
