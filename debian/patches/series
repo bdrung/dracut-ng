@@ -1,1 +1,2 @@
 fix-udev-rules-exclude-udev-rules-from-snapd.patch
+feat-dmsquash-live-autooverlay-support-readlink-from-uuti.patch
