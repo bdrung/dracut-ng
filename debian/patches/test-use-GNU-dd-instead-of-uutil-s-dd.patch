@@ -18,7 +18,7 @@ Forwarded: not-needed
  2 files changed, 6 insertions(+), 1 deletion(-)
 
 diff --git a/test/modules.d/70test-makeroot/module-setup.sh b/test/modules.d/70test-makeroot/module-setup.sh
-index a8fda4c..281b15a 100755
+index af87bd0..0759812 100755
 --- a/test/modules.d/70test-makeroot/module-setup.sh
 +++ b/test/modules.d/70test-makeroot/module-setup.sh
 @@ -13,7 +13,9 @@ install() {
