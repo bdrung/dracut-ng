@@ -19,7 +19,7 @@ jobs:
         runs-on: ubuntu-24.04
         timeout-minutes: 20
         concurrency:
-            group: basic-${{ github.workflow }}-${{ github.ref }}-${{ matrix.container }}-${{ matrix.test }}
+            group: extra-basic-${{ github.workflow }}-${{ github.ref }}-${{ matrix.container }}-${{ matrix.test }}
             cancel-in-progress: true
         strategy:
             fail-fast: false
@@ -37,7 +37,6 @@ jobs:
                     - gentoo:latest
                     - gentoo:amd64-openrc
                     - opensuse:latest
-                    - ubuntu:latest
                     - ubuntu:devel
                     - ubuntu:rolling
                     - void:latest
@@ -45,6 +44,7 @@ jobs:
                     - "10"
                     - "11"
                     - "12"
+                    - "13"
                     - "20"
                     - "26"
                     - "30"
@@ -52,6 +52,7 @@ jobs:
                     - "41"
                     - "42"
                     - "43"
+                    - "50"
                     - "80"
                     - "81"
                     - "82"
@@ -59,17 +60,171 @@ jobs:
                     # https://github.com/dracut-ng/dracut-ng/issues/1224
                     - container: gentoo:amd64-openrc
                       test: "43"
-                    # https://github.com/dracut-ng/dracut-ng/issues/1315
-                    - container: azurelinux:3.0
+                    # https://github.com/dracut-ng/dracut-ng/issues/1407
+                    - container: debian:sid
+                      test: "12"
+                    # https://github.com/dracut-ng/dracut-ng/issues/1590
+                    - container: ubuntu:rolling
+                      test: "30"
+                    # https://github.com/dracut-ng/dracut-ng/issues/1677
+                    - container: arch:latest
                       test: "41"
-                    # https://github.com/dracut-ng/dracut-ng/issues/1314
-                    - container: azurelinux:3.0
-                      test: "43"
         container:
             image: ghcr.io/dracut-ng/${{ matrix.container }}-amd
             options: '--device=/dev/kvm --privileged'
         steps:
             - name: "Checkout Repository"
-              uses: actions/checkout@v4
+              uses: actions/checkout@v5
             - name: "${{ matrix.container }} TEST-${{ matrix.test }}"
               run: ./test/test-container.sh "TEST-${{ matrix.test }}" ${{ matrix.test }}
+    network-systemd:
+        name: ${{ matrix.test }} on ${{ matrix.container }} ${{ matrix.network }} networking
+        runs-on: ubuntu-24.04
+        timeout-minutes: 20
+        concurrency:
+            group: extra-network-systemd-${{ github.workflow }}-${{ github.ref }}-${{ matrix.container }}-${{ matrix.test }}-${{ matrix.network }}
+            cancel-in-progress: true
+        strategy:
+            fail-fast: false
+            matrix:
+                network:
+                    - systemd-networkd
+                container:
+                    - arch:latest
+                    - debian:latest
+                    - debian:sid
+                test:
+                    - "50"
+        container:
+            image: ghcr.io/dracut-ng/${{ matrix.container }}-amd
+            options: '--device=/dev/kvm'
+        steps:
+            - name: "Checkout Repository"
+              uses: actions/checkout@v5
+            - name: "${{ matrix.container }} TEST-${{ matrix.test }}"
+              run: USE_NETWORK=${{ matrix.network }} ./test/test-container.sh "TEST-${{ matrix.test }}" ${{ matrix.test }}
+    network-manager:
+        name: ${{ matrix.test }} on ${{ matrix.container }} ${{ matrix.network }} networking
+        runs-on: ubuntu-24.04
+        timeout-minutes: 20
+        concurrency:
+            group: extra-network-manager-${{ github.workflow }}-${{ github.ref }}-${{ matrix.container }}-${{ matrix.test }}-${{ matrix.network }}
+            cancel-in-progress: true
+        strategy:
+            fail-fast: false
+            matrix:
+                network:
+                    - network-manager
+                container:
+                    - arch:latest
+                    - debian:latest
+                    - debian:sid
+                    - fedora:latest
+                    - fedora:rawhide
+                    - gentoo:amd64-openrc
+                    - opensuse:latest
+                test:
+                    - "60"
+                    - "70"
+                    - "71"
+                    - "72"
+        container:
+            image: ghcr.io/dracut-ng/${{ matrix.container }}-amd
+            options: '--device=/dev/kvm'
+        steps:
+            - name: "Checkout Repository"
+              uses: actions/checkout@v5
+            - name: "${{ matrix.container }} TEST-${{ matrix.test }}"
+              run: USE_NETWORK=${{ matrix.network }} ./test/test-container.sh "TEST-${{ matrix.test }}" ${{ matrix.test }}
+    network-legacy:
+        name: ${{ matrix.test }} on ${{ matrix.container }} ${{ matrix.network }} networking
+        runs-on: ubuntu-24.04
+        timeout-minutes: 20
+        concurrency:
+            group: extra-network-legacy-${{ github.workflow }}-${{ github.ref }}-${{ matrix.container }}-${{ matrix.test }}-${{ matrix.network }}
+            cancel-in-progress: true
+        strategy:
+            fail-fast: false
+            matrix:
+                network:
+                    - network-legacy
+                container:
+                    - opensuse:latest
+                test:
+                    - "50"
+                    - "60"
+                    - "70"
+                    - "71"
+                    - "72"
+        container:
+            image: ghcr.io/dracut-ng/${{ matrix.container }}-amd
+            options: '--device=/dev/kvm'
+        steps:
+            - name: "Checkout Repository"
+              uses: actions/checkout@v5
+            - name: "${{ matrix.container }} TEST-${{ matrix.test }}"
+              run: USE_NETWORK=${{ matrix.network }} ./test/test-container.sh "TEST-${{ matrix.test }}" ${{ matrix.test }}
+    omitsystemd:
+        # run this test on all containers
+        name: ${{ matrix.test }} on ${{ matrix.container }} with no systemd
+        runs-on: ubuntu-24.04
+        timeout-minutes: 20
+        concurrency:
+            group: extra-omitsystemd-${{ github.workflow }}-${{ github.ref }}-${{ matrix.container }}-${{ matrix.test }}
+            cancel-in-progress: true
+        strategy:
+            fail-fast: false
+            matrix:
+                container:
+                    - arch:latest
+                test:
+                    - "10"
+                    - "11"
+                    - "12"
+                    - "20"
+                    - "26"
+                    - "30"
+        container:
+            image: ghcr.io/dracut-ng/${{ matrix.container }}-amd
+            options: '--device=/dev/kvm --privileged'
+        steps:
+            - name: "Checkout Repository"
+              uses: actions/checkout@v5
+            - name: "${{ matrix.container }} TEST-${{ matrix.test }}"
+              run: TEST_DRACUT_ARGS="--omit systemd" ./test/test-container.sh "TEST-${{ matrix.test }}" ${{ matrix.test }}
+    hostonlystrict:
+        name: ${{ matrix.test }} on ${{ matrix.container }} with hostonly-mode strict
+        runs-on: ubuntu-24.04
+        timeout-minutes: 20
+        concurrency:
+            group: extra-hostonlystrict-${{ github.workflow }}-${{ github.ref }}-${{ matrix.container }}-${{ matrix.test }}
+            cancel-in-progress: true
+        strategy:
+            fail-fast: false
+            matrix:
+                container:
+                    - fedora:latest
+                test:
+                    - "10"
+                    - "11"
+                    - "12"
+                    - "13"
+                    - "20"
+                    - "26"
+                    - "30"
+                    - "40"
+                    - "41"
+                    - "42"
+                    - "43"
+                    - "50"
+                    - "80"
+                    - "81"
+                    - "82"
+        container:
+            image: ghcr.io/dracut-ng/${{ matrix.container }}-amd
+            options: '--device=/dev/kvm --privileged'
+        steps:
+            - name: "Checkout Repository"
+              uses: actions/checkout@v5
+            - name: "${{ matrix.container }} TEST-${{ matrix.test }}"
+              run: TEST_DRACUT_ARGS="--hostonly-mode strict" ./test/test-container.sh "TEST-${{ matrix.test }}" ${{ matrix.test }}

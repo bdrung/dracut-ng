@@ -25,7 +25,6 @@ client_run() {
     declare -i disk_index=0
     qemu_add_drive disk_index disk_args "$TESTDIR"/marker.img marker
     qemu_add_drive disk_index disk_args "$TESTDIR"/root.btrfs root
-    qemu_add_drive disk_index disk_args "$TESTDIR"/usr.btrfs usr
 
     test_marker_reset
     "$testdir"/run-qemu \
@@ -42,23 +41,26 @@ client_run() {
 
 test_run() {
     client_run "no option specified"
-    client_run "readonly root" "ro"
-    client_run "writeable root" "rw"
+    client_run "readonly root and writeable /usr" "ro"
+    client_run "writeable root and /usr" "rw"
+    client_run "readonly root and /usr" "ro rd.fstab=0"
+    client_run "readonly root snapshot" "rd.fstab=0 subvol=snapshot-root"
 }
 
 test_setup() {
     # Create what will eventually be our root filesystem onto an overlay
-    "$DRACUT" -N --keep --tmpdir "$TESTDIR" \
+    call_dracut --tmpdir "$TESTDIR" \
         --add-confdir test-root \
-        -i ./fstab /etc/fstab \
+        --mount "/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_root /usr btrfs subvol=usr,rw" \
         -f "$TESTDIR"/initramfs.root
-    mkdir -p "$TESTDIR"/overlay/source && mv "$TESTDIR"/dracut.*/initramfs/* "$TESTDIR"/overlay/source && rm -rf "$TESTDIR"/dracut.*
+    mkdir -p "$TESTDIR"/overlay/source
+    mv "$TESTDIR"/dracut.*/initramfs/* "$TESTDIR"/overlay/source
+    rm -rf "$TESTDIR"/dracut.*
 
-    # second, install the files needed to make the root filesystem
     # create an initramfs that will create the target root filesystem.
     # We do it this way so that we do not risk trashing the host mdraid
     # devices, volume groups, encrypted partitions, etc.
-    "$DRACUT" -N -i "$TESTDIR"/overlay / \
+    call_dracut -i "$TESTDIR"/overlay / \
         --add-confdir test-makeroot \
         -I "mkfs.btrfs" \
         -i ./create-root.sh /lib/dracut/hooks/initqueue/01-create-root.sh \
@@ -70,7 +72,6 @@ test_setup() {
     declare -i disk_index=0
     qemu_add_drive disk_index disk_args "$TESTDIR"/marker.img marker 1
     qemu_add_drive disk_index disk_args "$TESTDIR"/root.btrfs root 1
-    qemu_add_drive disk_index disk_args "$TESTDIR"/usr.btrfs usr 1
 
     # Invoke KVM and/or QEMU to actually create the target filesystem.
     "$testdir"/run-qemu \

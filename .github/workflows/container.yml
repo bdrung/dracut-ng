@@ -39,18 +39,16 @@ jobs:
                     - {dockerfile: 'Dockerfile-fedora', tag: 'fedora:latest'}
                     - {dockerfile: 'Dockerfile-opensuse', tag: 'opensuse:latest'}
                     - {dockerfile: 'Dockerfile-arch', tag: 'arch:latest'}
-                    - {dockerfile: 'Dockerfile-debian', tag: 'ubuntu:latest'}
+                    - {dockerfile: 'Dockerfile-debian', tag: 'ubuntu:devel'}
                     - {dockerfile: 'Dockerfile-alpine', tag: 'alpine:latest'}
                     - {dockerfile: 'Dockerfile-void', tag: 'void:latest'}
                 exclude:
-                   - config: {tag: 'alpine:latest'}
-                     architecture: {platform: 'linux/arm64'}
                    - config: {tag: 'arch:latest'}
                      architecture: {platform: 'linux/arm64'}
         runs-on: ${{ matrix.architecture.runner }}
         steps:
             - name: Check out the repo
-              uses: actions/checkout@v4
+              uses: actions/checkout@v5
             - name: Set up Docker Buildx
               uses: docker/setup-buildx-action@v3
             - name: Login to GitHub Container Registry
@@ -68,3 +66,6 @@ jobs:
                   tags: ghcr.io/${{env.repository_owner}}/${{ matrix.config.tag }}-${{ matrix.architecture.tag }}
                   push: ${{ github.event_name == 'push' ||  github.event_name == 'schedule' }}
                   platforms: ${{ matrix.architecture.platform }}
+                  build-args: |
+                      DISTRIBUTION=${{ matrix.config.tag }}
+                      PLATFORM=${{ matrix.config.platform }}

@@ -28,8 +28,8 @@ run_server() {
         -net nic,macaddr=52:54:00:12:34:57,model=virtio \
         -net socket,listen=127.0.0.1:12330 \
         -append "panic=1 oops=panic softlockup_panic=1 quiet root=/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_serverroot rw console=ttyS0,115200n81 ${SERVER_DEBUG-}" \
-        -initrd "$TESTDIR"/initramfs.server \
-        -pidfile "$TESTDIR"/server.pid -daemonize
+        -pidfile "$TESTDIR"/server.pid -daemonize \
+        -initrd "$TESTDIR"/initramfs.server
     chmod 644 "$TESTDIR"/server.pid
 
     if ! [[ ${SERIAL-} ]]; then
@@ -118,40 +118,33 @@ test_run() {
 }
 
 test_check() {
-    if ! type -p dhclient &> /dev/null; then
-        echo "Test needs dhclient for server networking... Skipping"
-        return 1
-    fi
     if ! command -v tgtd &> /dev/null || ! command -v tgtadm &> /dev/null; then
         echo "Need tgtd and tgtadm from scsi-target-utils"
-        return 1
-    fi
-    if ! [ -f /lib/systemd/system/iscsiuio.socket ]; then
-        echo "Need iscsiuio.socket to run this test"
         return 1
     fi
 }
 
 test_setup() {
     # Create what will eventually be the client root filesystem onto an overlay
-    "$DRACUT" -N --keep --tmpdir "$TESTDIR" \
+    call_dracut --tmpdir "$TESTDIR" \
         --add-confdir test-root \
         -I "ip grep setsid" \
         -f "$TESTDIR"/initramfs.root
-    mkdir -p "$TESTDIR"/overlay/source && mv "$TESTDIR"/dracut.*/initramfs/* "$TESTDIR"/overlay/source && rm -rf "$TESTDIR"/dracut.*
+    mkdir -p "$TESTDIR"/overlay/source
+    mv "$TESTDIR"/dracut.*/initramfs/* "$TESTDIR"/overlay/source
+    rm -rf "$TESTDIR"/dracut.*
 
     mkdir -p -- "$TESTDIR"/overlay/source/var/lib/nfs/rpc_pipefs
-    cp ./client-init.sh "$TESTDIR"/overlay/source/sbin/init
+    inst_init ./client-init.sh "$TESTDIR"/overlay/source
 
     # create an initramfs that will create the target root filesystem.
     # We do it this way so that we do not risk trashing the host mdraid
     # devices, volume groups, encrypted partitions, etc.
-    "$DRACUT" -i "$TESTDIR"/overlay / \
+    call_dracut -i "$TESTDIR"/overlay / \
         --add-confdir test-makeroot \
         -a "crypt lvm mdraid" \
         -I "setsid blockdev" \
         -i ./create-client-root.sh /lib/dracut/hooks/initqueue/01-create-client-root.sh \
-        --no-hostonly-cmdline -N \
         -f "$TESTDIR"/initramfs.makeroot
     rm -rf -- "$TESTDIR"/overlay
 
@@ -171,24 +164,25 @@ test_setup() {
     rm -- "$TESTDIR"/marker.img
 
     # Create what will eventually be the server root filesystem onto an overlay
-    "$DRACUT" -N --keep --tmpdir "$TESTDIR" \
+    call_dracut --tmpdir "$TESTDIR" \
         --add-confdir test-root \
-        -a network-legacy \
+        -a "$USE_NETWORK" \
         -d "iscsi_tcp crc32c ipv6" \
         -I "modprobe chmod ip setsid pidof tgtd tgtadm /etc/passwd" \
         --install-optional "/etc/netconfig dhcpd /etc/group /etc/nsswitch.conf /etc/rpc /etc/protocols /etc/services /usr/etc/nsswitch.conf /usr/etc/rpc /usr/etc/protocols /usr/etc/services" \
         -i "./dhcpd.conf" "/etc/dhcpd.conf" \
         -f "$TESTDIR"/initramfs.root
-    mkdir -p "$TESTDIR"/overlay/source && mv "$TESTDIR"/dracut.*/initramfs/* "$TESTDIR"/overlay/source && rm -rf "$TESTDIR"/dracut.*
+    mkdir -p "$TESTDIR"/overlay/source
+    mv "$TESTDIR"/dracut.*/initramfs/* "$TESTDIR"/overlay/source
+    rm -rf "$TESTDIR"/dracut.*
 
     mkdir -p "$TESTDIR"/overlay/source/var/lib/dhcpd
-    cp ./server-init.sh "$TESTDIR"/overlay/source/sbin/init
+    inst_init ./server-init.sh "$TESTDIR"/overlay/source
 
-    # second, install the files needed to make the root filesystem
     # create an initramfs that will create the target root filesystem.
     # We do it this way so that we do not risk trashing the host mdraid
     # devices, volume groups, encrypted partitions, etc.
-    "$DRACUT" -N -i "$TESTDIR"/overlay / \
+    call_dracut -i "$TESTDIR"/overlay / \
         --add-confdir test-makeroot \
         -i ./create-server-root.sh /lib/dracut/hooks/initqueue/01-create-server-root.sh \
         -f "$TESTDIR"/initramfs.makeroot
@@ -209,18 +203,18 @@ test_setup() {
     rm -- "$TESTDIR"/marker.img
 
     # Make server's dracut image
-    "$DRACUT" \
-        -a "test network-legacy" \
-        -d "piix ide-gd_mod ata_piix ext4 sd_mod drbg virtio_net virtio_pci virtio_scsi" \
+    call_dracut \
+        -a "qemu-net $USE_NETWORK" \
+        --add-confdir test \
         -i "./server.link" "/etc/systemd/network/01-server.link" \
         -i ./wait-if-server.sh /lib/dracut/hooks/pre-mount/99-wait-if-server.sh \
-        --no-hostonly-cmdline -N \
+        -N \
         -f "$TESTDIR"/initramfs.server
 
     # Make client's dracut image
     test_dracut \
-        --no-hostonly --no-hostonly-cmdline \
-        --add "$USE_NETWORK" \
+        --no-hostonly \
+        --add "watchdog qemu-net $USE_NETWORK" \
         --include "./client-persistent-lan0.link" "/etc/systemd/network/01-persistent-lan0.link" \
         --include "./client-persistent-lan1.link" "/etc/systemd/network/01-persistent-lan1.link" \
         --kernel-cmdline "rw rd.auto"

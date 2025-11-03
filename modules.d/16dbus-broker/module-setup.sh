@@ -34,12 +34,6 @@ install() {
     inst_dir "$dbussession"
     inst_dir "$dbussystem"
     inst_dir "$dbussystemservices"
-    inst_dir "$dbusconfdir"
-    inst_dir "$dbusinterfacesconfdir"
-    inst_dir "$dbusservicesconfdir"
-    inst_dir "$dbussessionconfdir"
-    inst_dir "$dbussystemconfdir"
-    inst_dir "$dbussystemservicesconfdir"
 
     inst_sysusers dbus.conf
 
@@ -47,7 +41,6 @@ install() {
         "$dbus"/session.conf \
         "$dbus"/system.conf \
         "$dbussystem"/org.freedesktop.systemd1.conf \
-        "$dbusservicesconfdir"/org.freedesktop.systemd1.service \
         "$dbussystemservices"/org.freedesktop.systemd1.service \
         "$systemdcatalog"/dbus-broker.catalog \
         "$systemdcatalog"/dbus-broker-launch.catalog \
@@ -71,7 +64,13 @@ install() {
     $SYSTEMCTL -q --root "$initdir" enable dbus-broker.service
 
     # Install the hosts local user configurations if enabled.
-    if [[ ${hostonly-} ]]; then
+    if [[ $hostonly ]]; then
+        inst_dir "$dbusconfdir"
+        inst_dir "$dbusinterfacesconfdir"
+        inst_dir "$dbusservicesconfdir"
+        inst_dir "$dbussessionconfdir"
+        inst_dir "$dbussystemconfdir"
+        inst_dir "$dbussystemservicesconfdir"
         inst_multiple -H -o \
             "$dbusconfdir"/session.conf \
             "$dbusconfdir"/system.conf \
@@ -79,6 +78,7 @@ install() {
             "$systemdsystemconfdir"/dbus.socket.d/*.conf \
             "$systemdsystemconfdir"/dbus-broker.service \
             "$systemdsystemconfdir"/dbus-broker.service.d/*.conf \
+            "$dbusservicesconfdir"/org.freedesktop.systemd1.service \
             "$systemdsystemconfdir"/sockets.target.wants/dbus.socket
     fi
 

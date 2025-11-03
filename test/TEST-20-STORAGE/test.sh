@@ -114,21 +114,22 @@ test_makeroot() {
 
 test_setup() {
     # Create what will eventually be our root filesystem onto an overlay
-    "$DRACUT" -N --keep --tmpdir "$TESTDIR" \
+    call_dracut --tmpdir "$TESTDIR" \
         --add-confdir test-root \
         -f "$TESTDIR"/initramfs.root
-    mkdir -p "$TESTDIR"/overlay/source && mv "$TESTDIR"/dracut.*/initramfs/* "$TESTDIR"/overlay/source && rm -rf "$TESTDIR"/dracut.*
+    mkdir -p "$TESTDIR"/overlay/source
+    mv "$TESTDIR"/dracut.*/initramfs/* "$TESTDIR"/overlay/source
+    rm -rf "$TESTDIR"/dracut.*
 
     # pass enviroment variables to make the root filesystem
     echo "TEST_FSTYPE=${TEST_FSTYPE}" > "$TESTDIR"/overlay/env
 
-    # second, install the files needed to make the root filesystem
     # create an initramfs that will create the target root filesystem.
     # We do it this way so that we do not risk trashing the host mdraid
     # devices, volume groups, encrypted partitions, etc.
 
     # shellcheck disable=SC2046
-    "$DRACUT" -N -i "$TESTDIR"/overlay / \
+    call_dracut -i "$TESTDIR"/overlay / \
         --add-confdir test-makeroot \
         -a "lvm" \
         -I "grep" \

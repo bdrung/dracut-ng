@@ -65,12 +65,12 @@ install() {
 
     # add common users in /etc/passwd, it will be used by nfs/ssh currently
     # use password for hostonly images to facilitate secure sulogin in emergency console
-    [[ ${hostonly-} ]] && pwshadow='x'
-    grep '^root:' "$initdir/etc/passwd" > /dev/null 2>&1 || echo "root:$pwshadow:0:0::/root:/bin/sh" >> "$initdir/etc/passwd"
+    [[ $hostonly ]] && pwshadow='x'
+    grep -qs '^root:' "$initdir/etc/passwd" || echo "root:$pwshadow:0:0::/root:/bin/sh" >> "$initdir/etc/passwd"
 
-    if [[ ${hostonly-} ]]; then
+    if [[ $hostonly ]]; then
         # check if other dracut modules already created an entry for root in /etc/shadow
-        if grep -q '^root:' "$initdir/etc/shadow"; then
+        if grep -qs '^root:' "$initdir/etc/shadow"; then
             grep -v '^root:' "$initdir/etc/shadow" > "$initdir/etc/shadow-"
             mv "$initdir/etc/shadow-" "$initdir/etc/shadow"
         fi
@@ -99,7 +99,7 @@ install() {
 
     [[ -d /lib/modprobe.d ]] && inst_multiple -o "/lib/modprobe.d/*.conf"
     [[ -d /usr/lib/modprobe.d ]] && inst_multiple -o "/usr/lib/modprobe.d/*.conf"
-    [[ ${hostonly-} ]] && inst_multiple -H -o /etc/modprobe.d/*.conf /etc/modprobe.conf
+    [[ $hostonly ]] && inst_multiple -H -o /etc/modprobe.d/*.conf /etc/modprobe.conf
 
     inst_simple "$moddir/insmodpost.sh" /sbin/insmodpost.sh
 
@@ -119,7 +119,7 @@ install() {
 
     ln -fs /proc/self/mounts "$initdir/etc/mtab"
     if [[ $ro_mnt == yes ]]; then
-        echo ro >> "${initdir}/etc/cmdline.d/base.conf"
+        echo ro >> "${initdir}/etc/cmdline.d/20-base.conf"
     fi
 
     echo "dracut-$DRACUT_VERSION" > "$initdir/lib/dracut/dracut-$DRACUT_VERSION"

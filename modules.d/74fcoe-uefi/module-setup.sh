@@ -2,12 +2,12 @@
 
 # called by dracut
 check() {
-    # shellcheck disable=SC2317  # called later by for_each_host_dev_and_slaves
+    # shellcheck disable=SC2317,SC2329  # called later by for_each_host_dev_and_slaves
     is_fcoe() {
         block_is_fcoe "$1" || return 1
     }
 
-    [[ $hostonly_mode == "strict" ]] || [[ $mount_needs ]] && {
+    [[ $hostonly ]] || [[ $mount_needs ]] && {
         for_each_host_dev_and_slaves is_fcoe || return 255
         [ -d /sys/firmware/efi ] || return 255
     }

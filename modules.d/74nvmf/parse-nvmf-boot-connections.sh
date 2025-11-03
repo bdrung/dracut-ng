@@ -214,7 +214,7 @@ nbft_parse() {
             i=$((i + 1))
         done
         j=$((j + 1))
-    done >> /etc/cmdline.d/40-nbft.conf
+    done >> /etc/cmdline.d/20-nbft.conf
 }
 
 if getargbool 0 rd.nonvmf; then
@@ -223,7 +223,7 @@ if getargbool 0 rd.nonvmf; then
 fi
 
 if getargbool 0 rd.nvmf.nostatic; then
-    rm -f /etc/cmdline.d/95nvmf-args.conf
+    rm -f /etc/cmdline.d/20-nvmf-args.conf
     rm -f /etc/nvme/discovery.conf /etc/nvme/config.json
 fi
 
@@ -317,12 +317,18 @@ for d in $(getargs rd.nvmf.discover -d nvmf.discover=); do
 done
 
 if [ -e /tmp/nvmf_needs_network ] || [ -e /tmp/valid_nbft_entry_found ]; then
-    echo "rd.neednet=1" > /etc/cmdline.d/nvmf-neednet.conf
+    echo "rd.neednet=1" > /etc/cmdline.d/20-nvmf-neednet.conf
     # netroot is a global variable that is present in all "sourced" scripts
     # shellcheck disable=SC2034
-    netroot=nbft
+    [ "$netroot" ] || netroot=nbft
     rm -f /tmp/nvmf_needs_network
 fi
 
 /sbin/initqueue --settled --onetime --name nvmf-connect-settled /sbin/nvmf-autoconnect.sh settled
 /sbin/initqueue --timeout --onetime --name nvmf-connect-timeout /sbin/nvmf-autoconnect.sh timeout
+# Make sure the autoconnect script is run at least once
+echo '[ -f /tmp/nvmf.done ]' > "$hookdir/initqueue/finished/74-nvmf.sh"
+
+# shellcheck disable=SC2034
+rootok=1
+[ -z "$root" ] && root="nvmf"

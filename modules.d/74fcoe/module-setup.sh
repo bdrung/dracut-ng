@@ -2,12 +2,12 @@
 
 # called by dracut
 check() {
-    # shellcheck disable=SC2317  # called later by for_each_host_dev_and_slaves
+    # shellcheck disable=SC2317,SC2329  # called later by for_each_host_dev_and_slaves
     is_fcoe() {
         block_is_fcoe "$1" || return 1
     }
 
-    [[ $hostonly_mode == "strict" ]] || [[ $mount_needs ]] && {
+    [[ $hostonly ]] || [[ $mount_needs ]] && {
         for_each_host_dev_and_slaves is_fcoe || return 255
     }
 
@@ -79,12 +79,12 @@ cmdline() {
             # DCB_REQUIRED in "/etc/fcoe/cfg-xxx" is expected to set to "no".
             #
             # Force "nodcb" if there's any DCB_REQUIRED="no"(child or vlan parent).
-            if grep -q '^[[:blank:]]*DCB_REQUIRED="no"' /etc/fcoe/cfg-"${i##*/}" &> /dev/null; then
+            if grep -qs '^[[:blank:]]*DCB_REQUIRED="no"' /etc/fcoe/cfg-"${i##*/}"; then
                 dcb="nodcb"
             fi
 
             if [ "$p" ]; then
-                if grep -q '^[[:blank:]]*DCB_REQUIRED="no"' /etc/fcoe/cfg-"${p}" &> /dev/null; then
+                if grep -qs '^[[:blank:]]*DCB_REQUIRED="no"' /etc/fcoe/cfg-"${p}"; then
                     dcb="nodcb"
                 fi
             fi
@@ -109,7 +109,7 @@ install() {
     if [[ $hostonly_cmdline == "yes" ]]; then
         local _fcoeconf
         _fcoeconf=$(cmdline)
-        [[ $_fcoeconf ]] && printf "%s\n" "$_fcoeconf" >> "${initdir}/etc/cmdline.d/95fcoe.conf"
+        [[ $_fcoeconf ]] && printf "%s\n" "$_fcoeconf" >> "${initdir}/etc/cmdline.d/20-fcoe.conf"
     fi
     inst_multiple "/etc/fcoe/cfg-*"
 

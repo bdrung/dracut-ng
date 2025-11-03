@@ -62,8 +62,8 @@ install() {
 
     {
         for i in cdrom tape dialout floppy; do
-            if ! grep -q "^$i:" "$initdir"/etc/group 2> /dev/null; then
-                if ! grep "^$i:" "${dracutsysrootdir-}"/etc/group 2> /dev/null; then
+            if ! grep -qs "^$i:" "$initdir"/etc/group; then
+                if ! grep -s "^$i:" "${dracutsysrootdir-}"/etc/group; then
                     case $i in
                         cdrom) echo "$i:x:11:" ;;
                         dialout) echo "$i:x:18:" ;;
@@ -100,7 +100,7 @@ install() {
         {"tls/$_arch/",tls/,"$_arch/",}"libnss_files*"
 
     # Install the hosts local user configurations if enabled.
-    if [[ ${hostonly-} ]]; then
+    if [[ $hostonly ]]; then
         inst_dir "$udevconfdir"
         inst_multiple -H -o \
             "$udevconfdir"/udev.conf \

@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -eu
 
+[ -z "${TEST_FSTYPE-}" ] && TEST_FSTYPE="ext4"
+
 # shellcheck disable=SC2034
 TEST_DESCRIPTION="live root on a squash filesystem"
 
@@ -80,11 +82,13 @@ test_run() {
 
 test_setup() {
     # Create what will eventually be our root filesystem onto an overlay
-    "$DRACUT" -N --keep --tmpdir "$TESTDIR" \
+    call_dracut --tmpdir "$TESTDIR" \
         --add-confdir test-root \
         -i ./test-init.sh /sbin/init-persist \
         -f "$TESTDIR"/initramfs.root
-    mkdir -p "$TESTDIR"/rootfs && mv "$TESTDIR"/dracut.*/initramfs/* "$TESTDIR"/rootfs && rm -rf "$TESTDIR"/dracut.*
+    mkdir -p "$TESTDIR"/rootfs
+    mv "$TESTDIR"/dracut.*/initramfs/* "$TESTDIR"/rootfs
+    rm -rf "$TESTDIR"/dracut.*
 
     # test to make sure /proc /sys and /dev is not needed inside the generated initrd
     rm -rf "$TESTDIR"/rootfs/proc "$TESTDIR"/rootfs/sys "$TESTDIR"/rootfs/dev
@@ -103,8 +107,10 @@ test_setup() {
 EOF
 
     sync "$TESTDIR"/root.img
-    dd if=/dev/zero of="$TESTDIR"/ext4.img bs=512 count=652688 status=none && sync "$TESTDIR"/ext4.img
-    mkfs.ext4 -q -L dracut -d "$TESTDIR"/rootfs/ "$TESTDIR"/ext4.img && sync "$TESTDIR"/ext4.img
+    dd if=/dev/zero of="$TESTDIR"/ext4.img bs=512 count=652688 status=none
+    sync "$TESTDIR"/ext4.img
+    mkfs.ext4 -q -L dracut -d "$TESTDIR"/rootfs/ "$TESTDIR"/ext4.img
+    sync "$TESTDIR"/ext4.img
     dd if="$TESTDIR"/ext4.img of="$TESTDIR"/root.img bs=512 seek=2048 conv=noerror,sync,notrunc
 
     # erofs drive
@@ -122,12 +128,27 @@ EOF
     if command -v xorriso &> /dev/null; then
         mkdir "$TESTDIR"/iso
         xorriso -as mkisofs -output "$TESTDIR"/iso/linux.iso "$TESTDIR"/live/ -volid "ISO" -iso-level 3
-        mkfs.ext4 -q -L dracut_iso -d "$TESTDIR"/iso/ "$TESTDIR"/root_iso.img && sync "$TESTDIR"/root_iso.img
+        mkfs.ext4 -q -L dracut_iso -d "$TESTDIR"/iso/ "$TESTDIR"/root_iso.img
+        sync "$TESTDIR"/root_iso.img
+    fi
+
+    local dracut_modules="dmsquash-live-autooverlay convertfs pollcdrom kernel-modules kernel-modules-extra qemu qemu-net"
+
+    if type -p ntfs-3g &> /dev/null; then
+        dracut_modules="$dracut_modules dmsquash-live-ntfs"
+    fi
+
+    if type -p NetworkManager &> /dev/null; then
+        dracut_modules="$dracut_modules network-manager"
+        if type -p curl &> /dev/null; then
+            dracut_modules="$dracut_modules livenet"
+        fi
     fi
 
     test_dracut \
         --no-hostonly \
-        --modules "dmsquash-live-autooverlay kernel-modules"
+        --add-drivers "${TEST_FSTYPE}" \
+        --modules " $dracut_modules "
 }
 
 # shellcheck disable=SC1090

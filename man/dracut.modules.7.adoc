@@ -156,6 +156,16 @@ after udev has settled and the basic device drivers have been loaded.
 
 All module installation information is in the file module-setup.sh.
 
+The following are the most commonly used shell variables used inside
+drauct modules. These shell variables are always declared and assigned
+values (the assigned value might be an empty string). There is a
+compatibility promise on these variables between dracut releases.
+Module should only read (and not write) these variables.
+ * `$hostonly` (could be an empty string)
+ * `$hostonly_mode` (could be an empty string)
+ * `$hostonly_cmdline` (not an empty string)
+ * `$moddir` (not an empty string)
+
 First we create a check() function, which just exits with 0 indicating that this
 module should be included by default.
 
@@ -213,6 +223,10 @@ the initramfs.
 $hostonly:: If the $hostonly variable is set, then the module check() function
 should be in "hostonly" mode, which means, that the check() should only return
 0, if the module is really needed to boot this specific host.
+
+Avoid making decisions inside this function based on the value of the
+$hostonly_mode variable. This principle ensures the inclusion of the
+same dracut modules in both sloppy and strict modes.
 
 check() should return with:
 

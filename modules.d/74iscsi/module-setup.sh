@@ -6,9 +6,9 @@ check() {
     require_binaries iscsi-iname iscsiadm iscsid || return 1
     require_kernel_modules iscsi_tcp || return 1
 
-    # If hostonly strict was requested, fail the check if we are not actually
+    # If hostonly was requested, fail the check if we are not actually
     # booting from root.
-    [[ $hostonly_mode == "strict" ]] || [[ $mount_needs ]] && {
+    [[ $hostonly ]] || [[ $mount_needs ]] && {
         pushd . > /dev/null
         for_each_host_dev_and_slaves block_is_iscsi
         local _is_iscsi=$?
@@ -135,7 +135,7 @@ install_iscsiroot() {
 install_softiscsi() {
     [ -d /sys/firmware/ibft ] && return 0
 
-    # shellcheck disable=SC2317  # called later by for_each_host_dev_and_slaves
+    # shellcheck disable=SC2317,SC2329  # called later by for_each_host_dev_and_slaves
     is_softiscsi() {
         local _dev=$1
         local iscsi_dev
@@ -192,8 +192,8 @@ install() {
     inst_multiple umount iscsi-iname iscsiadm iscsid
     inst_binary sort
 
-    inst_simple /etc/iscsi/iscsid.conf
-    if [[ ${hostonly-} ]]; then
+    if [[ $hostonly ]]; then
+        inst_simple /etc/iscsi/iscsid.conf
         inst_simple /etc/iscsi/initiatorname.iscsi
     fi
 
@@ -201,7 +201,7 @@ install() {
     if [[ $hostonly_cmdline == "yes" ]]; then
         local _iscsiconf
         _iscsiconf=$(cmdline)
-        [[ $_iscsiconf ]] && printf "%s\n" "$_iscsiconf" >> "${initdir}/etc/cmdline.d/95iscsi.conf"
+        [[ $_iscsiconf ]] && printf "%s\n" "$_iscsiconf" >> "${initdir}/etc/cmdline.d/20-iscsi.conf"
     fi
 
     inst_hook cmdline 90 "$moddir/parse-iscsiroot.sh"
@@ -220,14 +220,13 @@ install() {
             "$systemdsystemunitdir"/iscsiuio.socket \
             "$systemdsystemunitdir"/sockets.target.wants/iscsid.socket \
             "$systemdsystemunitdir"/sockets.target.wants/iscsiuio.socket
-        if grep -q '^ExecStartPre=/usr/lib/open-iscsi/startup-checks.sh$' "${dracutsysrootdir-}$systemdsystemunitdir/iscsid.service"; then
-            inst_simple /usr/lib/open-iscsi/startup-checks.sh
-        fi
+        sed -i '/ExecStartPre=\/usr\/lib\/open-iscsi\/startup-checks.sh/d' \
+            "${initdir}$systemdsystemunitdir/iscsid.service"
 
-        for i in \
-            iscsid.socket \
-            iscsiuio.socket; do
-            $SYSTEMCTL -q --root "$initdir" enable "$i"
+        for i in iscsid.socket iscsiuio.socket; do
+            if [[ -e "${initdir}$systemdsystemunitdir/$i" ]]; then
+                $SYSTEMCTL -q --root "$initdir" enable "$i"
+            fi
         done
 
         mkdir -p "${initdir}/$systemdsystemunitdir/iscsid.service.d"

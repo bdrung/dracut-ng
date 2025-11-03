@@ -19,7 +19,7 @@ depends() {
 
 # called by dracut
 installkernel() {
-    hostonly=$(optional_hostonly) instmods nf_tables nfnetlink nft_fwd_netdev
+    hostonly='' instmods nf_tables nfnetlink nft_fwd_netdev
 }
 
 # called by dracut
@@ -44,8 +44,12 @@ install() {
 
         # teaming support under systemd+dbus
         inst_multiple -o \
-            "$dbussystem"/teamd.conf \
-            "$dbussystemconfdir"/teamd.conf
+            "$dbussystem"/teamd.conf
+
+        if [[ $hostonly ]]; then
+            inst_multiple -H -o \
+                "$dbussystemconfdir"/teamd.conf
+        fi
 
         # Install a configuration snippet to prevent the automatic creation of
         # "Wired connection #" DHCP connections for Ethernet interfaces
@@ -78,7 +82,7 @@ install() {
         inst_multiple -o \
             "${systemdnetwork}/99-default.link" \
             "${systemdnetwork}/98-default-mac-none.link"
-        [[ ${hostonly-} ]] && inst_multiple -H -o "${systemdnetworkconfdir}/*.link"
+        [[ $hostonly ]] && inst_multiple -H -o "${systemdnetworkconfdir}/*.link"
     fi
 
     inst_hook initqueue/settled 99 "$moddir/nm-run.sh"
@@ -97,10 +101,6 @@ install() {
         UUID=$(< /proc/sys/kernel/random/uuid)
         echo "${UUID//-/}" > "$initdir/etc/machine-id"
     fi
-
-    # We don't install the ifcfg files from the host automatically.
-    # But the user might choose to include them, so we pull in the machinery to read them.
-    inst_libdir_file "NetworkManager/$_nm_version/libnm-settings-plugin-ifcfg-rh.so"
 
     _arch=${DRACUT_ARCH:-$(uname -m)}
 

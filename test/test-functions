@@ -59,9 +59,31 @@ test_dracut() {
     # shellcheck disable=SC2162
     IFS=' ' read -a TEST_DRACUT_ARGS_ARRAY <<< "$TEST_DRACUT_ARGS"
 
-    "$DRACUT" \
+    call_dracut \
         "${TEST_DRACUT_ARGS_ARRAY[@]}" \
         "$@" "$TESTDIR"/initramfs.testing || return 1
+}
+
+quote_args() {
+    local arg args=()
+    for arg in "$@"; do
+        if [[ -z $arg || $arg =~ [[:space:]\'] ]]; then
+            args+=("'${arg//\'/\'\\\'\'}'")
+        else
+            args+=("$arg")
+        fi
+    done
+    echo "${args[*]}"
+}
+
+# Call dracut and log its call in verbose mode
+call_dracut() {
+    # Uncomment this to debug failures
+    #set -- --stdlog 4 "$@"
+    if [[ ${V-} == "1" || ${V-} == "2" ]]; then
+        echo "Calling $DRACUT $(quote_args "$@")"
+    fi
+    "$DRACUT" "$@"
 }
 
 # Wait for the server QEMU has been started up.
@@ -85,6 +107,11 @@ wait_for_server_startup() {
         fi
         sleep 1
     done
+
+    if [ "${V-}" -ge 1 ]; then
+        tail -n "+$((printed_lines + 1))" "$TESTDIR"/server.log
+        echo "Server has been start up."
+    fi
 }
 
 ovmf_code() {
@@ -111,6 +138,27 @@ determine_kernel_version() {
     lsinitrd "$1" | grep modules.dep | head -1 | rev | cut -d'/' -f2 | rev
 }
 
+determine_kernel_image() {
+    local kversion="$1"
+    local paths=(
+        "/lib/modules/${kversion}/vmlinuz"
+        "/lib/modules/${kversion}/vmlinux"
+        "/lib/modules/${kversion}/Image"
+        "/boot/vmlinuz-${kversion}"
+        "/boot/vmlinux-${kversion}"
+    )
+
+    for path in "${paths[@]}"; do
+        if [ -f "$path" ]; then
+            echo "$path"
+            return 0
+        fi
+    done
+
+    echo "Could not find a Linux kernel image for version '$kversion'!" >&2
+    exit 1
+}
+
 # terminal sequence to set color to a 'success' color (currently: green)
 function SETCOLOR_SUCCESS() { echo -en '\033[0;32m'; }
 # terminal sequence to set color to a 'failure' color (currently: red)
@@ -124,6 +172,29 @@ COLOR_SUCCESS='\033[0;32m'
 COLOR_FAILURE='\033[0;31m'
 COLOR_WARNING='\033[0;33m'
 COLOR_NORMAL='\033[0;39m'
+
+# build an ext4 image from the given directory
+build_ext4_image() {
+    local source_dir="$1"
+    local image="$2"
+    local label="$3"
+
+    dd if=/dev/zero of="$image" bs=200MiB count=1 status=none
+    sync "$image"
+    mkfs.ext4 -q -L "$label" -d "$source_dir" "$image"
+    sync "$image"
+}
+
+# override the init script from the test-root dracut module (see module-setup.sh)
+inst_init() {
+    local init_script="$1"
+    local rootdir="$2"
+    if [ -e "$rootdir/sbin/test-init" ]; then
+        cp "$init_script" "$rootdir/sbin/test-init"
+    else
+        cp "$init_script" "$rootdir/sbin/init"
+    fi
+}
 
 # generate qemu arguments for named raw disks
 #
@@ -191,16 +262,37 @@ test_marker_check() {
     return $?
 }
 
+print_test_result() {
+    local ret=${1-1}
+    if [ "$ret" -eq 0 ]; then
+        rm -- test${TEST_RUN_ID:+-$TEST_RUN_ID}.log
+        echo -e "TEST: $TEST_DESCRIPTION " "$COLOR_SUCCESS" "[OK]" "$COLOR_NORMAL"
+    else
+        echo -e "TEST: $TEST_DESCRIPTION " "$COLOR_FAILURE" "[FAILED]" "$COLOR_NORMAL"
+        if [[ -f "$TESTDIR"/server.log ]]; then
+            mv "$TESTDIR"/server.log ./server${TEST_RUN_ID:+-$TEST_RUN_ID}.log
+        fi
+        if [ "${V-}" == "2" ]; then
+            tail -c 1048576 "$(pwd)/server${TEST_RUN_ID:+-$TEST_RUN_ID}.log" "$(pwd)/test${TEST_RUN_ID:+-$TEST_RUN_ID}.log"
+            echo -e "TEST: $TEST_DESCRIPTION " "$COLOR_FAILURE" "[FAILED]" "$COLOR_NORMAL"
+        else
+            echo "see $(pwd)/test${TEST_RUN_ID:+-$TEST_RUN_ID}.log"
+        fi
+    fi
+}
+
 while (($# > 0)); do
     case $1 in
         --run)
             echo "TEST RUN: $TEST_DESCRIPTION"
-            test_check && test_run
+            test_check
+            test_run
             exit $?
             ;;
         --setup)
             echo "TEST SETUP: $TEST_DESCRIPTION"
-            test_check && test_setup
+            test_check
+            test_setup
             exit $?
             ;;
         --clean)
@@ -220,45 +312,29 @@ while (($# > 0)); do
             else
                 echo -e "TEST: $TEST_DESCRIPTION " "$COLOR_SUCCESS" "[STARTED]" "$COLOR_NORMAL"
             fi
+            trap print_test_result ERR
             if [[ ${V-} == "1" || ${V-} == "2" ]]; then
                 tee_command="tee"
                 set -o pipefail
                 (
-                    test_setup && test_run
-                    ret=$?
+                    test_setup
+                    test_run
                     test_cleanup
-                    if ((ret != 0)) && [[ -f "$TESTDIR"/server.log ]]; then
-                        mv "$TESTDIR"/server.log ./server${TEST_RUN_ID:+-$TEST_RUN_ID}.log
-                    fi
                     rm -fr -- "$TESTDIR"
                     rm -f -- .testdir${TEST_RUN_ID:+-$TEST_RUN_ID}
-                    exit $ret
                 ) 2>&1 | "$tee_command" "test${TEST_RUN_ID:+-$TEST_RUN_ID}.log"
             else
                 (
-                    test_setup && test_run
-                    ret=$?
+                    test_setup
+                    test_run
                     test_cleanup
                     rm -fr -- "$TESTDIR"
                     rm -f -- .testdir${TEST_RUN_ID:+-$TEST_RUN_ID}
-                    exit $ret
                 ) > test${TEST_RUN_ID:+-$TEST_RUN_ID}.log 2>&1
             fi
-            ret=$?
             set +o pipefail
-            if [ $ret -eq 0 ]; then
-                rm -- test${TEST_RUN_ID:+-$TEST_RUN_ID}.log
-                echo -e "TEST: $TEST_DESCRIPTION " "$COLOR_SUCCESS" "[OK]" "$COLOR_NORMAL"
-            else
-                echo -e "TEST: $TEST_DESCRIPTION " "$COLOR_FAILURE" "[FAILED]" "$COLOR_NORMAL"
-                if [ "${V-}" == "2" ]; then
-                    tail -c 1048576 "$(pwd)/server${TEST_RUN_ID:+-$TEST_RUN_ID}.log" "$(pwd)/test${TEST_RUN_ID:+-$TEST_RUN_ID}.log"
-                    echo -e "TEST: $TEST_DESCRIPTION " "$COLOR_FAILURE" "[FAILED]" "$COLOR_NORMAL"
-                else
-                    echo "see $(pwd)/test${TEST_RUN_ID:+-$TEST_RUN_ID}.log"
-                fi
-            fi
-            exit $ret
+            print_test_result 0
+            exit 0
             ;;
         *) break ;;
     esac

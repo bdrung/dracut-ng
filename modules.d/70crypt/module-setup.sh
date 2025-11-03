@@ -6,7 +6,7 @@ check() {
     # if cryptsetup is not installed, then we cannot support encrypted devices.
     require_any_binary "$systemdutildir"/systemd-cryptsetup cryptsetup || return 1
 
-    [[ $hostonly_mode == "strict" ]] || [[ $mount_needs ]] && {
+    [[ $hostonly ]] || [[ $mount_needs ]] && {
         for fs in "${host_fs_types[@]}"; do
             [[ $fs == "crypto_LUKS" ]] && return 0
         done
@@ -81,7 +81,7 @@ install() {
     if [[ $hostonly_cmdline == "yes" ]]; then
         local _cryptconf
         _cryptconf=$(cmdline)
-        [[ $_cryptconf ]] && printf "%s\n" "$_cryptconf" >> "${initdir}/etc/cmdline.d/90crypt.conf"
+        [[ $_cryptconf ]] && printf "%s\n" "$_cryptconf" >> "${initdir}/etc/cmdline.d/20-crypt.conf"
     fi
 
     inst_hook cmdline 30 "$moddir/parse-crypt.sh"
@@ -93,7 +93,7 @@ install() {
         inst_hook cleanup 30 "$moddir/crypt-cleanup.sh"
     fi
 
-    if [[ ${hostonly-} ]] && [[ -f "${dracutsysrootdir-}/etc/crypttab" ]]; then
+    if [[ $hostonly ]] && [[ -f "${dracutsysrootdir-}/etc/crypttab" ]]; then
         # filter /etc/crypttab for the devices we need
         while read -r _mapper _dev _luksfile _luksoptions || [ -n "$_mapper" ]; do
             [[ $_mapper == \#* ]] && continue

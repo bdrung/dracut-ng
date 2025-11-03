@@ -18,21 +18,22 @@ jobs:
         runs-on: ubuntu-24.04-arm
         timeout-minutes: 20
         concurrency:
-            group: arm64-${{ github.workflow }}-${{ github.ref }}-${{ matrix.container }}-${{ matrix.test }}
+            group: extra-arm64-${{ github.workflow }}-${{ github.ref }}-${{ matrix.container }}-${{ matrix.test }}
             cancel-in-progress: true
         strategy:
             fail-fast: false
             matrix:
                 container:
                     - debian
-                    - fedora
                     - opensuse
                     - ubuntu
                     - void
                 test:
                     - "10"
+                    - "13"
                     - "30"
                     - "43"
+                    - "50"
                     - "80"
                     - "81"
         container:
@@ -40,6 +41,6 @@ jobs:
             options: '--privileged'
         steps:
             - name: "Checkout Repository"
-              uses: actions/checkout@v4
+              uses: actions/checkout@v5
             - name: "${{ matrix.container }} TEST-${{ matrix.test }}"
               run: ./test/test-container.sh "TEST-${{ matrix.test }}" ${{ matrix.test }}

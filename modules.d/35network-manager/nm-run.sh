@@ -7,17 +7,17 @@ if [ -z "${DRACUT_SYSTEMD-}" ]; then
     if [ -e /run/NetworkManager/initrd/neednet ]; then
         for i in /usr/lib/NetworkManager/system-connections/* \
             /run/NetworkManager/system-connections/* \
-            /etc/NetworkManager/system-connections/* \
-            /etc/sysconfig/network-scripts/ifcfg-*; do
+            /etc/NetworkManager/system-connections/*; do
             [ -f "$i" ] || continue
             /usr/sbin/NetworkManager --configure-and-quit=initrd --no-daemon
             break
         done
     fi
+fi
 
-    if [ -s /run/NetworkManager/initrd/hostname ]; then
-        cat /run/NetworkManager/initrd/hostname > /proc/sys/kernel/hostname
-    fi
+if [ -e /usr/lib/systemd/system/nm-initrd.service ] \
+    && [ -s /run/NetworkManager/initrd/hostname ]; then
+    cat /run/NetworkManager/initrd/hostname > /proc/sys/kernel/hostname
 fi
 
 kf_get_string() {
@@ -58,7 +58,7 @@ dhcpopts_create() {
 for _i in /sys/class/net/*; do
     [ -d "$_i" ] || continue
     state="/run/NetworkManager/devices/$(cat "$_i"/ifindex)"
-    grep -q '^connection-uuid=' "$state" 2> /dev/null || continue
+    grep -qs '^connection-uuid=' "$state" || continue
     ifname="${_i##*/}"
     dhcpopts_create "$state" > /tmp/dhclient."$ifname".dhcpopts
     source_hook initqueue/online "$ifname"

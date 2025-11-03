@@ -7,7 +7,7 @@ check() {
     require_binaries nvme jq || return 1
     require_kernel_modules nvme_fabrics || return 1
 
-    # shellcheck disable=SC2317  # called later by for_each_host_dev_and_slaves
+    # shellcheck disable=SC2317,SC2329  # called later by for_each_host_dev_and_slaves
     is_nvmf() {
         local _dev=$1
         local trtype
@@ -42,7 +42,7 @@ check() {
         [[ $found ]]
     }
 
-    [[ $hostonly_mode == "strict" ]] || [[ $mount_needs ]] && {
+    [[ $hostonly ]] || [[ $mount_needs ]] && {
         [ -f /etc/nvme/hostnqn ] || return 255
         [ -f /etc/nvme/hostid ] || return 255
         pushd . > /dev/null
@@ -72,6 +72,14 @@ installkernel() {
     hostonly=$(optional_hostonly) instmods nvme_fc nvme_tcp nvme_rdma lpfc qla2xxx
     # 802.1q VLAN may be set up in Firmware later. Include the module always.
     hostonly="" instmods 8021q
+    # lookup NIC kernel modules for active NBFT interfaces
+    if [[ $hostonly ]]; then
+        for i in /sys/class/net/nbft*; do
+            [ -d "$i" ] || continue
+            _driver=$(basename "$(readlink -f "$i/device/driver/module")")
+            [ -z "$_driver" ] || instmods "$_driver"
+        done
+    fi
 }
 
 # called by dracut
@@ -79,7 +87,7 @@ cmdline() {
     local _hostnqn
     local _hostid
 
-    # shellcheck disable=SC2317  # called later by for_each_host_dev_and_slaves
+    # shellcheck disable=SC2317,SC2329  # called later by for_each_host_dev_and_slaves
     gen_nvmf_cmdline() {
         local _dev=$1
         local trtype
@@ -128,7 +136,7 @@ cmdline() {
         echo -n " rd.nvmf.hostid=${_hostid}"
     fi
 
-    [[ ${hostonly-} ]] || [[ $mount_needs ]] && {
+    [[ $hostonly ]] || [[ $mount_needs ]] && {
         pushd . > /dev/null
         for_each_host_dev_and_slaves gen_nvmf_cmdline
         popd > /dev/null || exit
@@ -140,7 +148,7 @@ install() {
     if [[ $hostonly_cmdline == "yes" ]]; then
         local _nvmf_args
         _nvmf_args=$(cmdline)
-        [[ "$_nvmf_args" ]] && printf "%s" "$_nvmf_args" >> "${initdir}/etc/cmdline.d/95nvmf-args.conf"
+        [[ "$_nvmf_args" ]] && printf "%s" "$_nvmf_args" >> "${initdir}/etc/cmdline.d/20-nvmf-args.conf"
     fi
     inst_simple -H "/etc/nvme/hostnqn"
     inst_simple -H "/etc/nvme/hostid"
@@ -152,8 +160,8 @@ install() {
 
     inst_multiple nvme jq
     inst_hook cmdline 92 "$moddir/parse-nvmf-boot-connections.sh"
-    inst_simple "/etc/nvme/discovery.conf"
-    inst_simple "/etc/nvme/config.json"
+    inst_simple -H "/etc/nvme/discovery.conf"
+    inst_simple -H "/etc/nvme/config.json"
     inst_rules /usr/lib/udev/rules.d/71-nvmf-iopolicy-netapp.rules
     inst_rules "$moddir/95-nvmf-initqueue.rules"
 }

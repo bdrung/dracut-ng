@@ -6,7 +6,7 @@ check() {
     # no point in trying to support it in the initramfs.
     require_binaries btrfs || return 1
 
-    [[ $hostonly_mode == "strict" ]] || [[ $mount_needs ]] && {
+    [[ $hostonly ]] || [[ $mount_needs ]] && {
         for fs in "${host_fs_types[@]}"; do
             [[ $fs == "btrfs" ]] && return 0
         done
@@ -32,7 +32,6 @@ cmdline() {
 # called by dracut
 installkernel() {
     hostonly='' instmods btrfs
-    printf "%s\n" "$(cmdline)" > "${initdir}/etc/cmdline.d/00-btrfs.conf"
 }
 
 # called by dracut
@@ -57,4 +56,8 @@ install() {
 
     inst_multiple -o btrfsck btrfs-zero-log btrfstune
     inst btrfs /sbin/btrfs
+
+    if [[ $hostonly_cmdline == "yes" ]]; then
+        printf "%s\n" "$(cmdline)" > "${initdir}/etc/cmdline.d/20-btrfs.conf"
+    fi
 }

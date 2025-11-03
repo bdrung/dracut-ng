@@ -1,12 +1,13 @@
 # Test coverage provided by this container:
 # - arm64
-# - strict hostonly
+# - hostonly
 # - network-legacy
 # - mkosi-initrd
 # - hmaccalc (fido)
 # - rdma out of tree dracut module
 # - dbus-broker
 # - network: network-legacy, network-manager
+# - zstd compression
 
 FROM registry.opensuse.org/opensuse/tumbleweed:latest
 
@@ -19,6 +20,7 @@ RUN zypper --non-interactive install --no-recommends \
     cryptsetup \
     dhcp-client \
     dhcp-server \
+    dnsmasq \
     distribution-gpg-keys \
     e2fsprogs \
     erofs-utils \
@@ -55,11 +57,5 @@ RUN zypper --non-interactive install --no-recommends \
     tpm2.0-tools \
     util-linux-systemd \
     xorriso \
+    zstd \
     && zypper --non-interactive dist-upgrade --no-recommends
-
-# workaround for openSUSE on arm64
-# force strict hostonly mode to increase test coverage
-RUN \
-    echo 'hostonly_mode="strict"' > /usr/lib/dracut/dracut.conf.d/02-dist.conf ;\
-    KVERSION="$(cd /lib/modules && ls -1 | tail -1)" \
-    && if [ "$(arch)"="aarch64" ] && [ -e /usr/lib/modules/"$KVERSION"/Image ]; then ln -sf /usr/lib/modules/"$KVERSION"/Image /usr/lib/modules/"$KVERSION"/vmlinuz; fi

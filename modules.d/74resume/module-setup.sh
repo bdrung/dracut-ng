@@ -11,10 +11,10 @@ check() {
     }
 
     # If hostonly check if we want to include the resume module
-    if [[ ${hostonly-} ]] || [[ $mount_needs ]]; then
+    if [[ $hostonly ]] || [[ $mount_needs ]]; then
         # Resuming won't work if swap is on a netdevice
         swap_on_netdevice && return 255
-        if grep -rq 'resume=' /proc/cmdline /etc/cmdline /etc/cmdline.d /etc/kernel/cmdline /usr/lib/kernel/cmdline 2> /dev/null; then
+        if grep -rqsE '(^| )resume=' /proc/cmdline /etc/cmdline /etc/cmdline.d /etc/kernel/cmdline /usr/lib/kernel/cmdline; then
             # hibernation support requested on kernel command line
             return 0
         else
@@ -63,7 +63,7 @@ install() {
 
     if [[ $hostonly_cmdline == "yes" ]]; then
         _resumeconf=$(cmdline)
-        [[ $_resumeconf ]] && printf "%s\n" "$_resumeconf" >> "${initdir}/etc/cmdline.d/95resume.conf"
+        [[ $_resumeconf ]] && printf "%s\n" "$_resumeconf" >> "${initdir}/etc/cmdline.d/20-resume.conf"
     fi
 
     # if systemd is included and has the hibernate-resume tool, use it and nothing else
@@ -80,7 +80,7 @@ install() {
     for _bin in /usr/sbin/resume /usr/lib/suspend/resume /usr/lib64/suspend/resume /usr/lib/uswsusp/resume /usr/lib64/uswsusp/resume; do
         [[ -x "${dracutsysrootdir-}${_bin}" ]] && {
             inst "${_bin}" /usr/sbin/resume
-            [[ ${hostonly-} ]] && [[ -f "${dracutsysrootdir-}/etc/suspend.conf" ]] && inst -H /etc/suspend.conf
+            [[ $hostonly ]] && [[ -f "${dracutsysrootdir-}/etc/suspend.conf" ]] && inst -H /etc/suspend.conf
             break
         }
     done

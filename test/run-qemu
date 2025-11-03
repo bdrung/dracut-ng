@@ -7,11 +7,27 @@ export PATH=/usr/sbin:/usr/bin:/sbin:/bin
 ARCH="${ARCH-$(uname -m)}"
 QEMU_CPU="${QEMU_CPU:-max}"
 
+quote_args() {
+    local arg args=()
+    for arg in "$@"; do
+        if [[ -z $arg || $arg =~ [[:space:]\'] ]]; then
+            args+=("'${arg//\'/\'\\\'\'}'")
+        else
+            args+=("$arg")
+        fi
+    done
+    echo "${args[*]}"
+}
+
 set_vmlinux_env() {
     if [[ ${KVERSION-} ]]; then
         VMLINUZ=${VMLINUZ-"/lib/modules/${KVERSION}/vmlinuz"}
         if ! [ -f "$VMLINUZ" ]; then
             VMLINUZ="/lib/modules/${KVERSION}/vmlinux"
+        fi
+
+        if ! [ -f "$VMLINUZ" ]; then
+            VMLINUZ="/lib/modules/${KVERSION}/Image"
         fi
 
         if ! [ -f "$VMLINUZ" ]; then
@@ -29,10 +45,11 @@ set_vmlinux_env() {
                 VMLINUZ="/boot/Image-${KVERSION}"
             fi
         fi
-    else
-        VMLINUZ=$(find /boot/vmlinuz-* -type f 2> /dev/null | tail -1)
-        ! [ -f "$VMLINUZ" ] && VMLINUZ=$(find /lib/modules/ -type f -name vmlinuz 2> /dev/null | tail -1)
     fi
+
+    ! [ -f "${VMLINUZ-}" ] && VMLINUZ=$(find /boot/vmlinuz-* -type f 2> /dev/null | tail -1)
+    ! [ -f "${VMLINUZ-}" ] && VMLINUZ=$(find /lib/modules/ -type f -name vmlinuz 2> /dev/null | tail -1)
+    ! [ -f "${VMLINUZ-}" ] && VMLINUZ=$(find /lib/modules/ -type f -name Image 2> /dev/null | tail -1)
 
     if ! [ -f "$VMLINUZ" ]; then
         echo "Could not find a Linux kernel version to test with!" >&2
@@ -49,7 +66,7 @@ set_vmlinux_env() {
 [[ -x "/usr/bin/qemu-system-${ARCH}" ]] && BIN="/usr/bin/qemu-system-${ARCH}" && ARGS=(-cpu "$QEMU_CPU")
 [[ -z ${NO_KVM-} && -c /dev/kvm && -x "/usr/bin/qemu-system-${ARCH}" ]] && BIN="/usr/bin/qemu-system-${ARCH}" && ARGS=(-enable-kvm -cpu host)
 
-[[ $BIN ]] || {
+[[ ${BIN-} ]] || {
     echo "Could not find a working KVM or QEMU to test with!" >&2
     echo "Please install kvm or qemu." >&2
     exit 1
@@ -90,9 +107,14 @@ fi
 
 # only set -kernel if -initrd is specified
 if [[ $* == *-initrd* ]]; then
+    for arg in "$@"; do
+        [[ $1 == *-initrd* ]] && break
+    done
+
+    KVERSION=$(lsinitrd "$arg" | grep modules.dep | head -1 | rev | cut -d'/' -f2 | rev)
     set_vmlinux_env
     ARGS+=(-kernel "$VMLINUZ")
 fi
 
-echo "${0##*/}: $BIN ${ARGS[*]@Q} ${*@Q}"
+echo "${0##*/}: $BIN $(quote_args "${ARGS[@]}") $(quote_args "$@")"
 exec "$BIN" "${ARGS[@]}" "$@"

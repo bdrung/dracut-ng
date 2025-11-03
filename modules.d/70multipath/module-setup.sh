@@ -25,7 +25,7 @@ check() {
     require_binaries multipath || return 1
     require_binaries kpartx || return 1
 
-    [[ $hostonly_mode == "strict" ]] || [[ $mount_needs ]] && {
+    [[ $hostonly ]] || [[ $mount_needs ]] && {
         for_each_host_dev_and_slaves is_mpath || return 255
     }
 
@@ -69,7 +69,7 @@ install() {
     local -A _allow
     local config_dir
 
-    # shellcheck disable=SC2317  # called later by for_each_host_dev_and_slaves
+    # shellcheck disable=SC2317,SC2329  # called later by for_each_host_dev_and_slaves
     add_hostonly_mpath_conf() {
         if is_mpath "$1"; then
             local _dev
@@ -111,7 +111,7 @@ install() {
         "$tmpfilesdir/multipath.conf"
 
     mpathconf_installed \
-        && [[ ${hostonly-} ]] && [[ $hostonly_mode == "strict" ]] && {
+        && [[ $hostonly ]] && [[ $hostonly_mode == "strict" ]] && {
         for_each_host_dev_and_slaves_all add_hostonly_mpath_conf
         if ((${#_allow[@]} > 0)); then
             local -a _args
@@ -123,7 +123,7 @@ install() {
         fi
     }
 
-    [[ ${hostonly-} ]] || mpathconf_installed || {
+    [[ $hostonly ]] || mpathconf_installed || {
         for_each_host_dev_and_slaves is_mpath \
             || [[ -f /etc/multipath.conf ]] || {
             cat > "${initdir}"/etc/multipath.conf << EOF
@@ -144,7 +144,7 @@ EOF
     if [[ $hostonly_cmdline == "yes" ]]; then
         local _conf
         _conf=$(cmdline)
-        [[ $_conf ]] && echo "$_conf" >> "${initdir}/etc/cmdline.d/90multipath.conf"
+        [[ $_conf ]] && echo "$_conf" >> "${initdir}/etc/cmdline.d/20-multipath.conf"
     fi
 
     if dracut_module_included "systemd"; then
@@ -165,5 +165,6 @@ EOF
     inst_rules 40-multipath.rules 56-multipath.rules \
         62-multipath.rules 65-multipath.rules \
         66-kpartx.rules 67-kpartx-compat.rules \
-        11-dm-mpath.rules 11-dm-parts.rules
+        11-dm-mpath.rules 11-dm-parts.rules \
+        99-z-dm-mpath-late.rules
 }

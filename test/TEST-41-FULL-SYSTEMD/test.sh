@@ -73,14 +73,7 @@ test_setup() {
 
     local dracut_modules="resume systemd-udevd systemd-journald systemd-tmpfiles systemd-cryptsetup systemd-emergency systemd-ac-power systemd-coredump systemd-creds systemd-integritysetup systemd-ldconfig systemd-pstore systemd-repart systemd-sysext systemd-veritysetup systemd-hostnamed systemd-timedated"
 
-    # TODO - this workaround should not be needed and should be removed
-    if [ -f /usr/bin/dbus-broker ]; then
-        dracut_modules="$dracut_modules dbus-broker"
-    else
-        dracut_modules="$dracut_modules dbus-daemon"
-    fi
-
-    if [ -f /usr/lib/systemd/systemd-networkd ] && [ -e "${PKGLIBDIR}/modules.d/00systemd-network-management/module-setup.sh" ]; then
+    if [ -f /usr/lib/systemd/systemd-networkd ]; then
         dracut_modules="$dracut_modules systemd-network-management"
     fi
 
@@ -98,20 +91,21 @@ test_setup() {
     fi
 
     # Create what will eventually be our root filesystem onto an overlay
-    "$DRACUT" -N --keep --tmpdir "$TESTDIR" \
+    call_dracut --tmpdir "$TESTDIR" \
         --add-confdir test-root \
         -a "$dracut_modules" \
         -f "$TESTDIR"/initramfs.root
 
     KVERSION=$(determine_kernel_version "$TESTDIR"/initramfs.root)
 
-    mkdir -p "$TESTDIR"/overlay/source && cp -a "$TESTDIR"/dracut.*/initramfs/* "$TESTDIR"/overlay/source && rm -rf "$TESTDIR"/dracut.*
+    mkdir -p "$TESTDIR"/overlay/source
+    cp -a "$TESTDIR"/dracut.*/initramfs/* "$TESTDIR"/overlay/source
+    rm -rf "$TESTDIR"/dracut.*
 
-    # second, install the files needed to make the root filesystem
     # create an initramfs that will create the target root filesystem.
     # We do it this way so that we do not risk trashing the host mdraid
     # devices, volume groups, encrypted partitions, etc.
-    "$DRACUT" -N -i "$TESTDIR"/overlay / \
+    call_dracut -i "$TESTDIR"/overlay / \
         --add-confdir test-makeroot \
         -a "btrfs crypt" \
         -I "mkfs.btrfs cryptsetup" \

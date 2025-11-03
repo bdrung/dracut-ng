@@ -13,18 +13,8 @@ TEST_DESCRIPTION="root filesystem on NBD with $USE_NETWORK"
 #SERIAL="tcp:127.0.0.1:9999"
 
 test_check() {
-    if ! type -p dhclient &> /dev/null; then
-        echo "Test needs dhclient for server networking... Skipping"
-        return 1
-    fi
-
     if ! type -p nbd-server &> /dev/null; then
         echo "Test needs nbd-server... Skipping"
-        return 1
-    fi
-
-    if ! modinfo -k "$KVERSION" nbd &> /dev/null; then
-        echo "Kernel module nbd does not exist"
         return 1
     fi
 
@@ -47,8 +37,8 @@ run_server() {
         -net nic,macaddr=52:54:00:12:34:56,model=virtio \
         -net socket,listen=127.0.0.1:12340 \
         -append "panic=1 oops=panic softlockup_panic=1 rd.luks=0 systemd.crash_reboot quiet root=/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_serverroot rootfstype=ext4 rw console=ttyS0,115200n81 ${SERVER_DEBUG-}" \
-        -initrd "$TESTDIR"/initramfs.server \
-        -pidfile "$TESTDIR"/server.pid -daemonize
+        -pidfile "$TESTDIR"/server.pid -daemonize \
+        -initrd "$TESTDIR"/initramfs.server
     chmod 644 "$TESTDIR"/server.pid
 
     if ! [[ ${SERIAL-} ]]; then
@@ -187,25 +177,25 @@ client_run() {
 make_encrypted_root() {
     rm -fr "$TESTDIR"/overlay
     # Create what will eventually be our root filesystem onto an overlay
-    "$DRACUT" --keep --tmpdir "$TESTDIR" \
+    call_dracut --tmpdir "$TESTDIR" \
         --add-confdir test-root \
         -I "ip grep" \
-        --no-hostonly --no-hostonly-cmdline --nohardlink \
+        --no-hostonly \
         -f "$TESTDIR"/initramfs.root
-    mkdir -p "$TESTDIR"/overlay/source && mv "$TESTDIR"/dracut.*/initramfs/* "$TESTDIR"/overlay/source && rm -rf "$TESTDIR"/dracut.*
-    cp ./client-init.sh "$TESTDIR"/overlay/source/sbin/init
+    mkdir -p "$TESTDIR"/overlay/source
+    mv "$TESTDIR"/dracut.*/initramfs/* "$TESTDIR"/overlay/source
+    rm -rf "$TESTDIR"/dracut.*
+    inst_init ./client-init.sh "$TESTDIR"/overlay/source
 
-    # second, install the files needed to make the root filesystem
     # create an initramfs that will create the target root filesystem.
     # We do it this way so that we do not risk trashing the host mdraid
     # devices, volume groups, encrypted partitions, etc.
-    "$DRACUT" -i "$TESTDIR"/overlay / \
+    call_dracut -i "$TESTDIR"/overlay / \
         --add-confdir test-makeroot \
         -a "crypt lvm mdraid" \
         -I "cryptsetup" \
         -i ./create-encrypted-root.sh /lib/dracut/hooks/initqueue/01-create-encrypted-root.sh \
-        --no-hostonly-cmdline -N \
-        -f "$TESTDIR"/initramfs.makeroot "$KVERSION"
+        -f "$TESTDIR"/initramfs.makeroot
     rm -rf -- "$TESTDIR"/overlay
 
     declare -a disk_args=()
@@ -224,24 +214,23 @@ make_encrypted_root() {
 
 make_client_root() {
     rm -fr "$TESTDIR"/overlay
-    "$DRACUT" --keep --tmpdir "$TESTDIR" \
+    call_dracut --tmpdir "$TESTDIR" \
         --add-confdir test-root \
         -I "ip" \
-        --no-hostonly --no-hostonly-cmdline --nohardlink \
-        -f "$TESTDIR"/initramfs.root "$KVERSION"
-    mkdir -p "$TESTDIR"/overlay/source && mv "$TESTDIR"/dracut.*/initramfs/* "$TESTDIR"/overlay/source && rm -rf "$TESTDIR"/dracut.*
-    cp ./client-init.sh "$TESTDIR"/overlay/source/sbin/init
+        --no-hostonly \
+        -f "$TESTDIR"/initramfs.root
+    mkdir -p "$TESTDIR"/overlay/source
+    mv "$TESTDIR"/dracut.*/initramfs/* "$TESTDIR"/overlay/source
+    rm -rf "$TESTDIR"/dracut.*
+    inst_init ./client-init.sh "$TESTDIR"/overlay/source
 
-    # second, install the files needed to make the root filesystem
     # create an initramfs that will create the target root filesystem.
     # We do it this way so that we do not risk trashing the host mdraid
     # devices, volume groups, encrypted partitions, etc.
-    "$DRACUT" -i "$TESTDIR"/overlay / \
+    call_dracut -i "$TESTDIR"/overlay / \
         --add-confdir test-makeroot \
         -i ./create-client-root.sh /lib/dracut/hooks/initqueue/01-create-client-root.sh \
-        --nomdadmconf \
-        --no-hostonly-cmdline -N \
-        -f "$TESTDIR"/initramfs.makeroot "$KVERSION"
+        -f "$TESTDIR"/initramfs.makeroot
 
     declare -a disk_args=()
     declare -i disk_index=0
@@ -272,31 +261,29 @@ port = 2001
 bs = 4096
 EOF
 
-    "$DRACUT" --keep --tmpdir "$TESTDIR" \
+    call_dracut --keep --tmpdir "$TESTDIR" \
         --add-confdir test-root \
-        -a "network-legacy" \
+        -a "$USE_NETWORK" \
         -I "ip grep sleep nbd-server chmod modprobe pidof" \
         --install-optional "/etc/netconfig dhcpd /etc/group /etc/nsswitch.conf /etc/rpc /etc/protocols /etc/services /usr/etc/nsswitch.conf /usr/etc/rpc /usr/etc/protocols /usr/etc/services" \
         -i /tmp/config /etc/nbd-server/config \
         -i "./dhcpd.conf" "/etc/dhcpd.conf" \
-        --no-hostonly --no-hostonly-cmdline --nohardlink \
-        -f "$TESTDIR"/initramfs.root "$KVERSION"
-    mkdir -p "$TESTDIR"/overlay/source && mv "$TESTDIR"/dracut.*/initramfs/* "$TESTDIR"/overlay/source && rm -rf "$TESTDIR"/dracut.*
+        --no-hostonly \
+        -f "$TESTDIR"/initramfs.root
+    mkdir -p "$TESTDIR"/overlay/source
+    mv "$TESTDIR"/dracut.*/initramfs/* "$TESTDIR"/overlay/source
+    rm -rf "$TESTDIR"/dracut.*
 
     mkdir -p -- "$TESTDIR"/overlay/source/var/lib/dhcpd "$TESTDIR"/overlay/source/etc/nbd-server
-    cp ./server-init.sh "$TESTDIR"/overlay/source/sbin/init
+    inst_init ./server-init.sh "$TESTDIR"/overlay/source
 
-    # second, install the files needed to make the root filesystem
     # create an initramfs that will create the target root filesystem.
     # We do it this way so that we do not risk trashing the host mdraid
     # devices, volume groups, encrypted partitions, etc.
-    "$DRACUT" -N -i "$TESTDIR"/overlay / \
+    call_dracut -i "$TESTDIR"/overlay / \
         --add-confdir test-makeroot \
-        -a "network-legacy" \
         -i ./create-server-root.sh /lib/dracut/hooks/initqueue/01-create-server-root.sh \
-        --nomdadmconf \
-        --no-hostonly-cmdline -N \
-        -f "$TESTDIR"/initramfs.makeroot "$KVERSION"
+        -f "$TESTDIR"/initramfs.makeroot
 
     declare -a disk_args=()
     # shellcheck disable=SC2034  # disk_index used in qemu_add_drive
@@ -328,18 +315,18 @@ test_setup() {
     echo -n test > /tmp/key
 
     test_dracut \
-        --no-hostonly --no-hostonly-cmdline \
-        -a "${USE_NETWORK}" \
+        --no-hostonly \
+        -a "watchdog qemu-net ${USE_NETWORK}" \
         -i "./client.link" "/etc/systemd/network/01-client.link" \
         -i "/tmp/crypttab" "/etc/crypttab" \
         -i "/tmp/key" "/etc/key"
 
-    "$DRACUT" -N -i "$TESTDIR"/overlay / \
-        -a "test network-legacy ${SERVER_DEBUG:+debug}" \
-        -d "af_packet piix ide-gd_mod ata_piix ext4 sd_mod drbg virtio_net" \
+    call_dracut -N \
+        --add-confdir test \
+        -a "qemu-net $USE_NETWORK ${SERVER_DEBUG:+debug}" \
         -i "./server.link" "/etc/systemd/network/01-server.link" \
         -i "./wait-if-server.sh" "/lib/dracut/hooks/pre-mount/99-wait-if-server.sh" \
-        -f "$TESTDIR"/initramfs.server "$KVERSION"
+        -f "$TESTDIR"/initramfs.server
 }
 
 kill_server() {

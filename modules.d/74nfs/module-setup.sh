@@ -23,7 +23,7 @@ check() {
     require_any_binary rpcbind portmap || return 1
     require_binaries rpc.statd mount.nfs mount.nfs4 umount sed chmod chown || return 1
 
-    [[ $hostonly_mode == "strict" ]] || [[ $mount_needs ]] && {
+    [[ $hostonly ]] || [[ $mount_needs ]] && {
         [[ "$(get_nfs_type)" ]] && return 0
         return 255
     }
@@ -84,7 +84,7 @@ install() {
     if [[ $hostonly_cmdline == "yes" ]]; then
         local _netconf
         _netconf="$(cmdline)"
-        [[ $_netconf ]] && printf "%s\n" "$_netconf" >> "${initdir}/etc/cmdline.d/95nfs.conf"
+        [[ $_netconf ]] && printf "%s\n" "$_netconf" >> "${initdir}/etc/cmdline.d/20-nfs.conf"
     fi
 
     if [[ -f "${dracutsysrootdir-}/lib/modprobe.d/nfs.conf" ]]; then

@@ -5,7 +5,7 @@ installkernel() {
     local _blockfuncs='ahci_platform_get_resources|ata_scsi_ioctl|scsi_add_host|blk_cleanup_queue|register_mtd_blktrans|scsi_esp_register|register_virtio_device|usb_stor_disconnect|mmc_add_host|sdhci_add_host|scsi_add_host_with_dma|blk_alloc_disk|blk_mq_alloc_disk|blk_mq_alloc_request|blk_mq_destroy_queue|blk_cleanup_disk'
     local -A _hostonly_drvs
 
-    # shellcheck disable=SC2317  # called later by for_each_host_dev_and_slaves
+    # shellcheck disable=SC2317,SC2329  # called later by for_each_host_dev_and_slaves
     record_block_dev_drv() {
 
         for _mod in $(get_dev_module /dev/block/"$1"); do
@@ -93,6 +93,7 @@ installkernel() {
                 "=drivers/soc" \
                 "=drivers/spi" \
                 "=drivers/spmi" \
+                "=drivers/usb/cdns3" \
                 "=drivers/usb/chipidea" \
                 "=drivers/usb/dwc2" \
                 "=drivers/usb/dwc3" \
@@ -126,7 +127,7 @@ installkernel() {
             dracut_instmods -o -P ".*/(kernel/fs/nfs|kernel/fs/nfsd|kernel/fs/lockd)/.*" '=fs'
         fi
 
-        if [[ ${hostonly-} ]] && [[ "${host_fs_types[*]}" ]]; then
+        if [[ $hostonly ]] && [[ "${host_fs_types[*]}" ]]; then
             hostonly='' instmods "${host_fs_types[@]}"
         fi
 
@@ -143,7 +144,7 @@ installkernel() {
     fi
 
     inst_multiple -o "$depmodd/*.conf"
-    if [[ ${hostonly-} ]]; then
+    if [[ $hostonly ]]; then
         inst_multiple -H -o "$depmodconfdir/*.conf"
     fi
     :

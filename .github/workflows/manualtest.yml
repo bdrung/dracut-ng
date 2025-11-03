@@ -22,7 +22,6 @@ on:  # yamllint disable-line rule:truthy
                     - "arch:latest"
                     - "debian:latest"
                     - "debian:sid"
-                    - "ubuntu:latest"
                     - "ubuntu:devel"
                     - "ubuntu:rolling"
                     - "opensuse:latest"
@@ -46,7 +45,7 @@ jobs:
             tests: ${{ steps.set-matrix.outputs.tests }}
         steps:
             - name: "Checkout Repository"
-              uses: actions/checkout@v4
+              uses: actions/checkout@v5
               with:
                   fetch-depth: 0
             - id: set-matrix
@@ -63,7 +62,7 @@ jobs:
         runs-on: ubuntu-24.04
         timeout-minutes: 20
         concurrency:
-            group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.container }}-${{ matrix.test }}
+            group: manual-${{ github.workflow }}-${{ github.ref }}-${{ matrix.container }}-${{ matrix.test }}
             cancel-in-progress: true
         strategy:
             matrix:
@@ -75,7 +74,7 @@ jobs:
             options: "--privileged -v /dev:/dev"
         steps:
             - name: "Checkout Repository"
-              uses: actions/checkout@v4
+              uses: actions/checkout@v5
               with:
                   fetch-depth: 0
             - name: "${{ matrix.container }} ${{ matrix.test }}"

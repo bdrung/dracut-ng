@@ -22,12 +22,11 @@ test_run() {
 
 test_setup() {
     # create root filesystem
-    "$DRACUT" -N --keep --tmpdir "$TESTDIR" \
+    call_dracut --tmpdir "$TESTDIR" \
         --add-confdir test-root \
         -f "$TESTDIR"/initramfs.root
 
-    dd if=/dev/zero of="$TESTDIR"/root.img bs=200MiB count=1 status=none && sync "$TESTDIR"/root.img
-    mkfs.ext4 -q -L dracut -d "$TESTDIR"/dracut.*/initramfs/ "$TESTDIR"/root.img && sync "$TESTDIR"/root.img
+    build_ext4_image "$TESTDIR"/dracut.*/initramfs/ "$TESTDIR"/root.img dracut
 
     ln -s / "$TESTDIR"/sysroot
     test_dracut --hostonly --sysroot "$TESTDIR"/sysroot

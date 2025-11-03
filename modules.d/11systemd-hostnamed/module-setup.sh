@@ -20,7 +20,7 @@ check() {
 depends() {
 
     # This module has external dependency on other module(s).
-    echo dbus systemd-sysusers
+    echo systemd-sysusers
     # Return 0 to include the dependent module(s) in the initramfs.
     return 0
 
@@ -46,7 +46,7 @@ install() {
         hostnamectl
 
     # Install the hosts local user configurations if enabled.
-    if [[ ${hostonly-} ]]; then
+    if [[ $hostonly ]]; then
         inst_multiple -H -o \
             /etc/hostname \
             "$systemdsystemconfdir"/systemd-hostnamed.service \

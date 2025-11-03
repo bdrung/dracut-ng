@@ -41,28 +41,29 @@ install() {
     # regular files, but not with directory trees.
 
     inst_multiple -o \
-        "/usr/lib/confexts/*.raw" \
         "/usr/lib/extension-release.d/extension-release.*" \
         "$systemdsystemunitdir"/systemd-confext${_suffix}.service \
         "$systemdsystemunitdir/systemd-confext${_suffix}.service.d/*.conf" \
         "$systemdsystemunitdir"/systemd-sysext${_suffix}.service \
         "$systemdsystemunitdir/systemd-sysext${_suffix}.service.d/*.conf" \
+        "$systemdsystemunitdir"/initrd.target.wants/systemd-confext${_suffix}.service \
+        "$systemdsystemunitdir"/initrd.target.wants/systemd-sysext${_suffix}.service \
         systemd-confext systemd-sysext
 
-    # Enable systemd type unit(s)
+    # Enable systemd type unit(s) for systemd < v258 which doesn't ship
+    # initrd.target.wants symlinks.
     for i in \
         systemd-confext.service \
         systemd-sysext.service; do
-        $SYSTEMCTL -q --root "$initdir" enable "$i"
+        if [[ -e "$initdir$systemdsystemunitdir"/"$i" ]]; then
+            $SYSTEMCTL -q --root "$initdir" enable "$i"
+        fi
     done
 
     # Install the hosts local user configurations if enabled.
-    if [[ ${hostonly-} ]]; then
+    if [[ $hostonly ]]; then
         inst_multiple -H -o \
-            "/etc/extensions/*.raw" \
             "/etc/extension-release.d/extension-release.*" \
-            "/var/lib/confexts/*.raw" \
-            "/var/lib/extensions/*.raw" \
             "$systemdsystemconfdir"/systemd-confext${_suffix}.service \
             "$systemdsystemconfdir/systemd-confext${_suffix}.service.d/*.conf" \
             "$systemdsystemconfdir"/systemd-sysext${_suffix}.service \

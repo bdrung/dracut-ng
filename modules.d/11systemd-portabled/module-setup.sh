@@ -19,8 +19,6 @@ check() {
 # Module dependency requirements.
 depends() {
 
-    # This module has external dependency on other module(s).
-    echo dbus
     # Return 0 to include the dependent module(s) in the initramfs.
     return 0
 
@@ -54,6 +52,7 @@ install() {
         "$systemdutildir/portable/profile/strict/*.conf" \
         "$systemdutildir/portable/profile/trusted/*.conf" \
         "$systemdsystemunitdir"/systemd-portabled.service \
+        "$systemdsystemunitdir"/initrd.target.wants/systemd-portabled.service \
         "$systemdsystemunitdir/systemd-portabled.service.d/*.conf" \
         "$systemdsystemunitdir"/dbus-org.freedesktop.portable1.service \
         portablectl
@@ -62,11 +61,10 @@ install() {
     touch "$initdir"/etc/resolv.conf
 
     # Enable systemd type unit(s)
-    $SYSTEMCTL -q --root "$initdir" add-wants initrd.target systemd-portabled.service
     $SYSTEMCTL -q --root "$initdir" enable systemd-portabled.service
 
     # Install the hosts local user configurations if enabled.
-    if [[ ${hostonly-} ]]; then
+    if [[ $hostonly ]]; then
         inst_multiple -H -o \
             "/etc/portables/*.raw" \
             "$systemdutilconfdir/system.attached/*" \

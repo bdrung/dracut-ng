@@ -4,7 +4,7 @@
 
 # called by dracut
 cmdline() {
-    # shellcheck disable=SC2317  # called later by for_each_host_dev_and_slaves
+    # shellcheck disable=SC2317,SC2329  # called later by for_each_host_dev_and_slaves
     get_lunmask() {
         local _dev=$1
         local _devpath _sdev _lun _rport _end_device _classdev _wwpn _sas_address
@@ -38,14 +38,14 @@ cmdline() {
         fi
         return 1
     }
-    [[ ${hostonly-} ]] || [[ $mount_needs ]] && {
+    [[ $hostonly ]] || [[ $mount_needs ]] && {
         for_each_host_dev_and_slaves_all get_lunmask
     } | sort | uniq
 }
 
 # called by dracut
 check() {
-    [[ $hostonly_mode == "strict" ]] || [[ $mount_needs ]] && {
+    [[ $hostonly ]] || [[ $mount_needs ]] && {
         [ -w /sys/module/scsi_mod/parameters/scan ] || return 255
         read -r scan_type < /sys/module/scsi_mod/parameters/scan
         [ "$scan_type" = "manual" ] && return 0
@@ -63,7 +63,7 @@ install() {
         local _lunmask
 
         for _lunmask in $(cmdline); do
-            printf "%s\n" "$_lunmask" >> "${initdir}/etc/cmdline.d/95lunmask.conf"
+            printf "%s\n" "$_lunmask" >> "${initdir}/etc/cmdline.d/20-lunmask.conf"
         done
     fi
 }

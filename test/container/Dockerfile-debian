@@ -1,4 +1,5 @@
 # Test coverage provided by this container:
+# - 3cpio
 # - arm64
 # - dash default shell (instead of bash)
 # - curl (url-lib)
@@ -6,11 +7,7 @@
 # - zstd compression
 # - verbose logging for tests
 # - dbus-daemon
-# - network: network-legacy, network-manager, systemd-networkd
-
-# Not installed
-# - iscsiuio, open-iscsi (not yet working with dracut, https://bugs.launchpad.net/ubuntu/+source/open-iscsi/+bug/2072484)
-# - busybox-static
+# - network: network-manager, systemd-networkd
 
 ARG DISTRIBUTION=debian
 FROM docker.io/${DISTRIBUTION}
@@ -18,26 +15,20 @@ FROM docker.io/${DISTRIBUTION}
 # export ARG
 ARG DISTRIBUTION
 
-# prefer running tests in verbose mode
-ENV V=2
-
 # Install dracut as a linux-initramfs-tool provider so that the default initramfs-tool package does not get installed
-RUN apt-get update -y -qq && apt-get upgrade -y -qq && apt-get install -y -qq --no-install-recommends dracut
+RUN apt-get update -y -qq && apt-get upgrade -y -qq && apt-get install -y -qq --install-recommends dracut dracut-network dracut-squash dracut-live
 
-# extra packages for sid, rolling, devel
-RUN if [ "$DISTRIBUTION" = "debian:sid" ] || [ "$DISTRIBUTION" = "ubuntu:rolling" ] || [ "$DISTRIBUTION" = "ubuntu:devel" ] ; then \
+# Install 3cpio where available
+RUN if [ "$DISTRIBUTION" != "debian:latest" ] ; then \
     DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends -o Dpkg::Use-Pty=0 \
-    plymouth-themes \
-    network-manager \
-    systemd-cryptsetup \
-    systemd-repart \
-    systemd-ukify \
+    3cpio \
     ; fi
 
 RUN \
     DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends -o Dpkg::Use-Pty=0 \
     asciidoctor \
     bluez \
+    bsdextrautils \
     btrfs-progs \
     ca-certificates \
     cargo \
@@ -45,6 +36,7 @@ RUN \
     cpio \
     cryptsetup \
     curl \
+    dnsmasq \
     docbook \
     docbook-xml \
     docbook-xsl \
@@ -55,8 +47,9 @@ RUN \
     gpg \
     iputils-arping \
     iputils-ping \
-    isc-dhcp-client \
+    iproute2 \
     isc-dhcp-server \
+    iscsiuio \
     jq \
     kbd \
     kmod \
@@ -70,13 +63,16 @@ RUN \
     multipath-tools \
     nbd-client \
     nbd-server \
+    network-manager \
     nfs-kernel-server \
     ntfs-3g \
     nvme-cli \
+    open-iscsi \
     ovmf \
     parted \
     pcscd \
     pkg-config \
+    plymouth-themes \
     procps \
     qemu-efi-aarch64 \
     qemu-kvm \
@@ -87,19 +83,17 @@ RUN \
     systemd-boot-efi \
     systemd-container \
     systemd-coredump \
+    systemd-cryptsetup \
+    systemd-repart \
     systemd-resolved \
     systemd-sysv \
     systemd-timesyncd \
+    systemd-ukify \
     tgt \
     thin-provisioning-tools \
     tpm2-tools \
+    util-linux-extra \
+    xfsprogs \
     xorriso \
     zstd \
-    && apt-get clean \
-    && chmod a+r /boot/vmlinu*
-
-# workaround for kernel-install
-RUN \
-    KVERSION="$(cd /lib/modules && ls -1 | tail -1)" \
-    ; if ! [ -e /usr/lib/modules/"$KVERSION"/vmlinuz ]; then ln -sf /boot/vmlinuz /usr/lib/modules/"$KVERSION"/vmlinuz; fi  \
-    ; if ! [ -e /usr/lib/modules/"$KVERSION"/vmlinuz ]; then ln -sf /boot/vmlinuz-"$KVERSION" /usr/lib/modules/"$KVERSION"/vmlinuz; fi
+    && apt-get clean

@@ -65,8 +65,12 @@ fi
 git commit -m "docs: update NEWS.md and AUTHORS for release $NEW_VERSION" NEWS.md AUTHORS dracut-version.sh
 
 # git push can fail due to insufficient permissions
-if ! git push -u origin release; then
+if ! git push --force -u origin release; then
     exit $?
 fi
 
 # tagging and release genaration is no longer automated
+# Once the created release commit is merged, create a (signed) release tag:
+#
+# . ./dracut-version.sh
+# git tag -s -m "Dracut $DRACUT_VERSION release" "$DRACUT_VERSION"

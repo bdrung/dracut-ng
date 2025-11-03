@@ -22,7 +22,7 @@ check() {
 depends() {
 
     # This module has external dependency on other module(s).
-    echo net-lib kernel-network-modules systemd-sysusers systemd bash initqueue
+    echo net-lib kernel-network-modules systemd-sysusers systemd initqueue
     # Return 0 to include the dependent module(s) in the initramfs.
     return 0
 
@@ -63,7 +63,7 @@ install() {
         "$systemdsystemunitdir"/systemd-networkd-wait-online.service.d/99-dracut.conf
 
     inst_simple "$moddir"/99-default.network \
-        "$systemdnetworkconfdir"/zzzz-dracut-default.network
+        "$systemdnetwork"/zzzz-dracut-default.network
 
     inst_hook cmdline 99 "$moddir"/networkd-config.sh
     inst_hook initqueue/settled 99 "$moddir"/networkd-run.sh
@@ -78,7 +78,7 @@ install() {
     done
 
     # Install the hosts local user configurations if enabled.
-    if [[ ${hostonly-} ]]; then
+    if [[ $hostonly ]]; then
         inst_multiple -H -o \
             "$systemdutilconfdir"/networkd.conf \
             "$systemdutilconfdir/networkd.conf.d/*.conf" \

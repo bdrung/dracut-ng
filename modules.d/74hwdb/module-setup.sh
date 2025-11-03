@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 check() {
-    if [[ $hostonly_mode == "strict" ]]; then
+    if [[ $hostonly ]]; then
         return 255
     fi
 
@@ -16,7 +16,7 @@ install() {
         "${udevdir}"/hwdb.bin
 
     # Install the hosts local user configurations if enabled.
-    if [[ ${hostonly-} ]]; then
+    if [[ $hostonly ]]; then
         inst_multiple -H -o \
             "$udevconfdir"/hwdb.bin
     fi

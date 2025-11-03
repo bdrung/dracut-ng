@@ -2,7 +2,7 @@
 set -eu
 
 # shellcheck disable=SC2034
-TEST_DESCRIPTION="root filesystem on a ext4 filesystem with systemd but without dracut-systemd"
+TEST_DESCRIPTION="root filesystem on a ext4 filesystem with systemd but without dracut-systemd and shell"
 
 test_check() {
     command -v systemctl &> /dev/null
@@ -42,20 +42,19 @@ test_run() {
 
 test_setup() {
     # Create what will eventually be our root filesystem onto an overlay
-    "$DRACUT" -N --keep --tmpdir "$TESTDIR" \
+    call_dracut --tmpdir "$TESTDIR" \
         --add-confdir test-root \
         -f "$TESTDIR"/initramfs.root
-    mkdir -p "$TESTDIR"/overlay/source && mv "$TESTDIR"/dracut.*/initramfs/* "$TESTDIR"/overlay/source && rm -rf "$TESTDIR"/dracut.*
+    mkdir -p "$TESTDIR"/overlay/source
+    mv "$TESTDIR"/dracut.*/initramfs/* "$TESTDIR"/overlay/source
+    rm -rf "$TESTDIR"/dracut.*
 
-    # second, install the files needed to make the root filesystem
     # create an initramfs that will create the target root filesystem.
     # We do it this way so that we do not risk trashing the host mdraid
     # devices, volume groups, encrypted partitions, etc.
-    "$DRACUT" -N -i "$TESTDIR"/overlay / \
+    call_dracut -i "$TESTDIR"/overlay / \
         --add-confdir test-makeroot \
         -i ./create-root.sh /lib/dracut/hooks/initqueue/01-create-root.sh \
-        --nomdadmconf \
-        --no-hostonly-cmdline -N \
         -f "$TESTDIR"/initramfs.makeroot
 
     declare -a disk_args=()
@@ -74,7 +73,7 @@ test_setup() {
 
     # initrd for required kernel modules
     # Improve boot time by generating two initrds. Do not re-compress kernel modules
-    "$DRACUT" \
+    call_dracut \
         --no-compress \
         --kernel-only \
         -m "kernel-modules qemu" \
@@ -88,11 +87,21 @@ test_setup() {
         -m "systemd-initrd base" \
         "$TESTDIR"/initramfs-systemd-initrd
 
-    # verify that dracut systemd services are not included
     (
-        cd "$TESTDIR"/initrd/dracut.*/initramfs/usr/lib/systemd/system/
+        # remove all shell scripts and the shell itself from the generated initramfs
+        # to demonstrate a shell-less optimized boot
+        cd "$TESTDIR"/initrd/dracut.*/initramfs
+        rm "$(realpath bin/sh)"
+        rm bin/sh
+        find . -name "*.sh" -delete
+
+        # verify that dracut systemd services are not included
+        cd usr/lib/systemd/system/
         for f in dracut*.service; do
-            [ -e "$f" ] && echo "unexpected dracut service found: $f" && return 1
+            if [ -e "$f" ]; then
+                echo "unexpected dracut service found: $f"
+                return 1
+            fi
         done
     )
 

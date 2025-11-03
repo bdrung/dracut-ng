@@ -19,8 +19,6 @@ check() {
 # Module dependency requirements.
 depends() {
 
-    # This module has external dependency on other module(s).
-    echo dbus
     # Return 0 to include the dependent module(s) in the initramfs.
     return 0
 
@@ -38,7 +36,7 @@ install() {
         timedatectl
 
     # Install the hosts local user configurations if enabled.
-    if [[ ${hostonly-} ]]; then
+    if [[ $hostonly ]]; then
         inst_multiple -H -o \
             "$systemdsystemconfdir"/systemd-timedated.service \
             "$systemdsystemconfdir/systemd-timedated.service.d/*.conf"

@@ -14,8 +14,6 @@ HAVE_SHFMT ?= $(shell command -v shfmt >/dev/null  2>&1 && echo yes)
 
 -include Makefile.inc
 
-KVERSION ?= $(shell uname -r)
-
 prefix ?= /usr
 libdir ?= ${prefix}/lib
 datadir ?= ${prefix}/share
@@ -26,6 +24,7 @@ mandir ?= ${prefix}/share/man
 CFLAGS ?= -O2 -g -Wall -std=gnu99 -D_FILE_OFFSET_BITS=64 -Wformat -Werror=format-security -Wp,-D_FORTIFY_SOURCE=2
 bashcompletiondir ?= ${datadir}/bash-completion/completions
 pkgconfigdatadir ?= $(datadir)/pkgconfig
+ARCH ?= $(shell uname -m)
 
 configs = \
 	fips/10-fips.conf \
@@ -65,7 +64,7 @@ man8pages = man/dracut.8 \
 
 manpages = $(man1pages) $(man5pages) $(man7pages) $(man8pages)
 
-.PHONY: install clean archive test all check AUTHORS CONTRIBUTORS doc
+.PHONY: install clean distclean archive test all check AUTHORS CONTRIBUTORS doc
 
 all: dracut.pc dracut-install src/skipcpio/skipcpio dracut-util
 
@@ -201,15 +200,23 @@ install: all
 	install -m 0755 dracut-init.sh $(DESTDIR)$(pkglibdir)/dracut-init.sh
 	install -m 0755 dracut-functions.sh $(DESTDIR)$(pkglibdir)/dracut-functions.sh
 	install -m 0755 dracut-version.sh $(DESTDIR)$(pkglibdir)/dracut-version.sh
+	sed -i 's;^\(DRACUT_VERSION=\).*;\1$(DRACUT_FULL_VERSION);' $(DESTDIR)$(pkglibdir)/dracut-version.sh
 	ln -fs dracut-functions.sh $(DESTDIR)$(pkglibdir)/dracut-functions
 	install -m 0755 dracut-logger.sh $(DESTDIR)$(pkglibdir)/dracut-logger.sh
 	install -m 0755 dracut-initramfs-restore.sh $(DESTDIR)$(pkglibdir)/dracut-initramfs-restore
-	cp -arx modules.d $(DESTDIR)$(pkglibdir)
+	for module in modules.d/*; do \
+		if test -L "$$module"; then cp -d "$$module" "$(DESTDIR)$(pkglibdir)/modules.d"; continue; fi; \
+		install -m 0755 -d "$$module" "$(DESTDIR)$(pkglibdir)/$$module"; \
+		for file in "$$module"/*; do \
+			mode=0755; test -x "$$file" || mode=0644; \
+			install -m "$$mode" "$$file" "$(DESTDIR)$(pkglibdir)/$$file"; \
+		done; \
+	done
 	for conf in $(configs); do \
 		install -D -m 0644 "dracut.conf.d/$$conf" "$(DESTDIR)$(pkglibdir)/dracut.conf.d/$$conf"; \
 	done
 	for i in $(configprofile) ; do \
-		cp -arx dracut.conf.d/$$i/* $(DESTDIR)$(pkglibdir)/dracut.conf.d/ ;\
+		install -m 0644 dracut.conf.d/$$i/* $(DESTDIR)$(pkglibdir)/dracut.conf.d/ ;\
 	done
 ifeq ($(enable_test),yes)
 	cp -arx test $(DESTDIR)$(pkglibdir)
@@ -274,9 +281,16 @@ endif
 		rm -rf $(DESTDIR)$(pkglibdir)/test/TEST-[0-9][0-9]-*SYSTEMD* ;\
 		rm -rf $(DESTDIR)$(pkglibdir)/modules.d/*systemd* $(DESTDIR)$(mandir)/*.service.* ; \
 		for i in bluetooth connman dbus* fido2 lvmmerge lvmthinpool-monitor memstrack pcsc pkcs11 rngd squash* tpm2-tss; do \
-			rm -rf $(DESTDIR)$(pkglibdir)/modules.d/[0-9][0-9]$${i}; \
+			rm -r $(DESTDIR)$(pkglibdir)/modules.d/[0-9][0-9]$${i}; \
 		done \
 	fi
+ifneq ($(ARCH),s390x)
+	for f in cio_ignore cms dasd dasd_mod dcssblk zfcp zipl znet; do \
+		rm -r $(DESTDIR)$(pkglibdir)/modules.d/[0-9][0-9]$${f}; \
+	done
+else
+	rm -r $(DESTDIR)$(pkglibdir)/modules.d/[0-9][0-9]warpclock
+endif
 
 clean:
 	$(RM) *~
@@ -293,6 +307,9 @@ clean:
 	$(RM) -rf build/ doc_site/modules/ROOT/pages/man/*
 	$(MAKE) -C test clean
 
+distclean: clean
+	$(RM) Makefile.inc
+
 syncheck:
 	@ret=0;for i in dracut-initramfs-restore.sh modules.d/*/*.sh; do \
                 [ "$${i##*/}" = "module-setup.sh" ] && continue; \
@@ -306,9 +323,9 @@ syncheck:
 	done;exit $$ret
 ifeq ($(HAVE_SHELLCHECK),yes)
 ifeq ($(HAVE_SHFMT),yes)
-	shellcheck $$(shfmt -f .)
+	shellcheck $$(shfmt -f *)
 else
-	find . -name '*.sh' -print0 | xargs -0 shellcheck
+	find * -name '*.sh' -print0 | xargs -0 shellcheck
 endif
 endif
 
