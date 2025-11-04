@@ -60,6 +60,11 @@ Depends: btrfs-progs,
          systemd-timesyncd,
          systemd-ukify
 
+Tests: 50-network
+Architecture: amd64
+Restrictions: allow-stderr, needs-root
+Depends: dracut-network, dracut-test
+
 Tests: 60-nfs
 Architecture: amd64
 Restrictions: allow-stderr, needs-root
