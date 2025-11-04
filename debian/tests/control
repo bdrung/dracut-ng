@@ -57,6 +57,11 @@ Depends: btrfs-progs,
          systemd-timesyncd,
          systemd-ukify
 
+Tests: 44-drivers
+Architecture: amd64
+Restrictions: allow-stderr, needs-root
+Depends: dracut-test, xfsprogs
+
 Tests: 50-network
 Architecture: amd64
 Restrictions: allow-stderr, needs-root
