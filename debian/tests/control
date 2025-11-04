@@ -21,7 +21,6 @@ Architecture: amd64
 Restrictions: allow-stderr, needs-root
 Depends: btrfs-progs,
          busybox,
-         dbus,
          dracut-core,
          dracut-test,
          fdisk,
