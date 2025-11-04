@@ -11,10 +11,7 @@ else
 fi
 
 ARCH=$(dpkg --print-architecture)
-# shellcheck disable=SC2012
-KVERSION=$(cd /lib/modules; ls -1 | tail -1)
 export ARCH
-export KVERSION
 export DRACUT=dracut
 export PKGLIBDIR=/usr/lib/dracut
 
