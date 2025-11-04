@@ -66,7 +66,6 @@ usr/lib/dracut/modules.d/45plymouth
 usr/lib/dracut/modules.d/45simpledrm
 usr/lib/dracut/modules.d/68lvmmerge
 usr/lib/dracut/modules.d/68lvmthinpool-monitor
-usr/lib/dracut/modules.d/68systemd-sysusers
 usr/lib/dracut/modules.d/69cio_ignore
 usr/lib/dracut/modules.d/70bluetooth
 usr/lib/dracut/modules.d/70btrfs
@@ -117,6 +116,7 @@ usr/lib/dracut/modules.d/77pollcdrom
 usr/lib/dracut/modules.d/77selinux
 usr/lib/dracut/modules.d/77syslog
 usr/lib/dracut/modules.d/77usrmount
+usr/lib/dracut/modules.d/78systemd-sysusers
 usr/lib/dracut/modules.d/80base
 usr/lib/dracut/modules.d/81busybox
 usr/lib/dracut/modules.d/84memstrack
