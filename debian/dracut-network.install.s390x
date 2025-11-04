@@ -6,6 +6,7 @@ usr/lib/dracut/modules.d/35network-manager
 usr/lib/dracut/modules.d/40network
 usr/lib/dracut/modules.d/45net-lib
 usr/lib/dracut/modules.d/45url-lib
+usr/lib/dracut/modules.d/68cms
 usr/lib/dracut/modules.d/70kernel-network-modules
 usr/lib/dracut/modules.d/70qemu-net
 usr/lib/dracut/modules.d/70uefi-lib
@@ -17,3 +18,5 @@ usr/lib/dracut/modules.d/74nbd
 usr/lib/dracut/modules.d/74nfs
 usr/lib/dracut/modules.d/74nvmf
 usr/lib/dracut/modules.d/74ssh-client
+usr/lib/dracut/modules.d/74zfcp
+usr/lib/dracut/modules.d/74znet

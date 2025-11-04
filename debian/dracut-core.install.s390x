@@ -22,7 +22,6 @@ usr/lib/dracut/dracut.conf.d/uki-virt
 usr/lib/dracut/modules.d/10bash
 usr/lib/dracut/modules.d/10dash
 usr/lib/dracut/modules.d/10systemd
-usr/lib/dracut/modules.d/10warpclock
 usr/lib/dracut/modules.d/11fips
 usr/lib/dracut/modules.d/11fips-crypto-policies
 usr/lib/dracut/modules.d/11systemd-ac-power
@@ -66,6 +65,7 @@ usr/lib/dracut/modules.d/45plymouth
 usr/lib/dracut/modules.d/45simpledrm
 usr/lib/dracut/modules.d/68lvmmerge
 usr/lib/dracut/modules.d/68lvmthinpool-monitor
+usr/lib/dracut/modules.d/69cio_ignore
 usr/lib/dracut/modules.d/70bluetooth
 usr/lib/dracut/modules.d/70btrfs
 usr/lib/dracut/modules.d/70crypt
@@ -88,6 +88,10 @@ usr/lib/dracut/modules.d/73fido2
 usr/lib/dracut/modules.d/73pcsc
 usr/lib/dracut/modules.d/73pkcs11
 usr/lib/dracut/modules.d/73tpm2-tss
+usr/lib/dracut/modules.d/73zipl
+usr/lib/dracut/modules.d/74dasd
+usr/lib/dracut/modules.d/74dasd_mod
+usr/lib/dracut/modules.d/74dcssblk
 usr/lib/dracut/modules.d/74debug
 usr/lib/dracut/modules.d/74fstab-sys
 usr/lib/dracut/modules.d/74hwdb

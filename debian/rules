@@ -23,17 +23,6 @@ override_dh_auto_install:
 	rm debian/tmp/usr/lib/dracut/modules.d/77dracut-systemd/*.adoc
 	rm debian/tmp/usr/lib/dracut/modules.d/77dracut-systemd/*.8
 
-override_dh_fixperms-indep:
-	dh_fixperms
-ifneq ($(DEB_HOST_ARCH), s390x)
-	for m in 68cms 69cio_ignore 73zipl 74dasd 74dasd_mod \
-		74dcssblk 74zfcp 74znet; do \
-		rm -r debian/*/usr/lib/dracut/modules.d/$$m ; \
-	done
-else
-	rm -r debian/*/usr/lib/dracut/modules.d/00warpclock
-endif
-
 override_dh_auto_test:
 	make -C test check TESTS="80 81"
 	make syncheck
