@@ -72,6 +72,7 @@ usr/lib/dracut/modules.d/70crypt
 usr/lib/dracut/modules.d/70dm
 usr/lib/dracut/modules.d/70fs-lib
 usr/lib/dracut/modules.d/70kernel-modules
+usr/lib/dracut/modules.d/70kernel-modules-export
 usr/lib/dracut/modules.d/70kernel-modules-extra
 usr/lib/dracut/modules.d/70lvm
 usr/lib/dracut/modules.d/70mdraid
