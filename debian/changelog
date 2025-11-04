@@ -1,3 +1,18 @@
+dracut (109-1) UNRELEASED; urgency=medium
+
+  * New upstream release.
+  * Drop patches applied upstream and refresh remaining patches
+  * test: remove test module
+  * fix(debian): lower the ordering number for debian conf
+  * fix(systemd-sysusers): increase ordering from 68 to 78
+  * Provide separate install files for s390x
+  * dracut-core: add new module kernel-modules-export
+  * autopkgtest: test 30-DMSQUASH requires dracut-network now
+  * autopkgtest: run full systemd test separately with a separate set of
+    additional dependencies.
+
+ -- Benjamin Drung <bdrung@debian.org>  Tue, 04 Nov 2025 23:13:31 +0100
+
 dracut (108-8) unstable; urgency=medium
 
   * dracut-test: fix dropped dependencies on i386
