@@ -13,7 +13,6 @@ Build-Depends: debhelper-compat (= 13),
                shellcheck [!i386 !m68k !powerpc !sh4 !x32] <!nocheck>,
                shfmt [!alpha !hppa !i386 !m68k !powerpc !sh4 !sparc64 !x32] <!nocheck>,
                systemd-dev
-Rules-Requires-Root: no
 Standards-Version: 4.7.2
 Vcs-Browser: https://salsa.debian.org/debian/dracut
 Vcs-Git: https://salsa.debian.org/debian/dracut.git
