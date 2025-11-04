@@ -69,7 +69,6 @@ Depends: curl,
          dracut-live,
          dracut-network,
          dracut-test,
-         isc-dhcp-client,
          isc-dhcp-server,
          nfs-kernel-server,
          procps
@@ -77,20 +76,13 @@ Depends: curl,
 Tests: 70-iscsi, 71-iscsi-multi
 Architecture: amd64
 Restrictions: allow-stderr, needs-root
-Depends: dracut-network,
-         dracut-test,
-         isc-dhcp-client,
-         isc-dhcp-server,
-         open-iscsi,
-         procps,
-         tgt
+Depends: dracut-network, dracut-test, isc-dhcp-server, open-iscsi, procps, tgt
 
 Tests: 72-nbd
 Architecture: amd64
 Restrictions: allow-stderr, needs-root
 Depends: dracut-network,
          dracut-test,
-         isc-dhcp-client,
          isc-dhcp-server,
          nbd-client,
          nbd-server,
