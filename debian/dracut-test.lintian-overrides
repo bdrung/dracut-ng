@@ -1,2 +1,4 @@
 # one single directory for modules is needed, see https://github.com/dracutdevs/dracut/issues/2485
 dracut-test: executable-in-usr-lib [usr/lib/dracut/*]
+# package has architecture specific dependencies
+package-contains-no-arch-dependent-files
