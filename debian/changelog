@@ -1,4 +1,4 @@
-dracut (109-1) UNRELEASED; urgency=medium
+dracut (109-1) unstable; urgency=medium
 
   * New upstream release.
   * Drop patches applied upstream and refresh remaining patches
@@ -10,8 +10,17 @@ dracut (109-1) UNRELEASED; urgency=medium
   * autopkgtest: test 30-DMSQUASH requires dracut-network now
   * autopkgtest: run full systemd test separately with a separate set of
     additional dependencies.
+  * autopkgtest: add test 44-drivers and 50-network
+  * debian/rules: drop explicit --configprofile configure option
+  * fix(dracut): decrease logging by default
+  * autopkgtest: drop unneeded dbus and isc-dhcp-client dependency
+  * update-initramfs: drop intermediate initrd.new (see bug 1116593)
+  * autopkgtest: drop setting KVERSION
+  * configure: disable dracut-cpio explicitly
+  * Upgrade debian/watch to version 5
+  * Drop Rules-Requires-Root: no, which is the default now
 
- -- Benjamin Drung <bdrung@debian.org>  Tue, 04 Nov 2025 23:13:31 +0100
+ -- Benjamin Drung <bdrung@debian.org>  Wed, 05 Nov 2025 10:27:36 +0100
 
 dracut (108-8) unstable; urgency=medium
 
