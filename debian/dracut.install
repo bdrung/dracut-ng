@@ -1,0 +1,2 @@
+debian/kernel                   etc
+debian/update-initramfs         usr/sbin
