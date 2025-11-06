@@ -1,3 +1,9 @@
+dracut (109+git20251106-0ubuntu1) resolute; urgency=medium
+
+  * New upstream snapshot.
+
+ -- Benjamin Drung <bdrung@ubuntu.com>  Thu, 06 Nov 2025 12:19:48 +0100
+
 dracut (109-1) unstable; urgency=medium
 
   * New upstream release.
