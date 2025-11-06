@@ -1,6 +1,6 @@
-dracut (109+git20251106-0ubuntu1) resolute; urgency=medium
+dracut (109-1ubuntu1~ppa1) resolute; urgency=medium
 
-  * New upstream snapshot.
+  * Merge
 
  -- Benjamin Drung <bdrung@ubuntu.com>  Thu, 06 Nov 2025 12:19:48 +0100
 
