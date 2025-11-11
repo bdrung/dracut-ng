@@ -1,3 +1,9 @@
+dracut (109-1exp1) experimental; urgency=medium
+
+  * run autopkgtest on all relevant architectures
+
+ -- Benjamin Drung <bdrung@ubuntu.com>  Tue, 11 Nov 2025 15:48:17 +0100
+
 dracut (109-1) unstable; urgency=medium
 
   * New upstream release.
