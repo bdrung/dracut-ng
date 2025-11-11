@@ -6,7 +6,6 @@ usr/bin/dracut-catimages
 usr/bin/lsinitrd
 usr/lib/dracut/dracut-functions
 usr/lib/dracut/dracut-functions.sh
-usr/lib/dracut/dracut-init.sh
 usr/lib/dracut/dracut-initramfs-restore
 usr/lib/dracut/dracut-logger.sh
 usr/lib/dracut/dracut-util
