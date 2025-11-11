@@ -2,3 +2,4 @@ test-skip-using-kernel-install-due-to-bug-1117563.patch
 fix-udev-rules-exclude-udev-rules-from-snapd.patch
 feat-dmsquash-live-autooverlay-support-readlink-from-uuti.patch
 test-use-GNU-dd-instead-of-uutil-s-dd.patch
+test-set-SERVER_DEBUG.patch

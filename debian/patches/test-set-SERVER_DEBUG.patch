@@ -1,0 +1,72 @@
+From: Benjamin Drung <benjamin.drung@canonical.com>
+Date: Tue, 28 Oct 2025 17:48:46 +0100
+Subject: test: set SERVER_DEBUG
+
+---
+ test/TEST-60-NFS/test.sh         | 1 +
+ test/TEST-70-ISCSI/test.sh       | 1 +
+ test/TEST-71-ISCSI-MULTI/test.sh | 1 +
+ test/TEST-72-NBD/test.sh         | 1 +
+ test/test-functions              | 1 +
+ 5 files changed, 5 insertions(+)
+
+diff --git a/test/TEST-60-NFS/test.sh b/test/TEST-60-NFS/test.sh
+index cb350dd..2c08680 100755
+--- a/test/TEST-60-NFS/test.sh
++++ b/test/TEST-60-NFS/test.sh
+@@ -19,6 +19,7 @@ test_check() {
+ #DEBUGFAIL="rd.debug loglevel=7 rd.break=initqueue rd.shell"
+ #SERVER_DEBUG="rd.debug loglevel=7"
+ #SERIAL="unix:/tmp/server.sock"
++SERVER_DEBUG="systemd.journald.forward_to_kmsg=1 systemd.journald.max_level_kmsg=6"
+ 
+ run_server() {
+     # Start server first
+diff --git a/test/TEST-70-ISCSI/test.sh b/test/TEST-70-ISCSI/test.sh
+index 0cfdfde..93c221d 100755
+--- a/test/TEST-70-ISCSI/test.sh
++++ b/test/TEST-70-ISCSI/test.sh
+@@ -9,6 +9,7 @@ TEST_DESCRIPTION="root filesystem over iSCSI with $USE_NETWORK"
+ #DEBUGFAIL="rd.shell rd.break rd.debug loglevel=7 "
+ #SERVER_DEBUG="rd.debug loglevel=7"
+ #SERIAL="tcp:127.0.0.1:9999"
++SERVER_DEBUG="systemd.journald.forward_to_kmsg=1 systemd.journald.max_level_kmsg=6"
+ 
+ run_server() {
+     # Start server first
+diff --git a/test/TEST-71-ISCSI-MULTI/test.sh b/test/TEST-71-ISCSI-MULTI/test.sh
+index 9324cae..4d3cb19 100755
+--- a/test/TEST-71-ISCSI-MULTI/test.sh
++++ b/test/TEST-71-ISCSI-MULTI/test.sh
+@@ -9,6 +9,7 @@ TEST_DESCRIPTION="root filesystem over multiple iSCSI with $USE_NETWORK"
+ #DEBUGFAIL="rd.shell rd.break rd.debug loglevel=7 "
+ #SERVER_DEBUG="rd.debug loglevel=7"
+ #SERIAL="tcp:127.0.0.1:9999"
++SERVER_DEBUG="systemd.journald.forward_to_kmsg=1 systemd.journald.max_level_kmsg=6"
+ 
+ run_server() {
+     # Start server first
+diff --git a/test/TEST-72-NBD/test.sh b/test/TEST-72-NBD/test.sh
+index 10e2347..a6736f7 100755
+--- a/test/TEST-72-NBD/test.sh
++++ b/test/TEST-72-NBD/test.sh
+@@ -11,6 +11,7 @@ TEST_DESCRIPTION="root filesystem on NBD with $USE_NETWORK"
+ #DEBUGFAIL="rd.shell rd.break rd.debug systemd.log_target=console loglevel=7 systemd.log_level=debug"
+ #SERVER_DEBUG="rd.debug loglevel=7"
+ #SERIAL="tcp:127.0.0.1:9999"
++SERVER_DEBUG="systemd.journald.forward_to_kmsg=1 systemd.journald.max_level_kmsg=6"
+ 
+ test_check() {
+     if ! type -p nbd-server &> /dev/null; then
+diff --git a/test/test-functions b/test/test-functions
+index 1b233d8..60f7fb7 100644
+--- a/test/test-functions
++++ b/test/test-functions
+@@ -21,6 +21,7 @@ if [[ -f /etc/machine-id ]]; then
+ fi
+ [ -z "${TOKEN-}" ] && . /etc/os-release && TOKEN="$ID"
+ 
++TEST_KERNEL_CMDLINE+=" systemd.journald.forward_to_kmsg=1 systemd.journald.max_level_kmsg=6"
+ TEST_KERNEL_CMDLINE+=" root=LABEL=dracut panic=1 oops=panic softlockup_panic=1 systemd.crash_reboot ${DEBUGFAIL-} "
+ 
+ if [[ ${V-} != "1" && ${V-} != "2" ]]; then
