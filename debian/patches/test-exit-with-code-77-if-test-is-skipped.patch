@@ -8,10 +8,10 @@ Forwarded: https://github.com/dracut-ng/dracut-ng/pull/1859
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/test/test-functions b/test/test-functions
-index 1b233d8..63d1a27 100644
+index 2096440..1fafd3c 100644
 --- a/test/test-functions
 +++ b/test/test-functions
-@@ -308,7 +308,7 @@ while (($# > 0)); do
+@@ -302,7 +302,7 @@ while (($# > 0)); do
                      cat test${TEST_RUN_ID:+-$TEST_RUN_ID}.log
                  fi
                  echo -e "TEST: $TEST_DESCRIPTION " "$COLOR_WARNING" "[SKIPPED]" "$COLOR_NORMAL"
