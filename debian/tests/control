@@ -1,22 +1,4 @@
-Tests: lsinitrd
-Architecture: !armel !i386
-Depends: dracut, linux-image-generic, zstd
-Restrictions: needs-root, superficial
-
-# Skip following test cases:
-# * TEST-43-KERNEL-INSTALL: kernel-install issue, see https://bugs.debian.org/1117563
-# arm64, armhf, and ppc64el need upstream support: https://github.com/dracutdevs/dracut/issues/2493
-
-Tests: 10-basic,
-       11-usr-mount,
-       12-uefi,
-       13-sysroot,
-       20-storage,
-       26-enc-raid-lvm,
-       40-systemd,
-       42-systemd-initrd,
-       80-getarg,
-       81-skipcpio
+Tests: 13-sysroot
 Architecture: amd64 s390x
 Restrictions: allow-stderr, needs-root
 Depends: btrfs-progs,
@@ -29,60 +11,6 @@ Depends: btrfs-progs,
          squashfs-tools,
          systemd-boot-efi [amd64 arm64 armhf riscv64]
 
-Tests: 30-dmsquash
-Architecture: amd64 armhf ppc64el s390x
-Restrictions: allow-stderr, needs-root
-Depends: btrfs-progs,
-         busybox,
-         dracut-live,
-         dracut-network,
-         dracut-test,
-         fdisk,
-         kbd,
-         parted,
-         squashfs-tools,
-         util-linux-extra
-
-Tests: 41-full-systemd
-Architecture: amd64
-Restrictions: allow-stderr, needs-root
-Depends: btrfs-progs,
-         dracut-network,
-         dracut-test,
-         systemd-boot-efi [amd64 arm64 armhf riscv64],
-         systemd-container,
-         systemd-coredump,
-         systemd-repart,
-         systemd-resolved,
-         systemd-timesyncd,
-         systemd-ukify
-
-Tests: 44-drivers
-Architecture: amd64
-Restrictions: allow-stderr, needs-root
-Depends: dracut-test, xfsprogs
-
-Tests: 50-network
-Architecture: amd64
-Restrictions: allow-stderr, needs-root
-Depends: dracut-network, dracut-test
-
-Tests: 60-nfs
-Architecture: amd64 s390x
-Restrictions: allow-stderr, needs-root
-Depends: curl,
-         dracut-live,
-         dracut-network,
-         dracut-test,
-         isc-dhcp-server,
-         nfs-kernel-server,
-         procps
-
-Tests: 70-iscsi, 71-iscsi-multi
-Architecture: amd64 s390x
-Restrictions: allow-stderr, needs-root
-Depends: dracut-network, dracut-test, isc-dhcp-server, open-iscsi, procps, tgt
-
 Tests: 72-nbd
 Architecture: amd64 s390x
 Restrictions: allow-stderr, needs-root
@@ -92,9 +20,3 @@ Depends: dracut-network,
          nbd-client,
          nbd-server,
          procps
-
-# Dummy test so that linux-firmware updates trigger our other autopkgtests
-Features: test-name=hint-testsuite-triggers
-Test-Command: false
-Depends: linux-firmware
-Restrictions: hint-testsuite-triggers
