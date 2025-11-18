@@ -3,9 +3,11 @@
 #export DH_VERBOSE=1
 DPKG_EXPORT_BUILDTOOLS=1
 -include /usr/share/dpkg/buildtools.mk
+include /usr/share/dpkg/architecture.mk
 include /usr/share/dpkg/pkg-info.mk
 
 export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+export ARCH=$(DEB_HOST_ARCH_CPU)
 export DRACUT_MAIN_VERSION=$(DEB_VERSION_UPSTREAM_REVISION)
 export DRACUT_FULL_VERSION=$(DEB_VERSION)
 
