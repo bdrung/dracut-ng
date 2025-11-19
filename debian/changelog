@@ -1,3 +1,22 @@
+dracut (109-2) unstable; urgency=medium
+
+  * Fix FTCBFS: Export ARCH for make (Closes: #1120911)
+  * fix(systemd-networkd): install and enable
+    systemd-networkd-resolve-hook.socket (Closes: #1120955)
+  * dracut-live: depend on parted for dmsquash-live-autooverlay
+  * autopkgtest: remove unneeded dependencies
+  * autopkgtest: run kernel-install tests again after #1117563 got fixed
+  * Add Apport hook to include all packages with dracut modules in report
+    (LP: #2081183)
+  * test: exit with code 77 if test is skipped
+  * dracut-core: demote *cryptsetup, dmsetup, kpartx, lvm2, mdadm to suggests
+    These packages should be installed in case they are needed for the disk
+    setup but should not installed by default via Recommends.
+  * test: set console cmdline depending on the architecture
+  * run autopkgtest on all relevant architectures (LP: #2115532)
+
+ -- Benjamin Drung <bdrung@debian.org>  Wed, 19 Nov 2025 17:15:22 +0100
+
 dracut (109-1) unstable; urgency=medium
 
   * New upstream release.
