@@ -2,3 +2,6 @@ udevsettle
 debian-initramfs-post-update.patch
 fix-systemd-networkd-install-and-enable-systemd-networkd-.patch
 test-exit-with-code-77-if-test-is-skipped.patch
+test-run-qemu-do-not-expect-initrd-as-first-parameter.patch
+test-run-qemu-include-in-ARGS-array.patch
+test-set-console-cmdline-depending-on-the-architecture.patch

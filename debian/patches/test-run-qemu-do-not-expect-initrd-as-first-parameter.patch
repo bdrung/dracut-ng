@@ -1,0 +1,50 @@
+From: Benjamin Drung <benjamin.drung@canonical.com>
+Date: Wed, 19 Nov 2025 04:14:28 +0100
+Subject: test(run-qemu): do not expect -initrd as first parameter
+
+Check all parameters for `-initrd` instead of expecting it to be the
+first parameter.
+
+Forwarded: https://github.com/dracut-ng/dracut-ng/pull/1860
+---
+ test/run-qemu | 20 ++++++++++++++------
+ 1 file changed, 14 insertions(+), 6 deletions(-)
+
+diff --git a/test/run-qemu b/test/run-qemu
+index 073d69b..cc1fab6 100755
+--- a/test/run-qemu
++++ b/test/run-qemu
+@@ -7,6 +7,17 @@ export PATH=/usr/sbin:/usr/bin:/sbin:/bin
+ ARCH="${ARCH-$(uname -m)}"
+ QEMU_CPU="${QEMU_CPU:-max}"
+ 
++get_initrd() {
++    local next
++    for i in $(seq 1 $(($# - 1))); do
++        if [[ ${!i} == "-initrd" ]]; then
++            next=$((i + 1))
++            echo "${!next}"
++            return
++        fi
++    done
++}
++
+ quote_args() {
+     local arg args=()
+     for arg in "$@"; do
+@@ -106,12 +117,9 @@ if [[ $ARCH != "s390x" ]]; then
+ fi
+ 
+ # only set -kernel if -initrd is specified
+-if [[ $* == *-initrd* ]]; then
+-    for arg in "$@"; do
+-        [[ $1 == *-initrd* ]] && break
+-    done
+-
+-    KVERSION=$(lsinitrd "$arg" | grep modules.dep | head -1 | rev | cut -d'/' -f2 | rev)
++initrd=$(get_initrd "$@")
++if [[ -n $initrd ]]; then
++    KVERSION=$(lsinitrd "$initrd" | grep modules.dep | head -1 | rev | cut -d'/' -f2 | rev)
+     set_vmlinux_env
+     ARGS+=(-kernel "$VMLINUZ")
+ fi
