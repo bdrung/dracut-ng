@@ -1,0 +1,35 @@
+From: Benjamin Drung <benjamin.drung@canonical.com>
+Date: Wed, 19 Nov 2025 04:20:39 +0100
+Subject: test(run-qemu): include $@ in ARGS array
+
+To simplify the code and as preparation for the following commit,
+include `$@` in the `ARGS` array.
+
+Forwarded: https://github.com/dracut-ng/dracut-ng/pull/1860
+---
+ test/run-qemu | 8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
+
+diff --git a/test/run-qemu b/test/run-qemu
+index cc1fab6..4af8275 100755
+--- a/test/run-qemu
++++ b/test/run-qemu
+@@ -116,13 +116,15 @@ if [[ $ARCH != "s390x" ]]; then
+     ARGS+=(-device i6300esb)
+ fi
+ 
++ARGS+=("$@")
++
+ # only set -kernel if -initrd is specified
+-initrd=$(get_initrd "$@")
++initrd=$(get_initrd "${ARGS[@]}")
+ if [[ -n $initrd ]]; then
+     KVERSION=$(lsinitrd "$initrd" | grep modules.dep | head -1 | rev | cut -d'/' -f2 | rev)
+     set_vmlinux_env
+     ARGS+=(-kernel "$VMLINUZ")
+ fi
+ 
+-echo "${0##*/}: $BIN $(quote_args "${ARGS[@]}") $(quote_args "$@")"
+-exec "$BIN" "${ARGS[@]}" "$@"
++echo "${0##*/}: $BIN $(quote_args "${ARGS[@]}")"
++exec "$BIN" "${ARGS[@]}"
