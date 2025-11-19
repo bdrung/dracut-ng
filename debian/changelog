@@ -1,3 +1,9 @@
+dracut (109+git20251119-0ubuntu1) resolute; urgency=medium
+
+  * New upstream snapshot.
+
+ -- Benjamin Drung <bdrung@ubuntu.com>  Wed, 19 Nov 2025 23:40:44 +0100
+
 dracut (109-2) unstable; urgency=medium
 
   * Fix FTCBFS: Export ARCH for make (Closes: #1120911)
