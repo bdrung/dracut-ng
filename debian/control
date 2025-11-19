@@ -108,7 +108,7 @@ Description: dracut is an event driven initramfs infrastructure (squashfs module
 Package: dracut-live
 Architecture: all
 Multi-Arch: foreign
-Depends: dmsetup, dracut-core, ${misc:Depends}
+Depends: dmsetup, dracut-core, parted, ${misc:Depends}
 Recommends: dracut-network
 Suggests: isomd5sum
 Breaks: dracut-core (<< 050-1), dracut-network (<< 050-1)

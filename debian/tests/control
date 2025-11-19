@@ -39,7 +39,6 @@ Depends: btrfs-progs,
          dracut-test,
          fdisk,
          kbd,
-         parted,
          squashfs-tools,
          util-linux-extra
 
