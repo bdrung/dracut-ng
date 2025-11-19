@@ -3,9 +3,6 @@ Architecture: !armel !i386
 Depends: dracut, linux-image-generic, zstd
 Restrictions: needs-root, superficial
 
-# Skip following test cases:
-# arm64, armhf, ppc64el, and s390x need upstream support: https://github.com/dracutdevs/dracut/issues/2493
-
 Tests: 10-basic,
        13-sysroot,
        40-systemd,
@@ -13,15 +10,16 @@ Tests: 10-basic,
        43-kernel-install,
        80-getarg,
        81-skipcpio
-Architecture: amd64
+Architecture: !armel !i386 !riscv64
 Restrictions: allow-stderr, needs-root
 Depends: dracut-test
 
 Tests: 11-usr-mount
-Architecture: amd64
+Architecture: !armel !i386 !riscv64
 Restrictions: allow-stderr, needs-root
 Depends: btrfs-progs, dracut-test
 
+# Fails on arm64: https://github.com/dracut-ng/dracut-ng/issues/1862
 Tests: 12-uefi
 Architecture: amd64
 Restrictions: allow-stderr, needs-root
@@ -34,12 +32,12 @@ Depends: dracut-test,
          systemd-ukify
 
 Tests: 20-storage, 26-enc-raid-lvm
-Architecture: amd64
+Architecture: !armel !i386 !riscv64
 Restrictions: allow-stderr, needs-root
 Depends: cryptsetup, dracut-test, lvm2, mdadm, systemd-cryptsetup
 
 Tests: 30-dmsquash
-Architecture: amd64
+Architecture: !armel !i386 !riscv64
 Restrictions: allow-stderr, needs-root
 Depends: dracut-live,
          dracut-network,
@@ -48,8 +46,9 @@ Depends: dracut-live,
          squashfs-tools,
          util-linux-extra
 
+# Fails on arm64: https://github.com/dracut-ng/dracut-ng/issues/1861
 Tests: 41-full-systemd
-Architecture: amd64
+Architecture: !arm64 !armel !i386 !riscv64
 Restrictions: allow-stderr, needs-root
 Depends: btrfs-progs,
          cryptsetup,
@@ -63,17 +62,17 @@ Depends: btrfs-progs,
          systemd-timesyncd
 
 Tests: 44-drivers
-Architecture: amd64
+Architecture: !armel !i386 !riscv64
 Restrictions: allow-stderr, needs-root
 Depends: dracut-test, xfsprogs
 
 Tests: 50-network
-Architecture: amd64
+Architecture: !armel !i386 !riscv64
 Restrictions: allow-stderr, needs-root
 Depends: dracut-network, dracut-test
 
 Tests: 60-nfs
-Architecture: amd64
+Architecture: !armel !i386 !riscv64
 Restrictions: allow-stderr, needs-root
 Depends: curl,
          dracut-live,
@@ -84,7 +83,7 @@ Depends: curl,
          procps
 
 Tests: 70-iscsi, 71-iscsi-multi
-Architecture: amd64
+Architecture: !armel !i386 !riscv64
 Restrictions: allow-stderr, needs-root
 Depends: cryptsetup,
          dracut-network,
@@ -98,7 +97,7 @@ Depends: cryptsetup,
          tgt
 
 Tests: 72-nbd
-Architecture: amd64
+Architecture: !armel !i386 !riscv64
 Restrictions: allow-stderr, needs-root
 Depends: cryptsetup,
          dracut-network,
