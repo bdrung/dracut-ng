@@ -1,4 +1,3 @@
 udevsettle
 debian-initramfs-post-update.patch
-test-skip-using-kernel-install-due-to-bug-1117563.patch
 fix-systemd-networkd-install-and-enable-systemd-networkd-.patch

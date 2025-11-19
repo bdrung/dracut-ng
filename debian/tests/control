@@ -4,7 +4,6 @@ Depends: dracut, linux-image-generic, zstd
 Restrictions: needs-root, superficial
 
 # Skip following test cases:
-# * TEST-43-KERNEL-INSTALL: kernel-install issue, see https://bugs.debian.org/1117563
 # arm64, armhf, ppc64el, and s390x need upstream support: https://github.com/dracutdevs/dracut/issues/2493
 
 Tests: 10-basic,
@@ -13,6 +12,7 @@ Tests: 10-basic,
        26-enc-raid-lvm,
        40-systemd,
        42-systemd-initrd,
+       43-kernel-install,
        80-getarg,
        81-skipcpio
 Architecture: amd64
@@ -27,7 +27,7 @@ Depends: btrfs-progs, dracut-test
 Tests: 12-uefi
 Architecture: amd64
 Restrictions: allow-stderr, needs-root
-Depends: dracut-test, kbd, squashfs-tools, systemd-boot-efi
+Depends: dracut-test, kbd, squashfs-tools, systemd-boot-efi, systemd-ukify
 
 Tests: 30-dmsquash
 Architecture: amd64

@@ -136,7 +136,7 @@ Depends: bsdextrautils,
          qemu-efi-arm [armhf],
          qemu-system-native [!i386],
          seabios [ppc64el],
-         systemd,
+         systemd (>= 259~rc1),
          systemd-cryptsetup,
          zstd,
          ${misc:Depends}
