@@ -1,4 +1,5 @@
 debian/09console-setup          usr/lib/dracut/modules.d
+debian/source_dracut.py         usr/share/apport/package-hooks
 etc/dracut.conf                 etc
 usr/bin/dracut
 usr/bin/dracut-catimages
