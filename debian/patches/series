@@ -6,3 +6,4 @@ test-run-qemu-do-not-expect-initrd-as-first-parameter.patch
 test-run-qemu-include-in-ARGS-array.patch
 test-set-console-cmdline-depending-on-the-architecture.patch
 test-forward-journald-logs-to-console-in-V-1-or-V-2.patch
+test-replace-rev-command-by-sed.patch

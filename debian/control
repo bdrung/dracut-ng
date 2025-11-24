@@ -114,8 +114,7 @@ Description: dracut is an event driven initramfs infrastructure (live image modu
 Package: dracut-test
 Architecture: any
 Multi-Arch: foreign
-Depends: bsdextrautils,
-         dracut-core,
+Depends: dracut-core,
          ipxe-qemu,
          linux-image-generic [!i386],
          make,
