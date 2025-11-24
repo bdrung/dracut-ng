@@ -1,0 +1,83 @@
+From: Benjamin Drung <benjamin.drung@canonical.com>
+Date: Tue, 18 Nov 2025 19:44:04 +0100
+Subject: test: forward journald logs to console in V=1 or V=2
+
+To ease debugging, forward systemd journald logs to console when `V=1`
+or `V=2` is set.
+
+Forwarded: https://github.com/dracut-ng/dracut-ng/pull/1857
+---
+ test/TEST-60-NFS/test.sh         | 2 +-
+ test/TEST-70-ISCSI/test.sh       | 2 +-
+ test/TEST-71-ISCSI-MULTI/test.sh | 2 +-
+ test/TEST-72-NBD/test.sh         | 2 +-
+ test/test-functions              | 4 ++++
+ 5 files changed, 8 insertions(+), 4 deletions(-)
+
+diff --git a/test/TEST-60-NFS/test.sh b/test/TEST-60-NFS/test.sh
+index 10d32bb..2f3f7ec 100755
+--- a/test/TEST-60-NFS/test.sh
++++ b/test/TEST-60-NFS/test.sh
+@@ -33,7 +33,7 @@ run_server() {
+         -net socket,listen=127.0.0.1:12320 \
+         -net nic,macaddr=52:54:00:12:34:56,model=virtio \
+         -serial "${SERIAL:-"file:$TESTDIR/server.log"}" \
+-        -append "panic=1 oops=panic softlockup_panic=1 root=LABEL=dracut rootfstype=ext4 rw ${SERVER_DEBUG-}" \
++        -append "panic=1 oops=panic softlockup_panic=1 root=LABEL=dracut rootfstype=ext4 rw systemd.journald.forward_to_console=1 ${SERVER_DEBUG-}" \
+         -pidfile "$TESTDIR"/server.pid -daemonize \
+         -initrd "$TESTDIR"/initramfs.server
+     chmod 644 "$TESTDIR"/server.pid
+diff --git a/test/TEST-70-ISCSI/test.sh b/test/TEST-70-ISCSI/test.sh
+index 7e7b3c1..aba9c11 100755
+--- a/test/TEST-70-ISCSI/test.sh
++++ b/test/TEST-70-ISCSI/test.sh
+@@ -27,7 +27,7 @@ run_server() {
+         -net nic,macaddr=52:54:00:12:34:56,model=virtio \
+         -net nic,macaddr=52:54:00:12:34:57,model=virtio \
+         -net socket,listen=127.0.0.1:12330 \
+-        -append "panic=1 oops=panic softlockup_panic=1 quiet root=/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_serverroot rw ${SERVER_DEBUG-}" \
++        -append "panic=1 oops=panic softlockup_panic=1 quiet root=/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_serverroot rw systemd.journald.forward_to_console=1 ${SERVER_DEBUG-}" \
+         -pidfile "$TESTDIR"/server.pid -daemonize \
+         -initrd "$TESTDIR"/initramfs.server
+     chmod 644 "$TESTDIR"/server.pid
+diff --git a/test/TEST-71-ISCSI-MULTI/test.sh b/test/TEST-71-ISCSI-MULTI/test.sh
+index 7102130..3ca491c 100755
+--- a/test/TEST-71-ISCSI-MULTI/test.sh
++++ b/test/TEST-71-ISCSI-MULTI/test.sh
+@@ -27,7 +27,7 @@ run_server() {
+         -net nic,macaddr=52:54:00:12:34:56,model=virtio \
+         -net nic,macaddr=52:54:00:12:34:57,model=virtio \
+         -net socket,listen=127.0.0.1:12331 \
+-        -append "panic=1 oops=panic softlockup_panic=1 systemd.crash_reboot root=/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_serverroot rootfstype=ext4 rw ${SERVER_DEBUG-}" \
++        -append "panic=1 oops=panic softlockup_panic=1 systemd.crash_reboot root=/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_serverroot rootfstype=ext4 rw systemd.journald.forward_to_console=1 ${SERVER_DEBUG-}" \
+         -pidfile "$TESTDIR"/server.pid -daemonize \
+         -initrd "$TESTDIR"/initramfs.server
+     chmod 644 "$TESTDIR"/server.pid
+diff --git a/test/TEST-72-NBD/test.sh b/test/TEST-72-NBD/test.sh
+index 89be1d7..2336f6b 100755
+--- a/test/TEST-72-NBD/test.sh
++++ b/test/TEST-72-NBD/test.sh
+@@ -36,7 +36,7 @@ run_server() {
+         -serial "${SERIAL:-"file:$TESTDIR/server.log"}" \
+         -net nic,macaddr=52:54:00:12:34:56,model=virtio \
+         -net socket,listen=127.0.0.1:12340 \
+-        -append "panic=1 oops=panic softlockup_panic=1 rd.luks=0 systemd.crash_reboot quiet root=/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_serverroot rootfstype=ext4 rw ${SERVER_DEBUG-}" \
++        -append "panic=1 oops=panic softlockup_panic=1 rd.luks=0 systemd.crash_reboot quiet root=/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_serverroot rootfstype=ext4 rw systemd.journald.forward_to_console=1 ${SERVER_DEBUG-}" \
+         -pidfile "$TESTDIR"/server.pid -daemonize \
+         -initrd "$TESTDIR"/initramfs.server
+     chmod 644 "$TESTDIR"/server.pid
+diff --git a/test/test-functions b/test/test-functions
+index 1fafd3c..c0c55bc 100644
+--- a/test/test-functions
++++ b/test/test-functions
+@@ -23,6 +23,10 @@ fi
+ 
+ TEST_KERNEL_CMDLINE+=" root=LABEL=dracut panic=1 oops=panic softlockup_panic=1 systemd.crash_reboot ${DEBUGFAIL-} "
+ 
++if [[ ${V-} == "1" || ${V-} == "2" ]]; then
++    TEST_KERNEL_CMDLINE+="systemd.journald.forward_to_console=1 "
++fi
++
+ if [[ ${V-} != "1" && ${V-} != "2" ]]; then
+     TEST_KERNEL_CMDLINE+="quiet "
+ fi
