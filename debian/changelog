@@ -1,3 +1,18 @@
+dracut (109-3) unstable; urgency=medium
+
+  * test:
+    - forward journald logs to console in V=1 or V=2
+    - replace rev command by sed and drop bsdextrautils dependency
+    - use UEFI for QEMU when available and support UEFI on ARM
+  * dracut-test: ovmf is only needed for amd64
+  * Drop debian-initramfs-post-update.patch because the update-initramfs
+    script (shipped by dracut) invokes the bootloader hooks from
+    /etc/initramfs/post-update.d. (Closes: #1091455)
+  * autopkgtest: Skip failing (hanging) 41-full-systemd on s390x
+    (Closes: #1120955)
+
+ -- Benjamin Drung <bdrung@debian.org>  Tue, 25 Nov 2025 19:40:40 +0100
+
 dracut (109-2) unstable; urgency=medium
 
   * Fix FTCBFS: Export ARCH for make (Closes: #1120911)
