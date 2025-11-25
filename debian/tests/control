@@ -46,8 +46,9 @@ Depends: dracut-live,
          squashfs-tools,
          util-linux-extra
 
+# Fails on s390x: https://github.com/dracut-ng/dracut-ng/issues/1873
 Tests: 41-full-systemd
-Architecture: !armel !i386 !riscv64
+Architecture: !armel !i386 !riscv64 !s390x
 Restrictions: allow-stderr, needs-root
 Depends: btrfs-progs,
          cryptsetup,
