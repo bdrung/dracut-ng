@@ -1,0 +1,65 @@
+From: Benjamin Drung <benjamin.drung@canonical.com>
+Date: Tue, 25 Nov 2025 11:21:28 +0100
+Subject: test(run-qemu): support UEFI on ARM
+
+The OVMF firmware files are builds of EDK II for 64-bit x86 virtual
+machines. They do not work on other architectures.
+
+So search for AAVMF files on ARM. Remove the `cfi.pflash01` driver
+setting because it does not work on Ubuntu arm64 and `readonly=on` is
+already set for the firmware file.
+
+Fixes: https://github.com/dracut-ng/dracut-ng/issues/1861
+Forwarded: https://github.com/dracut-ng/dracut-ng/pull/1872
+---
+ test/run-qemu | 30 +++++++++++++++++++++---------
+ 1 file changed, 21 insertions(+), 9 deletions(-)
+
+diff --git a/test/run-qemu b/test/run-qemu
+index f838728..ec12a75 100755
+--- a/test/run-qemu
++++ b/test/run-qemu
+@@ -85,13 +85,26 @@ set_vmlinux_env() {
+ 
+ # Search for the UEFI firmware file
+ uefi_code() {
+-    for path in \
+-        "/usr/share/OVMF/OVMF_CODE.fd" \
+-        "/usr/share/OVMF/OVMF_CODE_4M.fd" \
+-        "/usr/share/edk2/x64/OVMF_CODE.fd" \
+-        "/usr/share/edk2/x64/OVMF_CODE.4m.fd" \
+-        "/usr/share/edk2-ovmf/OVMF_CODE.fd" \
+-        "/usr/share/qemu/ovmf-x86_64-4m.bin"; do
++    local paths=()
++    case "$ARCH" in
++        aarch64 | arm64)
++            paths=("/usr/share/AAVMF/AAVMF_CODE.no-secboot.fd")
++            ;;
++        amd64 | x86_64)
++            paths=(
++                "/usr/share/OVMF/OVMF_CODE.fd"
++                "/usr/share/OVMF/OVMF_CODE_4M.fd"
++                "/usr/share/edk2/x64/OVMF_CODE.fd"
++                "/usr/share/edk2/x64/OVMF_CODE.4m.fd"
++                "/usr/share/edk2-ovmf/OVMF_CODE.fd"
++                "/usr/share/qemu/ovmf-x86_64-4m.bin"
++            )
++            ;;
++        arm | armhf | armv7l)
++            paths=("/usr/share/AAVMF/AAVMF32_CODE.fd")
++            ;;
++    esac
++    for path in "${paths[@]}"; do
+         [[ -s $path ]] && echo -n "$path" && return
+     done
+ }
+@@ -141,8 +154,7 @@ esac
+ 
+ uefi_code_file=$(uefi_code)
+ if [[ -n $uefi_code_file ]]; then
+-    ARGS+=(-drive "if=pflash,format=raw,readonly=on,unit=0,file=$uefi_code_file"
+-        -global "driver=cfi.pflash01,property=secure,value=on")
++    ARGS+=(-drive "if=pflash,format=raw,readonly=on,unit=0,file=$uefi_code_file")
+ fi
+ 
+ # Provide rng device sourcing the hosts /dev/urandom and other standard parameters

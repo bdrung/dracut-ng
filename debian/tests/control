@@ -46,9 +46,8 @@ Depends: dracut-live,
          squashfs-tools,
          util-linux-extra
 
-# Fails on arm64: https://github.com/dracut-ng/dracut-ng/issues/1861
 Tests: 41-full-systemd
-Architecture: !arm64 !armel !i386 !riscv64
+Architecture: !armel !i386 !riscv64
 Restrictions: allow-stderr, needs-root
 Depends: btrfs-progs,
          cryptsetup,

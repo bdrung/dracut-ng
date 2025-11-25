@@ -1,0 +1,111 @@
+From: Benjamin Drung <benjamin.drung@canonical.com>
+Date: Tue, 25 Nov 2025 11:16:52 +0100
+Subject: test: use UEFI for QEMU when available
+
+Move the `ovmf_code` function and related code to `run-qemu` and always
+use UEFI when available. This is a preperation for the following commit.
+
+Forwarded: https://github.com/dracut-ng/dracut-ng/pull/1872
+---
+ test/TEST-12-UEFI/test.sh |  7 +++----
+ test/run-qemu             | 24 ++++++++++++++++++++++++
+ test/test-functions       | 12 ------------
+ 3 files changed, 27 insertions(+), 16 deletions(-)
+
+diff --git a/test/TEST-12-UEFI/test.sh b/test/TEST-12-UEFI/test.sh
+index 7107dee..990a0b5 100755
+--- a/test/TEST-12-UEFI/test.sh
++++ b/test/TEST-12-UEFI/test.sh
+@@ -16,7 +16,8 @@ test_check() {
+         return 1
+     fi
+ 
+-    if [[ -z "$(ovmf_code)" ]]; then
++    if ! "$testdir"/run-qemu --check-uefi; then
++        echo "No UEFI firmware (for QEMU) found" >&2
+         return 1
+     fi
+ }
+@@ -34,9 +35,7 @@ client_run() {
+ 
+     test_marker_reset
+     "$testdir"/run-qemu "${disk_args[@]}" -net none \
+-        -drive file=fat:rw:"$TESTDIR"/ESP,format=vvfat,label=EFI \
+-        -global driver=cfi.pflash01,property=secure,value=on \
+-        -drive if=pflash,format=raw,unit=0,file="$(ovmf_code)",readonly=on
++        -drive file=fat:rw:"$TESTDIR"/ESP,format=vvfat,label=EFI
+     test_marker_check
+ }
+ 
+diff --git a/test/run-qemu b/test/run-qemu
+index cf110d3..f838728 100755
+--- a/test/run-qemu
++++ b/test/run-qemu
+@@ -83,6 +83,19 @@ set_vmlinux_env() {
+     fi
+ }
+ 
++# Search for the UEFI firmware file
++uefi_code() {
++    for path in \
++        "/usr/share/OVMF/OVMF_CODE.fd" \
++        "/usr/share/OVMF/OVMF_CODE_4M.fd" \
++        "/usr/share/edk2/x64/OVMF_CODE.fd" \
++        "/usr/share/edk2/x64/OVMF_CODE.4m.fd" \
++        "/usr/share/edk2-ovmf/OVMF_CODE.fd" \
++        "/usr/share/qemu/ovmf-x86_64-4m.bin"; do
++        [[ -s $path ]] && echo -n "$path" && return
++    done
++}
++
+ [[ -x /usr/bin/qemu ]] && BIN=/usr/bin/qemu && ARGS=(-cpu "$QEMU_CPU")
+ (lsmod | grep -q '^kqemu ') && BIN=/usr/bin/qemu && ARGS=(-kernel-kqemu -cpu host)
+ [[ -z ${NO_KVM-} && -c /dev/kvm && -x /usr/bin/kvm ]] && BIN=/usr/bin/kvm && ARGS=(-cpu host)
+@@ -97,6 +110,11 @@ set_vmlinux_env() {
+     exit 1
+ }
+ 
++if test "${1-}" = "--check-uefi"; then
++    test -n "$(uefi_code)"
++    exit 0
++fi
++
+ if test "${1-}" = "--supports"; then
+     option="$2"
+     "$BIN" -help | grep -q "^$option"
+@@ -121,6 +139,12 @@ case "$ARCH" in
+         ;;
+ esac
+ 
++uefi_code_file=$(uefi_code)
++if [[ -n $uefi_code_file ]]; then
++    ARGS+=(-drive "if=pflash,format=raw,readonly=on,unit=0,file=$uefi_code_file"
++        -global "driver=cfi.pflash01,property=secure,value=on")
++fi
++
+ # Provide rng device sourcing the hosts /dev/urandom and other standard parameters
+ ARGS+=(-smp 2 -m "${MEMORY-1024}" -nodefaults -vga none -display none -no-reboot -watchdog-action poweroff -device virtio-rng-pci)
+ 
+diff --git a/test/test-functions b/test/test-functions
+index 5b8d6fc..259eacd 100644
+--- a/test/test-functions
++++ b/test/test-functions
+@@ -112,18 +112,6 @@ wait_for_server_startup() {
+     fi
+ }
+ 
+-ovmf_code() {
+-    for path in \
+-        "/usr/share/OVMF/OVMF_CODE.fd" \
+-        "/usr/share/OVMF/OVMF_CODE_4M.fd" \
+-        "/usr/share/edk2/x64/OVMF_CODE.fd" \
+-        "/usr/share/edk2/x64/OVMF_CODE.4m.fd" \
+-        "/usr/share/edk2-ovmf/OVMF_CODE.fd" \
+-        "/usr/share/qemu/ovmf-x86_64-4m.bin"; do
+-        [[ -s $path ]] && echo -n "$path" && return
+-    done
+-}
+-
+ command -v test_check &> /dev/null || test_check() {
+     :
+ }
