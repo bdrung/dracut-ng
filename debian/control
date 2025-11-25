@@ -138,7 +138,6 @@ Description: dracut is an event driven initramfs infrastructure (test modules)
  This package has following additional dependencies for reducing the amount
  of dependencies needed in autopkgtest:
  .
-  * bsdextrautils for rev command
   * Linux kernel
   * make
   * QEMU
