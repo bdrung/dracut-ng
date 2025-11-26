@@ -1,5 +1,5 @@
 From: Benjamin Drung <benjamin.drung@canonical.com>
-Date: Tue, 25 Nov 2025 11:21:28 +0100
+Date: Wed, 26 Nov 2025 00:16:43 +0100
 Subject: test(run-qemu): support UEFI on ARM
 
 The OVMF firmware files are builds of EDK II for 64-bit x86 virtual
@@ -16,13 +16,13 @@ Forwarded: https://github.com/dracut-ng/dracut-ng/pull/1872
  1 file changed, 21 insertions(+), 9 deletions(-)
 
 diff --git a/test/run-qemu b/test/run-qemu
-index f838728..ec12a75 100755
+index 0f09c4a..f0f86a1 100755
 --- a/test/run-qemu
 +++ b/test/run-qemu
-@@ -85,13 +85,26 @@ set_vmlinux_env() {
- 
- # Search for the UEFI firmware file
- uefi_code() {
+@@ -36,13 +36,26 @@ get_initrd() {
+ # Print UEFI firmware file on stdout on success.
+ # Return 1 in case no UEFI firmware file was found.
+ get_uefi_code() {
 -    for path in \
 -        "/usr/share/OVMF/OVMF_CODE.fd" \
 -        "/usr/share/OVMF/OVMF_CODE_4M.fd" \
@@ -50,16 +50,16 @@ index f838728..ec12a75 100755
 +            ;;
 +    esac
 +    for path in "${paths[@]}"; do
-         [[ -s $path ]] && echo -n "$path" && return
-     done
- }
-@@ -141,8 +154,7 @@ esac
+         if [[ -s $path ]]; then
+             echo -n "$path"
+             return 0
+@@ -146,8 +159,7 @@ case "$ARCH" in
+ esac
  
- uefi_code_file=$(uefi_code)
- if [[ -n $uefi_code_file ]]; then
--    ARGS+=(-drive "if=pflash,format=raw,readonly=on,unit=0,file=$uefi_code_file"
+ if uefi_code=$(get_uefi_code); then
+-    ARGS+=(-drive "if=pflash,format=raw,readonly=on,unit=0,file=$uefi_code"
 -        -global "driver=cfi.pflash01,property=secure,value=on")
-+    ARGS+=(-drive "if=pflash,format=raw,readonly=on,unit=0,file=$uefi_code_file")
++    ARGS+=(-drive "if=pflash,format=raw,readonly=on,unit=0,file=$uefi_code")
  fi
  
  # Provide rng device sourcing the hosts /dev/urandom and other standard parameters

@@ -1,5 +1,5 @@
 From: Benjamin Drung <benjamin.drung@canonical.com>
-Date: Tue, 25 Nov 2025 11:16:52 +0100
+Date: Wed, 26 Nov 2025 00:15:33 +0100
 Subject: test: use UEFI for QEMU when available
 
 Move the `ovmf_code` function and related code to `run-qemu` and always
@@ -8,9 +8,9 @@ use UEFI when available. This is a preperation for the following commit.
 Forwarded: https://github.com/dracut-ng/dracut-ng/pull/1872
 ---
  test/TEST-12-UEFI/test.sh |  7 +++----
- test/run-qemu             | 24 ++++++++++++++++++++++++
+ test/run-qemu             | 29 +++++++++++++++++++++++++++++
  test/test-functions       | 12 ------------
- 3 files changed, 27 insertions(+), 16 deletions(-)
+ 3 files changed, 32 insertions(+), 16 deletions(-)
 
 diff --git a/test/TEST-12-UEFI/test.sh b/test/TEST-12-UEFI/test.sh
 index 7107dee..990a0b5 100755
@@ -38,15 +38,17 @@ index 7107dee..990a0b5 100755
  }
  
 diff --git a/test/run-qemu b/test/run-qemu
-index cf110d3..f838728 100755
+index cf110d3..0f09c4a 100755
 --- a/test/run-qemu
 +++ b/test/run-qemu
-@@ -83,6 +83,19 @@ set_vmlinux_env() {
-     fi
+@@ -32,6 +32,25 @@ get_initrd() {
+     done
  }
  
 +# Search for the UEFI firmware file
-+uefi_code() {
++# Print UEFI firmware file on stdout on success.
++# Return 1 in case no UEFI firmware file was found.
++get_uefi_code() {
 +    for path in \
 +        "/usr/share/OVMF/OVMF_CODE.fd" \
 +        "/usr/share/OVMF/OVMF_CODE_4M.fd" \
@@ -54,32 +56,35 @@ index cf110d3..f838728 100755
 +        "/usr/share/edk2/x64/OVMF_CODE.4m.fd" \
 +        "/usr/share/edk2-ovmf/OVMF_CODE.fd" \
 +        "/usr/share/qemu/ovmf-x86_64-4m.bin"; do
-+        [[ -s $path ]] && echo -n "$path" && return
++        if [[ -s $path ]]; then
++            echo -n "$path"
++            return 0
++        fi
 +    done
++    return 1
 +}
 +
- [[ -x /usr/bin/qemu ]] && BIN=/usr/bin/qemu && ARGS=(-cpu "$QEMU_CPU")
- (lsmod | grep -q '^kqemu ') && BIN=/usr/bin/qemu && ARGS=(-kernel-kqemu -cpu host)
- [[ -z ${NO_KVM-} && -c /dev/kvm && -x /usr/bin/kvm ]] && BIN=/usr/bin/kvm && ARGS=(-cpu host)
-@@ -97,6 +110,11 @@ set_vmlinux_env() {
+ quote_args() {
+     local arg args=()
+     for arg in "$@"; do
+@@ -97,6 +116,11 @@ set_vmlinux_env() {
      exit 1
  }
  
 +if test "${1-}" = "--check-uefi"; then
-+    test -n "$(uefi_code)"
++    get_uefi_code > /dev/null
 +    exit 0
 +fi
 +
  if test "${1-}" = "--supports"; then
      option="$2"
      "$BIN" -help | grep -q "^$option"
-@@ -121,6 +139,12 @@ case "$ARCH" in
+@@ -121,6 +145,11 @@ case "$ARCH" in
          ;;
  esac
  
-+uefi_code_file=$(uefi_code)
-+if [[ -n $uefi_code_file ]]; then
-+    ARGS+=(-drive "if=pflash,format=raw,readonly=on,unit=0,file=$uefi_code_file"
++if uefi_code=$(get_uefi_code); then
++    ARGS+=(-drive "if=pflash,format=raw,readonly=on,unit=0,file=$uefi_code"
 +        -global "driver=cfi.pflash01,property=secure,value=on")
 +fi
 +
