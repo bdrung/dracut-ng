@@ -1,3 +1,9 @@
+dracut (109-4) unstable; urgency=medium
+
+  * test: update UEFI patches to the version merged upstream
+
+ -- Benjamin Drung <bdrung@debian.org>  Wed, 26 Nov 2025 01:17:48 +0100
+
 dracut (109-3) unstable; urgency=medium
 
   * test:
