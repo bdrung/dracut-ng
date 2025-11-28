@@ -1,3 +1,9 @@
+dracut (109-5) unstable; urgency=medium
+
+  * test(run-qemu): use hvc0 console on s390x (Closes: #1120955)
+
+ -- Benjamin Drung <bdrung@debian.org>  Sat, 29 Nov 2025 00:43:17 +0100
+
 dracut (109-4) unstable; urgency=medium
 
   * test: update UEFI patches to the version merged upstream
