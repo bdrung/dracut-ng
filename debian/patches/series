@@ -8,3 +8,4 @@ test-forward-journald-logs-to-console-in-V-1-or-V-2.patch
 test-replace-rev-command-by-sed.patch
 test-use-UEFI-for-QEMU-when-available.patch
 test-run-qemu-support-UEFI-on-ARM.patch
+test-run-qemu-use-hvc0-console-on-s390x.patch
