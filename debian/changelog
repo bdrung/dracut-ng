@@ -1,3 +1,9 @@
+dracut (109+git20251129-0ubuntu1) resolute; urgency=medium
+
+  * New upstream snapshot.
+
+ -- Benjamin Drung <bdrung@ubuntu.com>  Sat, 29 Nov 2025 02:32:40 +0100
+
 dracut (109-5) unstable; urgency=medium
 
   * test(run-qemu): use hvc0 console on s390x (Closes: #1120955)
