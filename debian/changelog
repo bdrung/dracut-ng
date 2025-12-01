@@ -26,6 +26,23 @@ dracut (109-6) unstable; urgency=medium
 
  -- Benjamin Drung <bdrung@debian.org>  Mon, 12 Jan 2026 15:44:08 +0100
 
+dracut (109-5ubuntu1) resolute; urgency=medium
+
+  * Merge with Debian unstable. Remaining changes:
+    - drop udevsettle patch (these kind of patches should be applied upstream)
+    - dracut-core: demote binutils to suggests. its only needed when using UEFI
+      executables
+    - Let linux-firmware updates trigger the dracut autopkgtest
+    - fix(udev-rules): exclude udev rules from snapd
+    - feat(dmsquash-live-autooverlay): support readlink from uutils
+    - test: use GNU dd instead of uutil's dd (to work around bug LP 2129037)
+  * test(sysroot): run with --no-hostonly-cmdline
+  * autopkgtest: skip failing 43-kernel-install on arm64 (see LP 2133402)
+  * autopkgtest: skip too slow 41-full-systemd on arm64 and armhf
+    (see LP 2133401)
+
+ -- Benjamin Drung <bdrung@ubuntu.com>  Mon, 01 Dec 2025 11:49:45 +0100
+
 dracut (109-5) unstable; urgency=medium
 
   * test(run-qemu): use hvc0 console on s390x (Closes: #1120955)
