@@ -56,8 +56,9 @@ Architecture: !armel !i386
 Restrictions: allow-stderr, needs-root
 Depends: curl, dmsetup, dracut-network, dracut-test, python3, squashfs-tools
 
+# Too slow on Ubuntu arm64 and armhf: https://launchpad.net/bugs/2133401
 Tests: 41-full-systemd
-Architecture: !armel !i386
+Architecture: !arm64 !armel !armhf !i386
 Restrictions: allow-stderr, needs-root
 Depends: btrfs-progs,
          cryptsetup,
