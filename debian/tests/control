@@ -7,10 +7,15 @@ Tests: 10-basic,
        13-sysroot,
        40-systemd,
        42-systemd-initrd,
-       43-kernel-install,
        80-getarg,
        81-skipcpio
 Architecture: !armel !i386
+Restrictions: allow-stderr, needs-root
+Depends: dracut-test
+
+# Fails on Ubuntu arm64: missing .efi suffix: https://launchpad.net/bugs/2133402
+Tests: 43-kernel-install
+Architecture: !arm64 !armel !i386
 Restrictions: allow-stderr, needs-root
 Depends: dracut-test
 
