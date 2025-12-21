@@ -14,8 +14,8 @@ Build-Depends: debhelper-compat (= 13),
                shfmt [!alpha !hppa !i386 !m68k !powerpc !sh4 !sparc64 !x32] <!nocheck>,
                systemd-dev
 Standards-Version: 4.7.2
-Vcs-Browser: https://salsa.debian.org/debian/dracut
-Vcs-Git: https://salsa.debian.org/debian/dracut.git
+Vcs-Browser: https://salsa.debian.org/kernel-team/dracut
+Vcs-Git: https://salsa.debian.org/kernel-team/dracut.git
 Homepage: https://github.com/dracut-ng/dracut-ng/wiki
 
 Package: dracut-core
