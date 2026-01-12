@@ -10,12 +10,12 @@ Tests: 10-basic,
        43-kernel-install,
        80-getarg,
        81-skipcpio
-Architecture: !armel !i386 !riscv64
+Architecture: !armel !i386
 Restrictions: allow-stderr, needs-root
 Depends: dracut-test
 
 Tests: 11-usr-mount
-Architecture: !armel !i386 !riscv64
+Architecture: !armel !i386
 Restrictions: allow-stderr, needs-root
 Depends: btrfs-progs, dracut-test
 
@@ -32,12 +32,12 @@ Depends: dracut-test,
          systemd-ukify
 
 Tests: 20-storage, 26-enc-raid-lvm
-Architecture: !armel !i386 !riscv64
+Architecture: !armel !i386
 Restrictions: allow-stderr, needs-root
 Depends: cryptsetup, dracut-test, lvm2, mdadm, systemd-cryptsetup
 
 Tests: 30-dmsquash
-Architecture: !armel !i386 !riscv64
+Architecture: !armel !i386
 Restrictions: allow-stderr, needs-root
 Depends: dracut-live,
          dracut-network,
@@ -47,7 +47,7 @@ Depends: dracut-live,
          util-linux-extra
 
 Tests: 41-full-systemd
-Architecture: !armel !i386 !riscv64
+Architecture: !armel !i386
 Restrictions: allow-stderr, needs-root
 Depends: btrfs-progs,
          cryptsetup,
@@ -61,17 +61,17 @@ Depends: btrfs-progs,
          systemd-timesyncd
 
 Tests: 44-drivers
-Architecture: !armel !i386 !riscv64
+Architecture: !armel !i386
 Restrictions: allow-stderr, needs-root
 Depends: dracut-test, xfsprogs
 
 Tests: 50-network
-Architecture: !armel !i386 !riscv64
+Architecture: !armel !i386
 Restrictions: allow-stderr, needs-root
 Depends: dracut-network, dracut-test
 
 Tests: 60-nfs
-Architecture: !armel !i386 !riscv64
+Architecture: !armel !i386
 Restrictions: allow-stderr, needs-root
 Depends: curl,
          dracut-live,
@@ -82,7 +82,7 @@ Depends: curl,
          procps
 
 Tests: 70-iscsi, 71-iscsi-multi
-Architecture: !armel !i386 !riscv64
+Architecture: !armel !i386
 Restrictions: allow-stderr, needs-root
 Depends: cryptsetup,
          dracut-network,
@@ -96,7 +96,7 @@ Depends: cryptsetup,
          tgt
 
 Tests: 72-nbd
-Architecture: !armel !i386 !riscv64
+Architecture: !armel !i386
 Restrictions: allow-stderr, needs-root
 Depends: cryptsetup,
          dracut-network,
