@@ -1,0 +1,44 @@
+From: Benjamin Drung <benjamin.drung@canonical.com>
+Date: Mon, 12 Jan 2026 13:16:25 +0100
+Subject: test: run QEMU with a timeout unless daemonized
+
+Dracut tests might hang. The Dracut CI sets a timeout to kill those
+hanging tests, but downstream might not configure something similar.
+
+Run QEMU with a timeout (unless daemonized) to avoid hanging tests
+forever.
+
+The slowest tests executions that I have seen on Debian/Ubuntu:
+
+* 33:44 for test 11 (5 client tests) on Ubuntu resolute on armhf
+* 101:58 for test 60 (19 client tests) on Debian unstable on ppc64el
+* 19:58 for test 70 (3 client tests) on Ubuntu resolute on arm64
+* 22:35 for test 71 (4 client tests) on Ubuntu resolute on arm64
+* 52:48 for test 72 (8 client tests) Debian unstable on ppc64el
+
+These slow tests take between 5:22 and 6:45 for each client tests on
+average (ignoring the setup cost). So set the timeout to 10 minutes as
+default.
+
+Fixes: https://bugs.debian.org/1121884
+Forwarded: https://github.com/dracut-ng/dracut-ng/pull/2039
+---
+ test/run-qemu | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/test/run-qemu b/test/run-qemu
+index 766bd7b..d3a9851 100755
+--- a/test/run-qemu
++++ b/test/run-qemu
+@@ -192,5 +192,11 @@ if [[ -n $initrd ]]; then
+     add_to_append "console=${console:-ttyS0},115200"
+ fi
+ 
++if ! [[ $* == *-daemonize* ]] && timeout --help 2> /dev/null | grep -q -- --foreground; then
++    # Run QEMU with a timeout (defaut: 10min) unless daemonized
++    ARGS=(--foreground "${QEMU_TIMEOUT-600}" "$BIN" "${ARGS[@]}")
++    BIN=timeout
++fi
++
+ echo "${0##*/}: $BIN $(quote_args "${ARGS[@]}")"
+ exec "$BIN" "${ARGS[@]}"
