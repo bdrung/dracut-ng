@@ -1,6 +1,5 @@
 Source: dracut
 Section: utils
-Priority: optional
 Maintainer: Thomas Lange <lange@debian.org>
 Uploaders: Benjamin Drung <bdrung@debian.org>
 Build-Depends: debhelper-compat (= 13),
