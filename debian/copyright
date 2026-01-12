@@ -1,7 +1,6 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-Upstream-Name: dracut
-Upstream-contact: Harald Hoyer <harald@redhat.com>
-Source: http://www.kernel.org/pub/linux/utils/boot/dracut/
+Upstream-Name: dracut-ng
+Source: https://github.com/dracut-ng/dracut-ng
 
 Files: *
 Copyright:
