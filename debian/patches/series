@@ -10,3 +10,4 @@ test-use-UEFI-for-QEMU-when-available.patch
 test-run-qemu-support-UEFI-on-ARM.patch
 test-run-qemu-use-hvc0-console-on-s390x.patch
 test-run-qemu-support-RISC-V.patch
+test-sysroot-run-with-no-hostonly-cmdline.patch
