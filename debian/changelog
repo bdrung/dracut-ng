@@ -1,3 +1,19 @@
+dracut (109-6) unstable; urgency=medium
+
+  * Move packaging git repository to the kernel team
+  * dracut-test: drop removed qemu-efi-arm [armhf] (Closes: #1124247)
+  * test(run-qemu): support RISC-V
+  * test(sysroot): run with --no-hostonly-cmdline
+  * test: drop --auto=yes from mdadm call
+  * test: run QEMU with a timeout unless daemonized (Closes: #1121884)
+  * autopkgtest: do not exclude riscv64 any more
+  * debian/control: drop explicit priority optional
+  * Update year in debian/copyright
+  * Update upstream information about dracut-ng in debiian/copyright
+  * Bump Standards-Version to 4.7.3
+
+ -- Benjamin Drung <bdrung@debian.org>  Mon, 12 Jan 2026 15:44:08 +0100
+
 dracut (109-5) unstable; urgency=medium
 
   * test(run-qemu): use hvc0 console on s390x (Closes: #1120955)
