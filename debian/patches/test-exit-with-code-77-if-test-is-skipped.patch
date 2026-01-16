@@ -1,0 +1,22 @@
+From: Benjamin Drung <benjamin.drung@canonical.com>
+Date: Wed, 19 Nov 2025 02:34:06 +0100
+Subject: test: exit with code 77 if test is skipped
+
+Forwarded: https://github.com/dracut-ng/dracut-ng/pull/1859
+---
+ test/test-functions | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/test/test-functions b/test/test-functions
+index 1b233d8..63d1a27 100644
+--- a/test/test-functions
++++ b/test/test-functions
+@@ -308,7 +308,7 @@ while (($# > 0)); do
+                     cat test${TEST_RUN_ID:+-$TEST_RUN_ID}.log
+                 fi
+                 echo -e "TEST: $TEST_DESCRIPTION " "$COLOR_WARNING" "[SKIPPED]" "$COLOR_NORMAL"
+-                exit 0
++                exit 77
+             else
+                 echo -e "TEST: $TEST_DESCRIPTION " "$COLOR_SUCCESS" "[STARTED]" "$COLOR_NORMAL"
+             fi

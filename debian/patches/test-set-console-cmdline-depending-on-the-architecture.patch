@@ -1,0 +1,335 @@
+From: Benjamin Drung <benjamin.drung@canonical.com>
+Date: Wed, 19 Nov 2025 04:28:38 +0100
+Subject: test: set console cmdline depending on the architecture
+
+The QEMU process hangs (without printing anything) on some Debian/Ubuntu
+architectures. This is caused by the console device is called
+differently on those architectures.
+
+So move setting `console` to `run-qemu` and set it to `ttyAMA0` on ARM
+systems and to `hvc0` on ppc64el.
+
+Forwarded: https://github.com/dracut-ng/dracut-ng/pull/1860
+---
+ test/TEST-11-USR-MOUNT/test.sh      |  2 +-
+ test/TEST-20-STORAGE/test.sh        |  2 +-
+ test/TEST-26-ENC-RAID-LVM/test.sh   |  2 +-
+ test/TEST-40-SYSTEMD/test.sh        |  2 +-
+ test/TEST-41-FULL-SYSTEMD/test.sh   |  2 +-
+ test/TEST-42-SYSTEMD-INITRD/test.sh |  2 +-
+ test/TEST-44-DRIVERS/test.sh        |  2 +-
+ test/TEST-60-NFS/test.sh            |  4 ++--
+ test/TEST-70-ISCSI/test.sh          |  6 +++---
+ test/TEST-71-ISCSI-MULTI/test.sh    |  6 +++---
+ test/TEST-72-NBD/test.sh            | 10 +++++-----
+ test/TEST-82-DRACUT-CPIO/test.sh    |  2 +-
+ test/run-qemu                       | 18 ++++++++++++++++++
+ test/test-functions                 |  6 ------
+ 14 files changed, 39 insertions(+), 27 deletions(-)
+
+diff --git a/test/TEST-11-USR-MOUNT/test.sh b/test/TEST-11-USR-MOUNT/test.sh
+index 5392bde..d867327 100755
+--- a/test/TEST-11-USR-MOUNT/test.sh
++++ b/test/TEST-11-USR-MOUNT/test.sh
+@@ -76,7 +76,7 @@ test_setup() {
+     # Invoke KVM and/or QEMU to actually create the target filesystem.
+     "$testdir"/run-qemu \
+         "${disk_args[@]}" \
+-        -append "root=/dev/dracut/root quiet console=ttyS0,115200n81" \
++        -append "root=/dev/dracut/root quiet" \
+         -initrd "$TESTDIR"/initramfs.makeroot
+ 
+     if ! test_marker_check dracut-root-block-created; then
+diff --git a/test/TEST-20-STORAGE/test.sh b/test/TEST-20-STORAGE/test.sh
+index 990d554..ff2d1c8 100755
+--- a/test/TEST-20-STORAGE/test.sh
++++ b/test/TEST-20-STORAGE/test.sh
+@@ -105,7 +105,7 @@ test_makeroot() {
+ 
+     "$testdir"/run-qemu \
+         "${disk_args[@]}" \
+-        -append "root=/dev/fakeroot quiet console=ttyS0,115200n81 $client_opts " \
++        -append "root=/dev/fakeroot quiet $client_opts " \
+         -initrd "$TESTDIR"/initramfs.makeroot
+     test_marker_check dracut-root-block-created
+ 
+diff --git a/test/TEST-26-ENC-RAID-LVM/test.sh b/test/TEST-26-ENC-RAID-LVM/test.sh
+index 14563d8..a73d1b9 100755
+--- a/test/TEST-26-ENC-RAID-LVM/test.sh
++++ b/test/TEST-26-ENC-RAID-LVM/test.sh
+@@ -81,7 +81,7 @@ test_setup() {
+ 
+     "$testdir"/run-qemu \
+         "${disk_args[@]}" \
+-        -append "root=/dev/fakeroot quiet console=ttyS0,115200n81" \
++        -append "root=/dev/fakeroot quiet" \
+         -initrd "$TESTDIR"/initramfs.makeroot
+     test_marker_check dracut-root-block-created
+     cryptoUUIDS=$(grep -F --binary-files=text -m 3 ID_FS_UUID "$TESTDIR"/marker.img)
+diff --git a/test/TEST-40-SYSTEMD/test.sh b/test/TEST-40-SYSTEMD/test.sh
+index f62f4f9..8bf045b 100755
+--- a/test/TEST-40-SYSTEMD/test.sh
++++ b/test/TEST-40-SYSTEMD/test.sh
+@@ -50,7 +50,7 @@ test_setup() {
+     # Invoke KVM and/or QEMU to actually create the target filesystem.
+     "$testdir"/run-qemu \
+         "${disk_args[@]}" \
+-        -append "root=/dev/fakeroot quiet console=ttyS0,115200n81" \
++        -append "root=/dev/fakeroot quiet" \
+         -initrd "$TESTDIR"/initramfs.makeroot
+     test_marker_check dracut-root-block-created
+     rm -- "$TESTDIR"/marker.img
+diff --git a/test/TEST-41-FULL-SYSTEMD/test.sh b/test/TEST-41-FULL-SYSTEMD/test.sh
+index 5170455..95bc34e 100755
+--- a/test/TEST-41-FULL-SYSTEMD/test.sh
++++ b/test/TEST-41-FULL-SYSTEMD/test.sh
+@@ -124,7 +124,7 @@ test_setup() {
+     # Invoke KVM and/or QEMU to actually create the target filesystem.
+     "$testdir"/run-qemu \
+         "${disk_args[@]}" \
+-        -append "root=/dev/fakeroot quiet console=ttyS0,115200n81" \
++        -append "root=/dev/fakeroot quiet" \
+         -initrd "$TESTDIR"/initramfs.makeroot
+     test_marker_check dracut-root-block-created
+ 
+diff --git a/test/TEST-42-SYSTEMD-INITRD/test.sh b/test/TEST-42-SYSTEMD-INITRD/test.sh
+index b511c60..fa5bab9 100755
+--- a/test/TEST-42-SYSTEMD-INITRD/test.sh
++++ b/test/TEST-42-SYSTEMD-INITRD/test.sh
+@@ -66,7 +66,7 @@ test_setup() {
+     # Invoke KVM and/or QEMU to actually create the target filesystem.
+     "$testdir"/run-qemu \
+         "${disk_args[@]}" \
+-        -append "root=/dev/fakeroot quiet console=ttyS0,115200n81" \
++        -append "root=/dev/fakeroot quiet" \
+         -initrd "$TESTDIR"/initramfs.makeroot
+     test_marker_check dracut-root-block-created
+     rm -- "$TESTDIR"/marker.img
+diff --git a/test/TEST-44-DRIVERS/test.sh b/test/TEST-44-DRIVERS/test.sh
+index 016be56..40477b2 100755
+--- a/test/TEST-44-DRIVERS/test.sh
++++ b/test/TEST-44-DRIVERS/test.sh
+@@ -72,7 +72,7 @@ test_setup() {
+     # Invoke KVM and/or QEMU to actually create the target filesystem.
+     "$testdir"/run-qemu \
+         "${disk_args[@]}" \
+-        -append "root=/dev/fakeroot quiet console=ttyS0,115200n81" \
++        -append "root=/dev/fakeroot quiet" \
+         -initrd "$TESTDIR"/initramfs.makeroot
+     test_marker_check dracut-root-block-created
+     rm -- "$TESTDIR"/marker.img
+diff --git a/test/TEST-60-NFS/test.sh b/test/TEST-60-NFS/test.sh
+index cb350dd..10d32bb 100755
+--- a/test/TEST-60-NFS/test.sh
++++ b/test/TEST-60-NFS/test.sh
+@@ -33,7 +33,7 @@ run_server() {
+         -net socket,listen=127.0.0.1:12320 \
+         -net nic,macaddr=52:54:00:12:34:56,model=virtio \
+         -serial "${SERIAL:-"file:$TESTDIR/server.log"}" \
+-        -append "panic=1 oops=panic softlockup_panic=1 root=LABEL=dracut rootfstype=ext4 rw console=ttyS0,115200n81 ${SERVER_DEBUG-}" \
++        -append "panic=1 oops=panic softlockup_panic=1 root=LABEL=dracut rootfstype=ext4 rw ${SERVER_DEBUG-}" \
+         -pidfile "$TESTDIR"/server.pid -daemonize \
+         -initrd "$TESTDIR"/initramfs.server
+     chmod 644 "$TESTDIR"/server.pid
+@@ -278,7 +278,7 @@ test_setup() {
+     # Invoke KVM and/or QEMU to actually create the target filesystem.
+     "$testdir"/run-qemu \
+         "${disk_args[@]}" \
+-        -append "root=/dev/dracut/root rw rootfstype=ext4 quiet console=ttyS0,115200n81" \
++        -append "root=/dev/dracut/root rw rootfstype=ext4 quiet" \
+         -initrd "$TESTDIR"/initramfs.makeroot
+     test_marker_check dracut-root-block-created
+ 
+diff --git a/test/TEST-70-ISCSI/test.sh b/test/TEST-70-ISCSI/test.sh
+index 0cfdfde..7e7b3c1 100755
+--- a/test/TEST-70-ISCSI/test.sh
++++ b/test/TEST-70-ISCSI/test.sh
+@@ -27,7 +27,7 @@ run_server() {
+         -net nic,macaddr=52:54:00:12:34:56,model=virtio \
+         -net nic,macaddr=52:54:00:12:34:57,model=virtio \
+         -net socket,listen=127.0.0.1:12330 \
+-        -append "panic=1 oops=panic softlockup_panic=1 quiet root=/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_serverroot rw console=ttyS0,115200n81 ${SERVER_DEBUG-}" \
++        -append "panic=1 oops=panic softlockup_panic=1 quiet root=/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_serverroot rw ${SERVER_DEBUG-}" \
+         -pidfile "$TESTDIR"/server.pid -daemonize \
+         -initrd "$TESTDIR"/initramfs.server
+     chmod 644 "$TESTDIR"/server.pid
+@@ -158,7 +158,7 @@ test_setup() {
+     # Invoke KVM and/or QEMU to actually create the target filesystem.
+     "$testdir"/run-qemu \
+         "${disk_args[@]}" \
+-        -append "root=/dev/fakeroot rw quiet console=ttyS0,115200n81" \
++        -append "root=/dev/fakeroot rw quiet" \
+         -initrd "$TESTDIR"/initramfs.makeroot
+     test_marker_check dracut-root-block-created
+     rm -- "$TESTDIR"/marker.img
+@@ -197,7 +197,7 @@ test_setup() {
+     # Invoke KVM and/or QEMU to actually create the target filesystem.
+     "$testdir"/run-qemu \
+         "${disk_args[@]}" \
+-        -append "root=/dev/dracut/root rw quiet console=ttyS0,115200n81" \
++        -append "root=/dev/dracut/root rw quiet" \
+         -initrd "$TESTDIR"/initramfs.makeroot
+     test_marker_check dracut-root-block-created
+     rm -- "$TESTDIR"/marker.img
+diff --git a/test/TEST-71-ISCSI-MULTI/test.sh b/test/TEST-71-ISCSI-MULTI/test.sh
+index 9324cae..7102130 100755
+--- a/test/TEST-71-ISCSI-MULTI/test.sh
++++ b/test/TEST-71-ISCSI-MULTI/test.sh
+@@ -27,7 +27,7 @@ run_server() {
+         -net nic,macaddr=52:54:00:12:34:56,model=virtio \
+         -net nic,macaddr=52:54:00:12:34:57,model=virtio \
+         -net socket,listen=127.0.0.1:12331 \
+-        -append "panic=1 oops=panic softlockup_panic=1 systemd.crash_reboot root=/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_serverroot rootfstype=ext4 rw console=ttyS0,115200n81 ${SERVER_DEBUG-}" \
++        -append "panic=1 oops=panic softlockup_panic=1 systemd.crash_reboot root=/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_serverroot rootfstype=ext4 rw ${SERVER_DEBUG-}" \
+         -pidfile "$TESTDIR"/server.pid -daemonize \
+         -initrd "$TESTDIR"/initramfs.server
+     chmod 644 "$TESTDIR"/server.pid
+@@ -166,7 +166,7 @@ test_setup() {
+     # Invoke KVM and/or QEMU to actually create the target filesystem.
+     "$testdir"/run-qemu \
+         "${disk_args[@]}" \
+-        -append "root=/dev/fakeroot rw rootfstype=ext4 quiet console=ttyS0,115200n81" \
++        -append "root=/dev/fakeroot rw rootfstype=ext4 quiet" \
+         -initrd "$TESTDIR"/initramfs.makeroot
+     test_marker_check dracut-root-block-created
+     rm -- "$TESTDIR"/marker.img
+@@ -206,7 +206,7 @@ test_setup() {
+     # Invoke KVM and/or QEMU to actually create the target filesystem.
+     "$testdir"/run-qemu \
+         "${disk_args[@]}" \
+-        -append "root=/dev/dracut/root rw rootfstype=ext4 quiet console=ttyS0,115200n81" \
++        -append "root=/dev/dracut/root rw rootfstype=ext4 quiet" \
+         -initrd "$TESTDIR"/initramfs.makeroot
+     test_marker_check dracut-root-block-created
+     rm -- "$TESTDIR"/marker.img
+diff --git a/test/TEST-72-NBD/test.sh b/test/TEST-72-NBD/test.sh
+index 10e2347..89be1d7 100755
+--- a/test/TEST-72-NBD/test.sh
++++ b/test/TEST-72-NBD/test.sh
+@@ -36,7 +36,7 @@ run_server() {
+         -serial "${SERIAL:-"file:$TESTDIR/server.log"}" \
+         -net nic,macaddr=52:54:00:12:34:56,model=virtio \
+         -net socket,listen=127.0.0.1:12340 \
+-        -append "panic=1 oops=panic softlockup_panic=1 rd.luks=0 systemd.crash_reboot quiet root=/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_serverroot rootfstype=ext4 rw console=ttyS0,115200n81 ${SERVER_DEBUG-}" \
++        -append "panic=1 oops=panic softlockup_panic=1 rd.luks=0 systemd.crash_reboot quiet root=/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_serverroot rootfstype=ext4 rw ${SERVER_DEBUG-}" \
+         -pidfile "$TESTDIR"/server.pid -daemonize \
+         -initrd "$TESTDIR"/initramfs.server
+     chmod 644 "$TESTDIR"/server.pid
+@@ -68,7 +68,7 @@ client_test() {
+         "${disk_args[@]}" \
+         -net nic,macaddr="$mac",model=virtio \
+         -net socket,connect=127.0.0.1:12340 \
+-        -append "$cmdline rd.auto ro console=ttyS0,115200n81" \
++        -append "$cmdline rd.auto ro" \
+         -initrd "$TESTDIR"/initramfs.testing
+ 
+     # shellcheck disable=SC2181
+@@ -206,7 +206,7 @@ make_encrypted_root() {
+     # Invoke KVM and/or QEMU to actually create the target filesystem.
+     "$testdir"/run-qemu \
+         "${disk_args[@]}" \
+-        -append "root=/dev/fakeroot rw quiet console=ttyS0,115200n81" \
++        -append "root=/dev/fakeroot rw quiet" \
+         -initrd "$TESTDIR"/initramfs.makeroot
+     test_marker_check dracut-root-block-created
+     grep -F -a -m 1 ID_FS_UUID "$TESTDIR"/marker.img > "$TESTDIR"/luks.uuid
+@@ -240,7 +240,7 @@ make_client_root() {
+     # Invoke KVM and/or QEMU to actually create the target filesystem.
+     "$testdir"/run-qemu \
+         "${disk_args[@]}" \
+-        -append "root=/dev/dracut/root rw quiet console=ttyS0,115200n81" \
++        -append "root=/dev/dracut/root rw quiet" \
+         -initrd "$TESTDIR"/initramfs.makeroot
+     test_marker_check dracut-root-block-created
+     rm -fr "$TESTDIR"/overlay
+@@ -294,7 +294,7 @@ EOF
+     # Invoke KVM and/or QEMU to actually create the target filesystem.
+     "$testdir"/run-qemu \
+         "${disk_args[@]}" \
+-        -append "root=/dev/dracut/root rw rootfstype=ext4 quiet console=ttyS0,115200n81" \
++        -append "root=/dev/dracut/root rw rootfstype=ext4 quiet" \
+         -initrd "$TESTDIR"/initramfs.makeroot
+     test_marker_check dracut-root-block-created
+     rm -fr "$TESTDIR"/overlay
+diff --git a/test/TEST-82-DRACUT-CPIO/test.sh b/test/TEST-82-DRACUT-CPIO/test.sh
+index c07ac1c..b303841 100755
+--- a/test/TEST-82-DRACUT-CPIO/test.sh
++++ b/test/TEST-82-DRACUT-CPIO/test.sh
+@@ -38,7 +38,7 @@ EOF
+     "$testdir"/run-qemu \
+         -daemonize -pidfile "$tdir/vm.pid" \
+         -serial "file:$tdir/console.out" \
+-        -append "panic=1 oops=panic softlockup_panic=1 console=ttyS0 rd.shell=1" \
++        -append "panic=1 oops=panic softlockup_panic=1 rd.shell=1" \
+         -initrd "$tdir/initramfs"
+ 
+     timeout=120
+diff --git a/test/run-qemu b/test/run-qemu
+index 4af8275..b957018 100755
+--- a/test/run-qemu
++++ b/test/run-qemu
+@@ -7,6 +7,20 @@ export PATH=/usr/sbin:/usr/bin:/sbin:/bin
+ ARCH="${ARCH-$(uname -m)}"
+ QEMU_CPU="${QEMU_CPU:-max}"
+ 
++add_to_append() {
++    local extra="$1"
++    local i
++
++    for i in "${!ARGS[@]}"; do
++        if [[ ${ARGS[i]} == -append ]]; then
++            ARGS[i + 1]="$extra ${ARGS[i + 1]# }"
++            return
++        fi
++    done
++
++    ARGS+=(-append "$extra")
++}
++
+ get_initrd() {
+     local next
+     for i in $(seq 1 $(($# - 1))); do
+@@ -92,15 +106,18 @@ fi
+ case "$ARCH" in
+     aarch64 | arm64)
+         ARGS+=(-M "virt,gic-version=max")
++        console=ttyAMA0
+         ;;
+     amd64 | i?86 | x86_64)
+         ARGS+=(-M q35)
+         ;;
+     arm | armhf | armv7l)
+         ARGS+=(-M virt)
++        console=ttyAMA0
+         ;;
+     ppc64el | ppc64le)
+         ARGS+=(-M "cap-ccf-assist=off,cap-cfpc=broken,cap-ibs=broken,cap-sbbc=broken")
++        console=hvc0
+         ;;
+ esac
+ 
+@@ -124,6 +141,7 @@ if [[ -n $initrd ]]; then
+     KVERSION=$(lsinitrd "$initrd" | grep modules.dep | head -1 | rev | cut -d'/' -f2 | rev)
+     set_vmlinux_env
+     ARGS+=(-kernel "$VMLINUZ")
++    add_to_append "console=${console:-ttyS0},115200"
+ fi
+ 
+ echo "${0##*/}: $BIN $(quote_args "${ARGS[@]}")"
+diff --git a/test/test-functions b/test/test-functions
+index 63d1a27..1fafd3c 100644
+--- a/test/test-functions
++++ b/test/test-functions
+@@ -33,12 +33,6 @@ fi
+ 
+ ARCH="${ARCH-$(uname -m)}"
+ 
+-case "$ARCH" in
+-    amd64 | i?86 | x86_64)
+-        TEST_KERNEL_CMDLINE+="console=ttyS0 "
+-        ;;
+-esac
+-
+ test_dracut() {
+     # directory for test configurations and for the generated initrd (extracted)
+     mkdir -p "$TESTDIR"/dracut.conf.d "$TESTDIR"/initrd
