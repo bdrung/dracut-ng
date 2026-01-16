@@ -11,5 +11,6 @@ test-run-qemu-support-UEFI-on-ARM.patch
 test-run-qemu-use-hvc0-console-on-s390x.patch
 test-run-qemu-support-RISC-V.patch
 test-sysroot-run-with-no-hostonly-cmdline.patch
+fix-dracut-source-dracut-functions.sh-before-calling-dwar.patch
 test-drop-auto-yes-from-mdadm-call.patch
 test-run-QEMU-with-a-timeout-unless-daemonized.patch
