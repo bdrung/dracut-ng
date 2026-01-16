@@ -1,9 +1,14 @@
-dracut (109-7) UNRELEASED; urgency=medium
+dracut (109-7) unstable; urgency=medium
 
+  [ Salvatore Bonaccorso ]
   * debian/control: Set Debian Kernel Team address as maintainer.
     Move Thomas Lange to Uploaders.
 
- -- Salvatore Bonaccorso <carnil@debian.org>  Wed, 14 Jan 2026 20:51:45 +0100
+  [ Benjamin Drung ]
+  * fix(dracut): source dracut-functions.sh before calling dwarning
+    (Closes: #1124479)
+
+ -- Benjamin Drung <bdrung@debian.org>  Fri, 16 Jan 2026 19:01:26 +0100
 
 dracut (109-6) unstable; urgency=medium
 
