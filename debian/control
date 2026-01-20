@@ -96,12 +96,13 @@ Description: dracut is an event driven initramfs infrastructure (dracut-install)
 Package: dracut-network
 Architecture: all
 Multi-Arch: foreign
-Depends: dracut-core,
+Depends: curl,
+         dracut-core,
          iproute2,
          iputils-arping,
          network-manager | systemd | connman,
          ${misc:Depends}
-Recommends: curl, nbd-client, nfs-common, open-iscsi
+Recommends: nbd-client, nfs-common, open-iscsi
 Suggests: iscsiuio
 Breaks: dracut-core (<< 105), dracut-live (<< 109-10~)
 Replaces: dracut-core (<< 105), dracut-live (<< 109-10~)
