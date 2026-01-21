@@ -28,6 +28,12 @@ test_run() {
         -append "root=LABEL=dracut $TEST_KERNEL_CMDLINE rd.driver.export" \
         -initrd "$TESTDIR"/initramfs.testing
     check_qemu_log
+
+    "$testdir"/run-qemu \
+        "${disk_args[@]}" \
+        -append "root=LABEL=dracut $TEST_KERNEL_CMDLINE copymods" \
+        -initrd "$TESTDIR"/initramfs.testing
+    check_qemu_log
 }
 
 test_setup() {
