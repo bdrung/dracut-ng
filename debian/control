@@ -20,7 +20,7 @@ Homepage: https://github.com/dracut-ng/dracut-ng/wiki
 Package: dracut-core
 Architecture: any
 Multi-Arch: foreign
-Depends: 3cpio | cpio,
+Depends: cpio,
          dracut-install,
          e2fsprogs,
          kmod,

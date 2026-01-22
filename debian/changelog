@@ -1,3 +1,9 @@
+dracut (109-8) UNRELEASED; urgency=medium
+
+  * Revert to use cpio. (closes: #1125948)
+
+ -- Bastian Blank <waldi@debian.org>  Thu, 22 Jan 2026 21:02:31 +0100
+
 dracut (109-7) unstable; urgency=medium
 
   [ Salvatore Bonaccorso ]
