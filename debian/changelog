@@ -1,3 +1,10 @@
+dracut (109-9) unstable; urgency=medium
+
+  * feat: warn in case 3cpio is present but not suitable (Closes: #1125948)
+  * dracut-core: Prefer 3cpio over cpio again
+
+ -- Benjamin Drung <bdrung@debian.org>  Sat, 24 Jan 2026 19:43:56 +0100
+
 dracut (109-8) unstable; urgency=medium
 
   [ Bastian Blank ]
