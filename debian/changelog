@@ -1,6 +1,10 @@
 dracut (109-8) unstable; urgency=medium
 
+  [ Bastian Blank ]
   * Revert to use cpio. (closes: #1125948)
+
+  [ Benjamin Drung ]
+  * Drop unneeded udevsettle patch (see upstream issue 2067)
 
  -- Bastian Blank <waldi@debian.org>  Fri, 23 Jan 2026 20:40:34 +0100
 
