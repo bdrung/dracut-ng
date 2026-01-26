@@ -31,7 +31,9 @@ Depends: 3cpio | cpio,
          ${shlibs:Depends}
 Recommends: binutils, console-setup, systemd, zstd
 Suggests: cryptsetup, dmsetup, kpartx, lvm2, mdadm, systemd-cryptsetup
-Breaks: dracut-live (<< 059-2), dracut-network (<< 057+157-2)
+Breaks: dracut-live (<< 059-2),
+        dracut-network (<< 057+157-2),
+        rust-coreutils (<< 0.5.0)
 Replaces: dracut-live (<< 059-2), dracut-network (<< 057+157-2)
 Description: dracut is an event driven initramfs infrastructure (core tools)
  Unlike existing initramfs's, this is an attempt at having as little as
