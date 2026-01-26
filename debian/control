@@ -1,6 +1,7 @@
 Source: dracut
 Section: utils
-Maintainer: Debian Kernel Team <debian-kernel@lists.debian.org>
+Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
+XSBC-Original-Maintainer: Debian Kernel Team <debian-kernel@lists.debian.org>
 Uploaders: Thomas Lange <lange@debian.org>, Benjamin Drung <bdrung@debian.org>
 Build-Depends: debhelper-compat (= 13),
                3cpio [!alpha !hppa !m68k !sh4] <!nocheck>,
