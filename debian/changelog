@@ -1,3 +1,23 @@
+dracut (109-9ubuntu1) resolute; urgency=medium
+
+  * Merge with Debian unstable. Remaining changes:
+    - Let linux-firmware updates trigger the dracut autopkgtest
+    - autopkgtest: skip failing 43-kernel-install on arm64 (see LP 2133402)
+    - autopkgtest: skip too slow 41-full-systemd on arm64 and armhf
+      (see LP 2133401)
+  * Dropped changes:
+    - dracut-core: demote binutils to suggests. its only needed when using UEFI
+      executables
+    - fix(udev-rules): exclude udev rules from snapd. Let snapd ship a Dracut
+      config file instead (see LP 2139065)
+    - feat(dmsquash-live-autooverlay): support readlink from uutils
+      (fixed by rust-coreutils 0.5.0)
+    - test: use GNU dd instead of uutil's dd (to work around bug LP 2129037)
+      (fixed by rust-coreutils 0.4.0)
+  * dracut-core: Declare breaking rust-coreutils before version 0.5.0
+
+ -- Benjamin Drung <bdrung@ubuntu.com>  Mon, 26 Jan 2026 11:47:44 +0100
+
 dracut (109-9) unstable; urgency=medium
 
   * feat: warn in case 3cpio is present but not suitable (Closes: #1125948)
