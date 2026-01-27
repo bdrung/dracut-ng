@@ -97,6 +97,8 @@ usr/lib/dracut/modules.d/74lunmask
 usr/lib/dracut/modules.d/74resume
 usr/lib/dracut/modules.d/74rootfs-block
 usr/lib/dracut/modules.d/74rootfs-block-fallback
+usr/lib/dracut/modules.d/74squash-erofs
+usr/lib/dracut/modules.d/74squash-squashfs
 usr/lib/dracut/modules.d/74terminfo
 usr/lib/dracut/modules.d/74udev-rules
 usr/lib/dracut/modules.d/74virtfs
@@ -119,6 +121,8 @@ usr/lib/dracut/modules.d/81busybox
 usr/lib/dracut/modules.d/84memstrack
 usr/lib/dracut/modules.d/85shell-interpreter
 usr/lib/dracut/modules.d/86shutdown
+usr/lib/dracut/modules.d/87squash
+usr/lib/dracut/modules.d/88squash-lib
 usr/lib/dracut/skipcpio
 usr/lib/kernel/install.d
 usr/share/bash-completion/completions

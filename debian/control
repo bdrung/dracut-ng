@@ -29,9 +29,15 @@ Depends: 3cpio | cpio,
          ${misc:Depends},
          ${shlibs:Depends}
 Recommends: binutils, console-setup, systemd, zstd
-Suggests: cryptsetup, dmsetup, kpartx, lvm2, mdadm, systemd-cryptsetup
-Breaks: dracut-live (<< 059-2), dracut-network (<< 057+157-2)
-Replaces: dracut-live (<< 059-2), dracut-network (<< 057+157-2)
+Suggests: cryptsetup,
+          dmsetup,
+          kpartx,
+          lvm2,
+          mdadm,
+          squashfs-tools,
+          systemd-cryptsetup
+Breaks: dracut-live (<< 059-2), dracut-network (<< 057+157-2), dracut-squash
+Replaces: dracut-live (<< 059-2), dracut-network (<< 057+157-2), dracut-squash
 Description: dracut is an event driven initramfs infrastructure (core tools)
  Unlike existing initramfs's, this is an attempt at having as little as
  possible hard-coded into the initramfs as possible.  The initramfs has
@@ -82,19 +88,6 @@ Replaces: dracut-core (<< 105)
 Description: dracut is an event driven initramfs infrastructure (network modules)
  Package to build a dracut initramfs with network support. This
  includes dracut modules for NFS, CIFS, iSCSI, HTTP, NBD, FCP and FCOE.
-
-Package: dracut-squash
-Architecture: all
-Multi-Arch: foreign
-Depends: dracut-core, squashfs-tools, ${misc:Depends}
-Breaks: dracut-core (<< 050-1)
-Replaces: dracut-core (<< 050-1)
-Description: dracut is an event driven initramfs infrastructure (squashfs modules)
- Package to build an initramfs with most files in a squashfs image.
- .
- This package provides a dracut module to build an initramfs, but
- store most files in a squashfs image, result in a smaller initramfs
- size and reduce runtime memory usage.
 
 Package: dracut-live
 Architecture: all

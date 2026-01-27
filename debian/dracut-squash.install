@@ -1,4 +1,0 @@
-usr/lib/dracut/modules.d/74squash-erofs
-usr/lib/dracut/modules.d/74squash-squashfs
-usr/lib/dracut/modules.d/87squash
-usr/lib/dracut/modules.d/88squash-lib
