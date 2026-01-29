@@ -1,3 +1,13 @@
+dracut (109-10) UNRELEASED; urgency=medium
+
+  * Let firmware package updates trigger the dracut autopkgtest
+  * dracut-core: document which Dracut module needs suggested packages
+  * Merge dracut-squash into dracut-core
+  * Move the livenet Dracut module to dracut-network and merge the remaining
+    dracut-live into dracut-core
+
+ -- Benjamin Drung <bdrung@debian.org>  Thu, 29 Jan 2026 19:58:19 +0100
+
 dracut (109-9) unstable; urgency=medium
 
   * feat: warn in case 3cpio is present but not suitable (Closes: #1125948)
