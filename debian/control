@@ -48,6 +48,19 @@ Description: dracut is an event driven initramfs infrastructure (core tools)
  to detect the rootfs.
  Having the root on MD, LVM2, LUKS is supported as well as NFS, iSCSI,
  NBD and FCOE with dracut-network.
+ .
+ These Dracut modules need suggested packages:
+  * crypt: cryptsetup or systemd-cryptsetup
+  * dm: dmsetup
+  * dmraid: kpartx
+  * dracut-systemd: systemd-cryptsetup (when crypt and systemd are used)
+  * lvm: lvm2
+  * lvmmerge: lvm2
+  * lvmthinpool-monitor: lvm2
+  * mdraid: mdadm
+  * multipath: kpartx
+  * squash-squashfs: squashfs-tools
+  * systemd-cryptsetup: systemd-cryptsetup
 
 Package: dracut
 Architecture: all
