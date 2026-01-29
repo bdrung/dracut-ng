@@ -38,6 +38,12 @@ test_run() {
     client_run "persistent device overlay (device path)" \
         "rd.overlay=/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_overlay test.expect=device"
     client_run "fallback to tmpfs (non-existent LABEL)" "rd.overlay=LABEL=NONEXISTENT test.expect=tmpfs"
+
+    client_run "overlayroot=tmpfs" "overlayroot=tmpfs test.expect=tmpfs"
+    client_run "overlayroot=LABEL" "overlayroot=LABEL=OVERLAY test.expect=device"
+    client_run "overlayroot=UUID" "overlayroot=UUID=$overlay_uuid test.expect=device"
+    client_run "overlayroot=/dev" \
+        "overlayroot=/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_overlay test.expect=device"
 }
 
 test_setup() {
