@@ -14,3 +14,4 @@ fix-dracut-source-dracut-functions.sh-before-calling-dwar.patch
 test-drop-auto-yes-from-mdadm-call.patch
 test-run-QEMU-with-a-timeout-unless-daemonized.patch
 feat-warn-in-case-3cpio-is-present-but-not-suitable.patch
+fix-tpm2-tss-add-tss-user-group-in-addition-to-sysusers-c.patch
