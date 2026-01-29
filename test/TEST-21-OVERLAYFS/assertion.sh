@@ -3,6 +3,15 @@ set -eu
 
 # required binaries: cat cut grep sort
 
+check_compat_symlink() {
+    if ! [ -L /media/root-ro ]; then
+        echo "missing compatibility symlink: /media/root-ro" >> /run/failed
+    fi
+    if ! [ -e /media/root-ro/usr/lib/os-release ]; then
+        echo "/media/root-ro/usr/lib/os-release does not exist. Broken /media/root-ro symlink?" >> /run/failed
+    fi
+}
+
 check_crypt_mounted() {
     if ! grep -q "^/dev/mapper/overlay-crypt /run/overlayfs-backing " /proc/mounts; then
         echo "encrypted overlay not mounted at /run/overlayfs-backing" >> /run/failed
@@ -47,6 +56,10 @@ else
 
     if ! echo > /test-overlay-write; then
         echo "overlay is not writable" >> /run/failed
+    fi
+
+    if grep -q overlayroot /proc/cmdline; then
+        check_compat_symlink
     fi
 fi
 

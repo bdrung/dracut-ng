@@ -51,6 +51,16 @@ test_run() {
     setup_crypt_disk
     client_run "encrypted overlay (new device, random password)" \
         "rd.overlay.crypt=LABEL=CRYPT test.expect=crypt"
+
+    client_run "overlayroot=tmpfs" "overlayroot=tmpfs test.expect=tmpfs"
+    client_run "overlayroot=LABEL" "overlayroot=LABEL=OVERLAY test.expect=device"
+    client_run "overlayroot=UUID" "overlayroot=UUID=$overlay_uuid test.expect=device"
+    client_run "overlayroot=/dev" \
+        "overlayroot=/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_overlay test.expect=device"
+
+    setup_crypt_disk
+    client_run "overlayroot=crypt (new device, random password)" \
+        "overlayroot=crypt:dev=LABEL=CRYPT test.expect=crypt"
 }
 
 test_setup() {
