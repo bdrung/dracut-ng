@@ -8,6 +8,7 @@ usr/lib/dracut/modules.d/45net-lib
 usr/lib/dracut/modules.d/45url-lib
 usr/lib/dracut/modules.d/68cms
 usr/lib/dracut/modules.d/70kernel-network-modules
+usr/lib/dracut/modules.d/70livenet
 usr/lib/dracut/modules.d/70qemu-net
 usr/lib/dracut/modules.d/70uefi-lib
 usr/lib/dracut/modules.d/74cifs

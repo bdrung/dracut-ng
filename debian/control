@@ -31,13 +31,16 @@ Depends: 3cpio | cpio,
 Recommends: binutils, console-setup, systemd, zstd
 Suggests: cryptsetup,
           dmsetup,
+          isomd5sum,
           kpartx,
           lvm2,
           mdadm,
+          parted,
           squashfs-tools,
           systemd-cryptsetup
-Breaks: dracut-live (<< 059-2), dracut-network (<< 057+157-2), dracut-squash
-Replaces: dracut-live (<< 059-2), dracut-network (<< 057+157-2), dracut-squash
+Breaks: dracut-live, dracut-network (<< 057+157-2), dracut-squash
+Replaces: dracut-live, dracut-network (<< 057+157-2), dracut-squash
+Provides: dracut-live
 Description: dracut is an event driven initramfs infrastructure (core tools)
  Unlike existing initramfs's, this is an attempt at having as little as
  possible hard-coded into the initramfs as possible.  The initramfs has
@@ -53,6 +56,8 @@ Description: dracut is an event driven initramfs infrastructure (core tools)
   * crypt: cryptsetup or systemd-cryptsetup
   * dm: dmsetup
   * dmraid: kpartx
+  * dmsquash-live: isomd5sum (optionally)
+  * dmsquash-live-autooverlay: parted
   * dracut-systemd: systemd-cryptsetup (when crypt and systemd are used)
   * lvm: lvm2
   * lvmmerge: lvm2
@@ -96,25 +101,11 @@ Depends: dracut-core,
          ${misc:Depends}
 Recommends: curl, nbd-client, nfs-common, open-iscsi
 Suggests: iscsiuio
-Breaks: dracut-core (<< 105)
-Replaces: dracut-core (<< 105)
+Breaks: dracut-core (<< 105), dracut-live
+Replaces: dracut-core (<< 105), dracut-live
 Description: dracut is an event driven initramfs infrastructure (network modules)
  Package to build a dracut initramfs with network support. This
  includes dracut modules for NFS, CIFS, iSCSI, HTTP, NBD, FCP and FCOE.
-
-Package: dracut-live
-Architecture: all
-Multi-Arch: foreign
-Depends: dmsetup, dracut-core, parted, ${misc:Depends}
-Recommends: dracut-network
-Suggests: isomd5sum
-Breaks: dracut-core (<< 050-1), dracut-network (<< 050-1)
-Replaces: dracut-core (<< 050-1), dracut-network (<< 050-1)
-Description: dracut is an event driven initramfs infrastructure (live image modules)
- Package to build a dracut initramfs with live image capabilities.
- .
- This package requires everything which is needed to build an
- initramfs with dracut, with live image capabilities, like Live CDs.
 
 Package: dracut-test
 Architecture: any

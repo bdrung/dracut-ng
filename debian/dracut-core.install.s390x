@@ -71,7 +71,11 @@ usr/lib/dracut/modules.d/70bluetooth
 usr/lib/dracut/modules.d/70btrfs
 usr/lib/dracut/modules.d/70crypt
 usr/lib/dracut/modules.d/70dm
+usr/lib/dracut/modules.d/70dmsquash-live
+usr/lib/dracut/modules.d/70dmsquash-live-autooverlay
+usr/lib/dracut/modules.d/70dmsquash-live-ntfs
 usr/lib/dracut/modules.d/70fs-lib
+usr/lib/dracut/modules.d/70img-lib
 usr/lib/dracut/modules.d/70kernel-modules
 usr/lib/dracut/modules.d/70kernel-modules-export
 usr/lib/dracut/modules.d/70kernel-modules-extra

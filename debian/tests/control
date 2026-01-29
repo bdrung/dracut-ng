@@ -39,10 +39,11 @@ Depends: cryptsetup, dracut-test, lvm2, mdadm, systemd-cryptsetup
 Tests: 30-dmsquash
 Architecture: !armel !i386
 Restrictions: allow-stderr, needs-root
-Depends: dracut-live,
+Depends: dmsetup,
          dracut-network,
          dracut-test,
          fdisk,
+         parted,
          squashfs-tools,
          util-linux-extra
 
@@ -74,7 +75,6 @@ Tests: 60-nfs
 Architecture: !armel !i386
 Restrictions: allow-stderr, needs-root
 Depends: curl,
-         dracut-live,
          dracut-network,
          dracut-test,
          isc-dhcp-server,
