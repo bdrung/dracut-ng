@@ -40,6 +40,12 @@ test_run() {
     client_run "fallback to tmpfs (non-existent LABEL)" "rd.overlay=LABEL=NONEXISTENT test.expect=tmpfs"
     client_run "tmpfs overlay with size (rd.overlay=tmpfs:size=32M,nr_inodes=100000)" \
         "rd.overlay=tmpfs:size=32M,nr_inodes=100000 test.expect=tmpfs-sized"
+
+    client_run "overlayroot=tmpfs" "overlayroot=tmpfs test.expect=tmpfs"
+    client_run "overlayroot=LABEL" "overlayroot=LABEL=OVERLAY test.expect=device"
+    client_run "overlayroot=UUID" "overlayroot=UUID=$overlay_uuid test.expect=device"
+    client_run "overlayroot=/dev" \
+        "overlayroot=/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_overlay test.expect=device"
 }
 
 test_setup() {
