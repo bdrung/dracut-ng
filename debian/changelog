@@ -1,3 +1,9 @@
+dracut (109-11) unstable; urgency=medium
+
+  * autopkgtest: explicitly depend on dmsetup for test 60-nfs
+
+ -- Benjamin Drung <bdrung@debian.org>  Fri, 30 Jan 2026 22:36:56 +0100
+
 dracut (109-10) unstable; urgency=medium
 
   * Let firmware package updates trigger the dracut autopkgtest
