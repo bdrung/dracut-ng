@@ -34,7 +34,7 @@ usr/lib/dracut/modules.d/11systemd-integritysetup
 usr/lib/dracut/modules.d/11systemd-journald
 usr/lib/dracut/modules.d/11systemd-ldconfig
 usr/lib/dracut/modules.d/11systemd-modules-load
-usr/lib/dracut/modules.d/11systemd-pcrphase
+usr/lib/dracut/modules.d/11systemd-pcrextend
 usr/lib/dracut/modules.d/11systemd-portabled
 usr/lib/dracut/modules.d/11systemd-pstore
 usr/lib/dracut/modules.d/11systemd-repart
