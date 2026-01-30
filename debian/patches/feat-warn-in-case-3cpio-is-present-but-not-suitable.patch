@@ -1,0 +1,67 @@
+From: Benjamin Drung <benjamin.drung@canonical.com>
+Date: Fri, 23 Jan 2026 22:59:26 +0100
+Subject: feat: warn in case 3cpio is present but not suitable
+
+In case the 3cpio call fails, dracut will silently fall back to cpio.
+This makes debugging harder.
+
+So print a warning in case calling 3cpio fails. Print an info in case
+3cpio does not support `--create`.
+
+See also https://bugs.debian.org/1126301
+Forwarded: https://github.com/dracut-ng/dracut-ng/pull/2109
+---
+ dracut.sh   | 15 +++++++++++++--
+ lsinitrd.sh | 13 +++++++++++--
+ 2 files changed, 24 insertions(+), 4 deletions(-)
+
+diff --git a/dracut.sh b/dracut.sh
+index 3c76a97..584fa74 100755
+--- a/dracut.sh
++++ b/dracut.sh
+@@ -1487,8 +1487,19 @@ elif [[ -n $persistent_policy && ! -d "/dev/disk/${persistent_policy}" ]]; then
+ fi
+ 
+ CPIO=cpio
+-if 3cpio --help 2> /dev/null | grep -q -- --create; then
+-    CPIO=3cpio
++if command -v 3cpio > /dev/null; then
++    if help_output=$(3cpio --help); then
++        if echo "$help_output" | grep -q -- --create; then
++            CPIO=3cpio
++        else
++            dinfo "3cpio does not support --create. Falling back to cpio."
++        fi
++    elif command -v cpio > /dev/null; then
++        dwarning "Calling '3cpio --help' failed. Cannot check if 3cpio supports --create. Falling back to cpio."
++    else
++        dwarning "Calling '3cpio --help' failed. Cannot check if 3cpio supports --create."
++        CPIO=3cpio
++    fi
+ fi
+ 
+ if [[ $enhanced_cpio == "yes" ]]; then
+diff --git a/lsinitrd.sh b/lsinitrd.sh
+index 7162e6d..32ee28d 100755
+--- a/lsinitrd.sh
++++ b/lsinitrd.sh
+@@ -97,8 +97,17 @@ while (($# > 0)); do
+ done
+ 
+ CPIO=cpio
+-if 3cpio --help 2> /dev/null | grep -q -- --make-directories; then
+-    CPIO=3cpio
++if command -v 3cpio > /dev/null; then
++    if help_output=$(3cpio --help); then
++        if echo "$help_output" | grep -q -- --make-directories; then
++            CPIO=3cpio
++        fi
++    elif command -v cpio > /dev/null; then
++        echo "Warning: Calling '3cpio --help' failed. Cannot check if 3cpio supports --make-directories. Falling back to cpio."
++    else
++        echo "Warning: Calling '3cpio --help' failed. Cannot check if 3cpio supports --make-directories."
++        CPIO=3cpio
++    fi
+ fi
+ 
+ if ! [[ $KERNEL_VERSION ]]; then

@@ -1,0 +1,36 @@
+From: Benjamin Drung <benjamin.drung@canonical.com>
+Date: Fri, 5 Dec 2025 14:20:50 +0100
+Subject: test(run-qemu): support RISC-V
+
+Use the `virt` machine on RISC-V. This machine does not have a PCI bus.
+So use `virtio-rng-device` as RNG device there.
+
+Forwarded: https://github.com/dracut-ng/dracut-ng/pull/1920
+---
+ test/run-qemu | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/test/run-qemu b/test/run-qemu
+index ab741e8..766bd7b 100755
+--- a/test/run-qemu
++++ b/test/run-qemu
+@@ -156,6 +156,10 @@ case "$ARCH" in
+         ARGS+=(-M "cap-ccf-assist=off,cap-cfpc=broken,cap-ibs=broken,cap-sbbc=broken")
+         console=hvc0
+         ;;
++    riscv64)
++        ARGS+=(-M virt)
++        rng_device=virtio-rng-device
++        ;;
+     s390x)
+         console=hvc0
+         ;;
+@@ -166,7 +170,7 @@ if uefi_code=$(get_uefi_code); then
+ fi
+ 
+ # Provide rng device sourcing the hosts /dev/urandom and other standard parameters
+-ARGS+=(-smp 2 -m "${MEMORY-1024}" -nodefaults -vga none -display none -no-reboot -watchdog-action poweroff -device virtio-rng-pci)
++ARGS+=(-smp 2 -m "${MEMORY-1024}" -nodefaults -vga none -display none -no-reboot -watchdog-action poweroff -device "${rng_device:-virtio-rng-pci}")
+ 
+ if ! [[ $* == *-daemonize* ]] && ! [[ $* == *-daemonize* ]]; then
+     ARGS+=(-serial stdio)
