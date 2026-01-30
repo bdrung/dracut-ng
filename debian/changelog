@@ -1,12 +1,15 @@
-dracut (109-10) UNRELEASED; urgency=medium
+dracut (109-10) unstable; urgency=medium
 
   * Let firmware package updates trigger the dracut autopkgtest
   * dracut-core: document which Dracut module needs suggested packages
   * Merge dracut-squash into dracut-core
   * Move the livenet Dracut module to dracut-network and merge the remaining
     dracut-live into dracut-core
+  * fix(tpm2-tss): add tss user/group in addition to sysusers config
+    (LP: #2127725)
+  * autopkgtest: depend on erofs-utils and xorriso in test 30
 
- -- Benjamin Drung <bdrung@debian.org>  Thu, 29 Jan 2026 19:58:19 +0100
+ -- Benjamin Drung <bdrung@debian.org>  Fri, 30 Jan 2026 15:08:55 +0100
 
 dracut (109-9) unstable; urgency=medium
 
