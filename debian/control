@@ -38,8 +38,10 @@ Suggests: cryptsetup,
           parted,
           squashfs-tools,
           systemd-cryptsetup
-Breaks: dracut-live, dracut-network (<< 057+157-2), dracut-squash
-Replaces: dracut-live, dracut-network (<< 057+157-2), dracut-squash
+Breaks: dracut-live (<< 109-10~), dracut-network (<< 057+157-2), dracut-squash
+Replaces: dracut-live (<< 109-10~),
+          dracut-network (<< 057+157-2),
+          dracut-squash
 Provides: dracut-live
 Description: dracut is an event driven initramfs infrastructure (core tools)
  Unlike existing initramfs's, this is an attempt at having as little as
@@ -101,8 +103,8 @@ Depends: dracut-core,
          ${misc:Depends}
 Recommends: curl, nbd-client, nfs-common, open-iscsi
 Suggests: iscsiuio
-Breaks: dracut-core (<< 105), dracut-live
-Replaces: dracut-core (<< 105), dracut-live
+Breaks: dracut-core (<< 105), dracut-live (<< 109-10~)
+Replaces: dracut-core (<< 105), dracut-live (<< 109-10~)
 Description: dracut is an event driven initramfs infrastructure (network modules)
  Package to build a dracut initramfs with network support. This
  includes dracut modules for NFS, CIFS, iSCSI, HTTP, NBD, FCP and FCOE.
