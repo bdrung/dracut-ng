@@ -42,10 +42,12 @@ Restrictions: allow-stderr, needs-root
 Depends: dmsetup,
          dracut-network,
          dracut-test,
+         erofs-utils,
          fdisk,
          parted,
          squashfs-tools,
-         util-linux-extra
+         util-linux-extra,
+         xorriso
 
 Tests: 41-full-systemd
 Architecture: !armel !i386
