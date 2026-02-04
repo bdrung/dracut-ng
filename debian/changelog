@@ -1,3 +1,9 @@
+dracut (109+git20260204-1) unstable; urgency=medium
+
+  * New upstream snapshot.
+
+ -- Benjamin Drung <bdrung@debian.org>  Wed, 04 Feb 2026 16:54:48 +0100
+
 dracut (109-11) unstable; urgency=medium
 
   * autopkgtest: explicitly depend on dmsetup for test 60-nfs
