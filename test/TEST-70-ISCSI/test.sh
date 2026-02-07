@@ -80,12 +80,17 @@ do_test_run() {
         "ip=192.168.50.101::192.168.50.1:255.255.255.0:iscsi-1:lan0:off" \
         "rd.iscsi.initiator=$initiator"
 
-    run_client "netroot=iscsi target1 target2" "" \
-        "root=LABEL=sysroot" \
-        "ip=dhcp" \
-        "netroot=iscsi:192.168.51.1::::iqn.2009-06.dracut:target1" \
-        "netroot=iscsi:192.168.50.1::::iqn.2009-06.dracut:target2" \
-        "rd.iscsi.initiator=$initiator"
+    . /etc/os-release
+    if [[ $ID == debian ]]; then
+        echo 'Warning: Skipping client test "netroot=iscsi target1 target2" due to mdadm 4.5 bug: https://github.com/md-raid-utilities/mdadm/issues/238'
+    else
+        run_client "netroot=iscsi target1 target2" "" \
+            "root=LABEL=sysroot" \
+            "ip=dhcp" \
+            "netroot=iscsi:192.168.51.1::::iqn.2009-06.dracut:target1" \
+            "netroot=iscsi:192.168.50.1::::iqn.2009-06.dracut:target2" \
+            "rd.iscsi.initiator=$initiator"
+    fi
 
     if "$testdir"/run-qemu --supports -acpitable; then
         run_client "root=ibft" "ibft.table" \

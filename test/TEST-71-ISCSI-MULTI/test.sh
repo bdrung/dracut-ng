@@ -65,6 +65,12 @@ run_client() {
 }
 
 do_test_run() {
+    . /etc/os-release
+    if [[ $ID == debian ]]; then
+        echo 'Warning: Skipping client tests due to mdadm 4.5 bug: https://github.com/md-raid-utilities/mdadm/issues/238'
+        return 0
+    fi
+
     initiator=$(iscsi-iname)
     run_client "netroot=iscsi target1 target2" \
         "root=LABEL=sysroot" \
