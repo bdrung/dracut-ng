@@ -75,6 +75,7 @@ Architecture: !armel !i386
 Restrictions: allow-stderr, needs-root
 Depends: dracut-test, xfsprogs
 
+# libarchive is required by systemd-import for systemd >= v259: https://launchpad.net/bugs/2139822
 Tests: 45-systemd-import
 Architecture: !armel !i386
 Restrictions: allow-stderr, needs-root
@@ -83,6 +84,7 @@ Depends: dracut-network,
          erofs-utils,
          gpg,
          gpg-agent,
+         libarchive13t64,
          python3,
          squashfs-tools,
          systemd-container
