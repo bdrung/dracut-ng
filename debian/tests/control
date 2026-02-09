@@ -51,6 +51,11 @@ Depends: dmsetup,
          util-linux-extra,
          xorriso
 
+Tests: 31-livenet
+Architecture: !armel !i386
+Restrictions: allow-stderr, needs-root
+Depends: curl, dmsetup, dracut-network, dracut-test, python3, squashfs-tools
+
 Tests: 41-full-systemd
 Architecture: !armel !i386
 Restrictions: allow-stderr, needs-root
