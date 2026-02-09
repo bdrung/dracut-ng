@@ -76,6 +76,7 @@ usr/lib/dracut/modules.d/70kernel-modules-export
 usr/lib/dracut/modules.d/70kernel-modules-extra
 usr/lib/dracut/modules.d/70lvm
 usr/lib/dracut/modules.d/70mdraid
+usr/lib/dracut/modules.d/70memdisk
 usr/lib/dracut/modules.d/70multipath
 usr/lib/dracut/modules.d/70numlock
 usr/lib/dracut/modules.d/70nvdimm
