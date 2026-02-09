@@ -1,3 +1,23 @@
+dracut (110-1) unstable; urgency=medium
+
+  * New upstream release.
+  * Drop all patches applied upstream
+  * dracut-core:
+    - remove dropped uki-virt and no-xattr Dracut config
+    - remove merged dracut-init.sh and dracut-version.sh
+    - rename systemd-pcrphase to systemd-pcrextend
+    - order systemd-cryptsetup after crypt Dracut module
+    - add new memdisk Dracut module
+  * dracut-network:
+    - add new systemd-import Dracut module and suggest systemd-container for it
+    - Drop network-legacy dracut module (and isc-dhcp-client support)
+  * autopkgtest: add new upstream tests 14-hooks, 21-overlayfs, 31-livenet,
+    and 45-systemd-import
+  * autopkgtest: do not require make for running upstream tests
+  * test: skip failing MD RAID tests cases in test 70 and 71 (mdadm 4.5 bug)
+
+ -- Benjamin Drung <bdrung@debian.org>  Mon, 09 Feb 2026 02:05:10 +0100
+
 dracut (109-11) unstable; urgency=medium
 
   * autopkgtest: explicitly depend on dmsetup for test 60-nfs
