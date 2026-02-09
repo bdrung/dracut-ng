@@ -5,6 +5,7 @@ usr/lib/dracut/modules.d/35network-legacy
 usr/lib/dracut/modules.d/35network-manager
 usr/lib/dracut/modules.d/40network
 usr/lib/dracut/modules.d/45net-lib
+usr/lib/dracut/modules.d/45systemd-import
 usr/lib/dracut/modules.d/45url-lib
 usr/lib/dracut/modules.d/68cms
 usr/lib/dracut/modules.d/70kernel-network-modules
