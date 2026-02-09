@@ -102,12 +102,16 @@ Depends: dracut-core,
          network-manager | systemd | connman | isc-dhcp-client,
          ${misc:Depends}
 Recommends: curl, nbd-client, nfs-common, open-iscsi
-Suggests: iscsiuio
+Suggests: iscsiuio, systemd-container
 Breaks: dracut-core (<< 105), dracut-live (<< 109-10~)
 Replaces: dracut-core (<< 105), dracut-live (<< 109-10~)
 Description: dracut is an event driven initramfs infrastructure (network modules)
  Package to build a dracut initramfs with network support. This
  includes dracut modules for NFS, CIFS, iSCSI, HTTP, NBD, FCP and FCOE.
+ .
+ These Dracut modules need suggested packages:
+  * systemd-import: systemd-container
+  * iscsi: iscsiuio (optionally)
 
 Package: dracut-test
 Architecture: any
