@@ -26,17 +26,16 @@ run_server() {
     echo "NBD TEST SETUP: Starting DHCP/NBD server"
 
     declare -a disk_args=()
-    declare -i disk_index=0
-    qemu_add_drive disk_index disk_args "$TESTDIR"/unencrypted.img unencrypted
-    qemu_add_drive disk_index disk_args "$TESTDIR"/encrypted.img encrypted
-    qemu_add_drive disk_index disk_args "$TESTDIR"/server.img serverroot
+    qemu_add_drive disk_args "$TESTDIR"/unencrypted.img unencrypted
+    qemu_add_drive disk_args "$TESTDIR"/encrypted.img encrypted
+    qemu_add_drive disk_args "$TESTDIR"/server.img serverroot
 
     "$testdir"/run-qemu \
         "${disk_args[@]}" \
         -serial "${SERIAL:-"file:$TESTDIR/server.log"}" \
         -net nic,macaddr=52:54:00:12:34:56,model=virtio \
         -net socket,listen=127.0.0.1:12340 \
-        -append "panic=1 oops=panic softlockup_panic=1 rd.luks=0 systemd.crash_reboot quiet root=/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_serverroot rootfstype=ext4 rw console=ttyS0,115200n81 ${SERVER_DEBUG-}" \
+        -append "panic=1 oops=panic softlockup_panic=1 rd.luks=0 systemd.crash_reboot quiet root=/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_serverroot rootfstype=ext4 rw systemd.journald.forward_to_console=1 ${SERVER_DEBUG-}" \
         -pidfile "$TESTDIR"/server.pid -daemonize \
         -initrd "$TESTDIR"/initramfs.server
     chmod 644 "$TESTDIR"/server.pid
@@ -57,23 +56,21 @@ client_test() {
     local fsopt=${5-ro}
     local found opts nbdinfo
 
-    echo "CLIENT TEST START: $test_name"
+    client_test_start "$test_name"
 
     declare -a disk_args=()
-    declare -i disk_index=0
-    qemu_add_drive disk_index disk_args "$TESTDIR"/marker.img marker
+    qemu_add_drive disk_args "$TESTDIR"/marker.img marker
 
     test_marker_reset
     "$testdir"/run-qemu \
         "${disk_args[@]}" \
         -net nic,macaddr="$mac",model=virtio \
         -net socket,connect=127.0.0.1:12340 \
-        -append "$cmdline rd.auto ro console=ttyS0,115200n81" \
+        -append "$cmdline rd.auto ro" \
         -initrd "$TESTDIR"/initramfs.testing
 
-    # shellcheck disable=SC2181
-    if [[ $? -ne 0 ]] || ! test_marker_check nbd-OK; then
-        echo "CLIENT TEST END: $test_name [FAILED - BAD EXIT]"
+    if ! test_marker_check nbd-OK; then
+        client_test_end "FAILED - MISSING MARKER"
         return 1
     fi
 
@@ -81,7 +78,7 @@ client_test() {
     read -r -a nbdinfo < <(awk '{print $2, $3; exit}' "$TESTDIR"/marker.img)
 
     if [[ ${nbdinfo[0]} != "$fstype" ]]; then
-        echo "CLIENT TEST END: $test_name [FAILED - WRONG FS TYPE] \"${nbdinfo[0]}\" != \"$fstype\""
+        client_test_end "FAILED - WRONG FS TYPE: \"${nbdinfo[0]}\" != \"$fstype\""
         return 1
     fi
 
@@ -95,11 +92,11 @@ client_test() {
     done
 
     if [[ ! $found ]]; then
-        echo "CLIENT TEST END: $test_name [FAILED - BAD FS OPTS] \"${nbdinfo[1]}\" != \"$fsopt\""
+        client_test_end "FAILED - BAD FS OPTS: \"${nbdinfo[1]}\" != \"$fsopt\""
         return 1
     fi
 
-    echo "CLIENT TEST END: $test_name [OK]"
+    client_test_end
 }
 
 test_run() {
@@ -174,17 +171,11 @@ client_run() {
 
 }
 
-make_encrypted_root() {
+make_encrypted_rootfs() {
     rm -fr "$TESTDIR"/overlay
     # Create what will eventually be our root filesystem onto an overlay
-    call_dracut --tmpdir "$TESTDIR" \
-        --add-confdir test-root \
-        -I "ip grep" \
-        --no-hostonly \
-        -f "$TESTDIR"/initramfs.root
-    mkdir -p "$TESTDIR"/overlay/source
-    mv "$TESTDIR"/dracut.*/initramfs/* "$TESTDIR"/overlay/source
-    rm -rf "$TESTDIR"/dracut.*
+    build_client_rootfs "$TESTDIR/overlay/source"
+    inst_multiple ip grep
     inst_init ./client-init.sh "$TESTDIR"/overlay/source
 
     # create an initramfs that will create the target root filesystem.
@@ -194,60 +185,34 @@ make_encrypted_root() {
         --add-confdir test-makeroot \
         -a "crypt lvm mdraid" \
         -I "cryptsetup" \
-        -i ./create-encrypted-root.sh /lib/dracut/hooks/initqueue/01-create-encrypted-root.sh \
+        -i ./create-encrypted-root.sh /usr/lib/dracut/hooks/initqueue/01-create-encrypted-root.sh \
         -f "$TESTDIR"/initramfs.makeroot
     rm -rf -- "$TESTDIR"/overlay
 
     declare -a disk_args=()
-    declare -i disk_index=0
-    qemu_add_drive disk_index disk_args "$TESTDIR"/marker.img marker 1
-    qemu_add_drive disk_index disk_args "$TESTDIR"/encrypted.img root 1
+    qemu_add_drive disk_args "$TESTDIR"/marker.img marker 1
+    qemu_add_drive disk_args "$TESTDIR"/encrypted.img root 1
 
     # Invoke KVM and/or QEMU to actually create the target filesystem.
     "$testdir"/run-qemu \
         "${disk_args[@]}" \
-        -append "root=/dev/fakeroot rw quiet console=ttyS0,115200n81" \
+        -append "root=/dev/fakeroot rw quiet" \
         -initrd "$TESTDIR"/initramfs.makeroot
     test_marker_check dracut-root-block-created
     grep -F -a -m 1 ID_FS_UUID "$TESTDIR"/marker.img > "$TESTDIR"/luks.uuid
 }
 
-make_client_root() {
-    rm -fr "$TESTDIR"/overlay
-    call_dracut --tmpdir "$TESTDIR" \
-        --add-confdir test-root \
-        -I "ip" \
-        --no-hostonly \
-        -f "$TESTDIR"/initramfs.root
-    mkdir -p "$TESTDIR"/overlay/source
-    mv "$TESTDIR"/dracut.*/initramfs/* "$TESTDIR"/overlay/source
-    rm -rf "$TESTDIR"/dracut.*
-    inst_init ./client-init.sh "$TESTDIR"/overlay/source
+make_client_rootfs() {
+    build_client_rootfs "$TESTDIR/client-rootfs"
+    inst_multiple ip
+    inst_init ./client-init.sh "$TESTDIR"/client-rootfs
 
-    # create an initramfs that will create the target root filesystem.
-    # We do it this way so that we do not risk trashing the host mdraid
-    # devices, volume groups, encrypted partitions, etc.
-    call_dracut -i "$TESTDIR"/overlay / \
-        --add-confdir test-makeroot \
-        -i ./create-client-root.sh /lib/dracut/hooks/initqueue/01-create-client-root.sh \
-        -f "$TESTDIR"/initramfs.makeroot
-
-    declare -a disk_args=()
-    declare -i disk_index=0
-    qemu_add_drive disk_index disk_args "$TESTDIR"/marker.img marker 1
-    qemu_add_drive disk_index disk_args "$TESTDIR"/unencrypted.img root 1
-
-    # Invoke KVM and/or QEMU to actually create the target filesystem.
-    "$testdir"/run-qemu \
-        "${disk_args[@]}" \
-        -append "root=/dev/dracut/root rw quiet console=ttyS0,115200n81" \
-        -initrd "$TESTDIR"/initramfs.makeroot
-    test_marker_check dracut-root-block-created
-    rm -fr "$TESTDIR"/overlay
+    build_ext4_image "$TESTDIR/client-rootfs" "$TESTDIR"/unencrypted.img dracut
+    rm -fr "$TESTDIR"/client-rootfs
 }
 
-make_server_root() {
-    rm -fr "$TESTDIR"/overlay
+make_server_rootfs() {
+    rm -fr "$TESTDIR"/server-rootfs
 
     cat > /tmp/config << EOF
 [generic]
@@ -270,43 +235,21 @@ EOF
         -i "./dhcpd.conf" "/etc/dhcpd.conf" \
         --no-hostonly \
         -f "$TESTDIR"/initramfs.root
-    mkdir -p "$TESTDIR"/overlay/source
-    mv "$TESTDIR"/dracut.*/initramfs/* "$TESTDIR"/overlay/source
+    mkdir -p "$TESTDIR"/server-rootfs
+    mv "$TESTDIR"/dracut.*/initramfs/* "$TESTDIR"/server-rootfs
     rm -rf "$TESTDIR"/dracut.*
 
-    mkdir -p -- "$TESTDIR"/overlay/source/var/lib/dhcpd "$TESTDIR"/overlay/source/etc/nbd-server
-    inst_init ./server-init.sh "$TESTDIR"/overlay/source
+    mkdir -p -- "$TESTDIR"/server-rootfs/var/lib/dhcpd "$TESTDIR"/server-rootfs/etc/nbd-server
+    inst_init ./server-init.sh "$TESTDIR"/server-rootfs
 
-    # create an initramfs that will create the target root filesystem.
-    # We do it this way so that we do not risk trashing the host mdraid
-    # devices, volume groups, encrypted partitions, etc.
-    call_dracut -i "$TESTDIR"/overlay / \
-        --add-confdir test-makeroot \
-        -i ./create-server-root.sh /lib/dracut/hooks/initqueue/01-create-server-root.sh \
-        -f "$TESTDIR"/initramfs.makeroot
-
-    declare -a disk_args=()
-    # shellcheck disable=SC2034  # disk_index used in qemu_add_drive
-    declare -i disk_index=0
-    qemu_add_drive disk_index disk_args "$TESTDIR"/marker.img marker 1
-    qemu_add_drive disk_index disk_args "$TESTDIR"/server.img root 1
-
-    # Invoke KVM and/or QEMU to actually create the target filesystem.
-    "$testdir"/run-qemu \
-        "${disk_args[@]}" \
-        -append "root=/dev/dracut/root rw rootfstype=ext4 quiet console=ttyS0,115200n81" \
-        -initrd "$TESTDIR"/initramfs.makeroot
-    test_marker_check dracut-root-block-created
-    rm -fr "$TESTDIR"/overlay
+    build_ext4_image "$TESTDIR/server-rootfs" "$TESTDIR"/server.img dracut
+    rm -fr "$TESTDIR"/server-rootfs
 }
 
 test_setup() {
-    make_encrypted_root
-    make_client_root
-    make_server_root
-
-    rm -fr "$TESTDIR"/overlay
-    # Make the test image
+    make_encrypted_rootfs
+    make_client_rootfs
+    make_server_rootfs
 
     # shellcheck source=$TESTDIR/luks.uuid
     . "$TESTDIR"/luks.uuid
@@ -316,16 +259,16 @@ test_setup() {
 
     test_dracut \
         --no-hostonly \
-        -a "watchdog qemu-net ${USE_NETWORK}" \
+        -a "watchdog ${USE_NETWORK}" \
         -i "./client.link" "/etc/systemd/network/01-client.link" \
         -i "/tmp/crypttab" "/etc/crypttab" \
         -i "/tmp/key" "/etc/key"
 
     call_dracut -N \
         --add-confdir test \
-        -a "qemu-net $USE_NETWORK ${SERVER_DEBUG:+debug}" \
+        -a "$USE_NETWORK ${SERVER_DEBUG:+debug}" \
         -i "./server.link" "/etc/systemd/network/01-server.link" \
-        -i "./wait-if-server.sh" "/lib/dracut/hooks/pre-mount/99-wait-if-server.sh" \
+        -i "./wait-if-server.sh" "/usr/lib/dracut/hooks/pre-mount/99-wait-if-server.sh" \
         -f "$TESTDIR"/initramfs.server
 }
 

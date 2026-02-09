@@ -88,9 +88,6 @@ install() {
     mkdir -m 0755 -p "${initdir}"/lib/dracut
     mkdir -m 0755 -p "${initdir}"/var/lib/dracut/hooks
 
-    # symlink to old hooks location for compatibility
-    ln_r /var/lib/dracut/hooks /lib/dracut/hooks
-
     mkdir -p "${initdir}"/tmp
 
     inst_simple "$moddir/dracut-lib.sh" "/lib/dracut-lib.sh"
@@ -135,7 +132,7 @@ install() {
                     export DRACUT_SYSTEMD=1
                 fi
                 export PREFIX="$initdir"
-                export hookdir=/lib/dracut/hooks
+                export hookdir=/var/lib/dracut/hooks
 
                 # shellcheck source=dracut-dev-lib.sh
                 . "$moddir/dracut-dev-lib.sh"
@@ -155,7 +152,7 @@ install() {
                     _pdev=$(get_persistent_dev "$_dev")
 
                     case "$_pdev" in
-                        /dev/?*) wait_for_dev "$_pdev" 0 ;;
+                        /dev/?*) wait_for_dev "$_pdev" "infinity" ;;
                         *) ;;
                     esac
                 done
@@ -163,7 +160,7 @@ install() {
                 for _dev in "${user_devs[@]}"; do
 
                     case "$_dev" in
-                        /dev/?*) wait_for_dev "$_dev" 0 ;;
+                        /dev/?*) wait_for_dev "$_dev" "infinity" ;;
                         *) ;;
                     esac
 
@@ -171,7 +168,7 @@ install() {
                     [[ $_dev == "$_pdev" ]] && continue
 
                     case "$_pdev" in
-                        /dev/?*) wait_for_dev "$_pdev" 0 ;;
+                        /dev/?*) wait_for_dev "$_pdev" "infinity" ;;
                         *) ;;
                     esac
                 done

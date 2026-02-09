@@ -17,8 +17,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-export __DRACUT_LOGGER__=1
-
 ## @brief Logging facility module for dracut both at build- and boot-time.
 #
 # @section intro Introduction
@@ -103,7 +101,7 @@ export __DRACUT_LOGGER__=1
 dlog_init() {
     local __oldumask
     local ret=0
-    local errmsg=
+    local errmsgs=()
     [ -z "${stdloglvl-}" ] && stdloglvl=4
     [ -z "${sysloglvl-}" ] && sysloglvl=0
     [ -z "${kmsgloglvl-}" ] && kmsgloglvl=0
@@ -131,7 +129,7 @@ dlog_init() {
                 # We cannot log to file, so turn this facility off.
                 fileloglvl=0
                 ret=1
-                errmsg="'$logfile' is not a writable file"
+                errmsgs+=("'$logfile' is not a writable file")
             fi
         fi
     fi
@@ -153,11 +151,19 @@ dlog_init() {
             exec 15> "$_systemdcatfile"
         elif ! ([[ -S /dev/log ]] && [[ -w /dev/log ]] && command -v logger > /dev/null); then
             # We cannot log to syslog, so turn this facility off.
-            kmsgloglvl=$sysloglvl
+            if [[ -w /dev/kmsg ]]; then
+                kmsgloglvl=$sysloglvl
+            fi
             sysloglvl=0
             ret=1
-            errmsg="No '/dev/log' or 'logger' included for syslog logging"
+            errmsgs+=("No '/dev/log' or 'logger' included for syslog logging")
         fi
+    fi
+
+    if ((kmsgloglvl > 0)) && [[ ! -w /dev/kmsg ]]; then
+        kmsgloglvl=0
+        ret=1
+        errmsgs+=("'/dev/kmsg' not writable. Disabling logging to kernel ring buffer.")
     fi
 
     if ((sysloglvl > 0)) || ((kmsgloglvl > 0)); then
@@ -166,7 +172,6 @@ dlog_init() {
         else
             readonly syslogfacility=daemon
         fi
-        export syslogfacility
     fi
 
     local lvl
@@ -175,7 +180,6 @@ dlog_init() {
         ((lvl > maxloglvl_l)) && maxloglvl_l=$lvl
     done
     readonly maxloglvl=$maxloglvl_l
-    export maxloglvl
 
     if ((stdloglvl < 6)) && ((kmsgloglvl < 6)) && ((fileloglvl < 6)) && ((sysloglvl < 6)); then
         unset dtrace
@@ -216,7 +220,9 @@ dlog_init() {
         dfatal() { :; }
     fi
 
-    [ -n "$errmsg" ] && derror "$errmsg"
+    for errmsg in "${errmsgs[@]}"; do
+        derror "$errmsg"
+    done
 
     return $ret
 }
@@ -481,7 +487,7 @@ dlog() {
 dtrace() {
     set +x
     dlog 6 "$@"
-    if [ -n "$debug" ]; then
+    if [ -n "${debug-}" ]; then
         set -x
     fi
 }
@@ -493,7 +499,7 @@ dtrace() {
 ddebug() {
     set +x
     dlog 5 "$@"
-    if [ -n "$debug" ]; then
+    if [ -n "${debug-}" ]; then
         set -x
     fi
 }
@@ -505,7 +511,7 @@ ddebug() {
 dinfo() {
     set +x
     dlog 4 "$@"
-    if [ -n "$debug" ]; then
+    if [ -n "${debug-}" ]; then
         set -x
     fi
 }
@@ -517,7 +523,7 @@ dinfo() {
 dwarn() {
     set +x
     dlog 3 "$@"
-    if [ -n "$debug" ]; then
+    if [ -n "${debug-}" ]; then
         set -x
     fi
 }
@@ -529,7 +535,7 @@ dwarn() {
 dwarning() {
     set +x
     dwarn "$@"
-    if [ -n "$debug" ]; then
+    if [ -n "${debug-}" ]; then
         set -x
     fi
 }
@@ -541,7 +547,7 @@ dwarning() {
 derror() {
     set +x
     dlog 2 "$@"
-    if [ -n "$debug" ]; then
+    if [ -n "${debug-}" ]; then
         set -x
     fi
 }
@@ -553,7 +559,7 @@ derror() {
 dfatal() {
     set +x
     dlog 1 "$@"
-    if [ -n "$debug" ]; then
+    if [ -n "${debug-}" ]; then
         set -x
     fi
 }

@@ -417,7 +417,7 @@ static int cp(const char *src, const char *dst)
                                                 log_info("Failed to chown %s: %m", dst);
                                 }
 
-                        if (geteuid() == 0 && no_xattr == false) {
+                        if (geteuid() == 0 && !no_xattr) {
                                 if (copy_xattr(dest_desc, source_desc) != 0)
                                         log_error("Failed to copy xattr %s: %m", dst);
                         }
@@ -437,10 +437,13 @@ static int cp(const char *src, const char *dst)
 
 normal_copy:
         pid = fork();
-        const char *preservation = (geteuid() == 0
-                                    && no_xattr == false) ? "--preserve=mode,xattr,timestamps,ownership" : "--preserve=mode,timestamps,ownership";
+        bool preservation = geteuid() == 0 && !no_xattr;
+
         if (pid == 0) {
-                execlp("cp", "cp", "--reflink=auto", "--sparse=auto", preservation, "-fL", src, dst, NULL);
+                if (preservation)
+                        execlp("cp", "cp", "--reflink=auto", "--preserve=xattr", "-fLp", src, dst, NULL);
+                else
+                        execlp("cp", "cp", "--reflink=auto", "-fLp", src, dst, NULL);
                 _exit(errno == ENOENT ? 127 : 126);
         }
 
@@ -451,8 +454,12 @@ normal_copy:
                 }
         }
         ret = WIFSIGNALED(ret) ? 128 + WTERMSIG(ret) : WEXITSTATUS(ret);
-        if (ret != 0)
-                log_error("ERROR: 'cp --reflink=auto --sparse=auto %s -fL %s %s' failed with %d", preservation, src, dst, ret);
+        if (ret != 0) {
+                if (preservation)
+                        log_error("ERROR: 'cp --reflink=auto --preserve=xattr -fLp %s %s' failed with %d", src, dst, ret);
+                else
+                        log_error("ERROR: 'cp --reflink=auto -fLp %s %s' failed with %d", src, dst, ret);
+        }
         log_debug("cp ret = %d", ret);
         return ret;
 }
@@ -461,7 +468,8 @@ static int library_install(const char *src, const char *lib)
 {
         _cleanup_free_ char *p = NULL;
         _cleanup_free_ char *pdir = NULL, *ppdir = NULL, *pppdir = NULL, *clib = NULL;
-        char *q, *clibdir;
+        char *clib_so_offset, *clibdir;
+        const char *lib_so_offset;
         int r, ret = 0;
 
         r = dracut_install(lib, lib, false, false, true);
@@ -472,9 +480,9 @@ static int library_install(const char *src, const char *lib)
         ret += r;
 
         /* also install lib.so for lib.so.* files */
-        q = strstr(lib, ".so.");
-        if (q) {
-                p = strndup(lib, q - lib + 3);
+        lib_so_offset = strstr(lib, ".so.");
+        if (lib_so_offset) {
+                p = strndup(lib, lib_so_offset - lib + 3);
 
                 /* ignore errors for base lib symlink */
                 if (dracut_install(p, p, false, false, true) == 0)
@@ -512,9 +520,9 @@ static int library_install(const char *src, const char *lib)
         if (dracut_install(clib, clib, false, false, true) == 0)
                 log_debug("Lib install: '%s'", clib);
         /* also install lib.so for lib.so.* files */
-        q = strstr(clib, ".so.");
-        if (q) {
-                q[3] = '\0';
+        clib_so_offset = strstr(clib, ".so.");
+        if (clib_so_offset) {
+                clib_so_offset[3] = '\0';
 
                 /* ignore errors for base lib symlink */
                 if (dracut_install(clib, clib, false, false, true) == 0)
@@ -1384,7 +1392,6 @@ static int dracut_install(const char *orig_src, const char *orig_dst, bool isdir
         int ret;
         bool src_islink = false;
         bool src_isdir = false;
-        mode_t src_mode = 0;
         char *hash_path = NULL;
         const char *src, *dst;
 
@@ -1430,7 +1437,6 @@ static int dracut_install(const char *orig_src, const char *orig_dst, bool isdir
         } else {
                 src_islink = S_ISLNK(sb.st_mode);
                 src_isdir = S_ISDIR(sb.st_mode);
-                src_mode = sb.st_mode;
         }
 
         /* The install hasn't succeeded yet, but mark this item as successful
@@ -1453,7 +1459,7 @@ static int dracut_install(const char *orig_src, const char *orig_dst, bool isdir
                         return 1;
                 }
 
-                if (resolvedeps && S_ISREG(sb.st_mode) && (sb.st_mode & (S_IXUSR | S_IXGRP | S_IXOTH))) {
+                if (resolvedeps && S_ISREG(sb.st_mode)) {
                         log_debug("'%s' already exists, but checking for any deps", fulldstpath);
                         if (sysrootdirlen && (strncmp(fulldstpath, sysrootdir, sysrootdirlen) == 0))
                                 ret = resolve_deps(fulldstpath + sysrootdirlen, NULL);
@@ -1539,18 +1545,16 @@ static int dracut_install(const char *orig_src, const char *orig_dst, bool isdir
                         return 0;
                 }
 
-                if (src_mode & (S_IXUSR | S_IXGRP | S_IXOTH)) {
-                        if (resolvedeps) {
-                                /* ensure fullsrcpath contains sysrootdir */
-                                if (sysrootdirlen && (strncmp(fullsrcpath, sysrootdir, sysrootdirlen) == 0))
-                                        ret += resolve_deps(fullsrcpath + sysrootdirlen, NULL);
-                                else
-                                        ret += resolve_deps(fullsrcpath, NULL);
-                        }
-                        if (arg_hmac) {
-                                /* copy .hmac files also */
-                                hmac_install(src, dst, NULL);
-                        }
+                if (resolvedeps) {
+                        /* ensure fullsrcpath contains sysrootdir */
+                        if (sysrootdirlen && (strncmp(fullsrcpath, sysrootdir, sysrootdirlen) == 0))
+                                ret += resolve_deps(fullsrcpath + sysrootdirlen, NULL);
+                        else
+                                ret += resolve_deps(fullsrcpath, NULL);
+                }
+                if (arg_hmac) {
+                        /* copy .hmac files also */
+                        hmac_install(src, dst, NULL);
                 }
 
                 log_debug("dracut_install ret = %d", ret);
@@ -2580,8 +2584,7 @@ static int install_modules(int argc, char **argv)
 
         struct kmod_module *mod = NULL, *mod_o = NULL;
 
-        const char *abskpath = NULL;
-        char *p;
+        const char *abskpath = NULL, *p;
         int i;
         int modinst = 0;
 

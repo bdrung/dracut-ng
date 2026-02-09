@@ -24,16 +24,14 @@ run_server() {
     # Start server first
     echo "NFS TEST SETUP: Starting DHCP/NFS server"
     declare -a disk_args=()
-    # shellcheck disable=SC2034
-    declare -i disk_index=0
-    qemu_add_drive disk_index disk_args "$TESTDIR"/server.img root 0 1
+    qemu_add_drive disk_args "$TESTDIR"/server.img root 0 1
 
     "$testdir"/run-qemu \
         "${disk_args[@]}" \
         -net socket,listen=127.0.0.1:12320 \
         -net nic,macaddr=52:54:00:12:34:56,model=virtio \
         -serial "${SERIAL:-"file:$TESTDIR/server.log"}" \
-        -append "panic=1 oops=panic softlockup_panic=1 root=LABEL=dracut rootfstype=ext4 rw console=ttyS0,115200n81 ${SERVER_DEBUG-}" \
+        -append "panic=1 oops=panic softlockup_panic=1 root=LABEL=dracut rootfstype=ext4 rw systemd.journald.forward_to_console=1 ${SERVER_DEBUG-}" \
         -pidfile "$TESTDIR"/server.pid -daemonize \
         -initrd "$TESTDIR"/initramfs.server
     chmod 644 "$TESTDIR"/server.pid
@@ -54,14 +52,12 @@ client_test() {
     local check_opt="$5"
     local nfsinfo opts found expected
 
-    echo "CLIENT TEST START: $test_name"
+    client_test_start "$test_name"
 
     # Need this so kvm-qemu will boot (needs non-/dev/zero local disk)
     declare -a disk_args=()
-    # shellcheck disable=SC2034
-    declare -i disk_index=0
-    qemu_add_drive disk_index disk_args "$TESTDIR"/marker.img marker 1
-    qemu_add_drive disk_index disk_args "$TESTDIR"/marker2.img marker2 1
+    qemu_add_drive disk_args "$TESTDIR"/marker.img marker 1
+    qemu_add_drive disk_args "$TESTDIR"/marker2.img marker2 1
 
     "$testdir"/run-qemu \
         "${disk_args[@]}" \
@@ -70,9 +66,8 @@ client_test() {
         -append "$TEST_KERNEL_CMDLINE $cmdline ro" \
         -initrd "$TESTDIR"/initramfs.testing
 
-    # shellcheck disable=SC2181
-    if [[ $? -ne 0 ]] || ! test_marker_check nfs-OK; then
-        echo "CLIENT TEST END: $test_name [FAILED - BAD EXIT]"
+    if ! test_marker_check nfs-OK; then
+        client_test_end "FAILED - MISSING MARKER"
         return 1
     fi
 
@@ -82,7 +77,7 @@ client_test() {
     if [[ ${nfsinfo[0]%%:*} != "$server" ]]; then
         echo "CLIENT TEST INFO: got server: ${nfsinfo[0]%%:*}"
         echo "CLIENT TEST INFO: expected server: $server"
-        echo "CLIENT TEST END: $test_name [FAILED - WRONG SERVER]"
+        client_test_end "FAILED - WRONG SERVER"
         return 1
     fi
 
@@ -106,20 +101,20 @@ client_test() {
         echo "CLIENT TEST INFO: got options: ${nfsinfo[2]%%:*}"
         if [[ $expected -eq 0 ]]; then
             echo "CLIENT TEST INFO: did not expect: $check_opt"
-            echo "CLIENT TEST END: $test_name [FAILED - UNEXPECTED OPTION]"
+            client_test_end "FAILED - UNEXPECTED OPTION"
         else
             echo "CLIENT TEST INFO: missing: $check_opt"
-            echo "CLIENT TEST END: $test_name [FAILED - MISSING OPTION]"
+            client_test_end "FAILED - MISSING OPTION"
         fi
         return 1
     fi
 
     if ! test_marker_check nfsfetch-OK marker2.img; then
-        echo "CLIENT TEST END: $test_name [FAILED - NFS FETCH FAILED]"
+        client_test_end "FAILED - NFS FETCH FAILED"
         return 1
     fi
 
-    echo "CLIENT TEST END: $test_name [OK]"
+    client_test_end
     return 0
 }
 
@@ -192,10 +187,10 @@ test_nfsv4() {
         "root=dhcp" 192.168.50.3 wsize=4096
 
     client_test "NFSv4 Overlayfs root=nfs4:..." 52:54:00:12:34:84 \
-        "root=nfs4:192.168.50.1:/client rd.live.overlay.overlayfs=1 " 192.168.50.1 -wsize=4096
+        "root=nfs4:192.168.50.1:/client rd.overlay " 192.168.50.1 -wsize=4096
 
     client_test "NFSv4 Live Overlayfs root=nfs4:..." 52:54:00:12:34:84 \
-        "root=nfs4:192.168.50.1:/client rd.live.image rd.live.overlay.overlayfs=1" 192.168.50.1 -wsize=4096
+        "root=nfs4:192.168.50.1:/client rd.live.image rd.overlay" 192.168.50.1 -wsize=4096
 
     return 0
 }
@@ -220,7 +215,7 @@ test_run() {
     fi
 }
 
-test_setup() {
+make_server_rootfs() {
     call_dracut --tmpdir "$TESTDIR" \
         --add-confdir test-root \
         -a "$USE_NETWORK url-lib nfs" \
@@ -239,11 +234,11 @@ test_setup() {
         -i "./dhcpd.conf" "/etc/dhcpd.conf" \
         -f "$TESTDIR"/initramfs.root
 
-    mkdir -p "$TESTDIR"/server/overlay/source
-    mv "$TESTDIR"/server/overlay/dracut.*/initramfs/* "$TESTDIR"/server/overlay/source
+    mkdir -p "$TESTDIR"/server-rootfs
+    mv "$TESTDIR"/server/overlay/dracut.*/initramfs/* "$TESTDIR"/server-rootfs
     rm -rf "$TESTDIR"/server/overlay/dracut.*
 
-    export initdir=$TESTDIR/server/overlay/source
+    export initdir=$TESTDIR/server-rootfs
     mkdir -p "$initdir"/var/lib/{dhcpd,rpcbind} "$initdir"/var/lib/nfs/{v4recovery,rpc_pipefs}
     chmod 777 "$initdir"/var/lib/{dhcpd,rpcbind}
     inst_init ./server-init.sh "$initdir"
@@ -252,47 +247,30 @@ test_setup() {
 
     # Make client root inside server root
     # shellcheck disable=SC2031
-    export initdir=$TESTDIR/server/overlay/source/nfs/client
+    export initdir=$TESTDIR/server-rootfs/nfs/client
     mkdir -p "$initdir"
     mv "$TESTDIR"/dracut.*/initramfs/* "$initdir"
     rm -rf "$TESTDIR"/dracut.*
     echo "TEST FETCH FILE" > "$initdir"/root/fetchfile
     inst_init ./client-init.sh "$initdir"
 
-    # create an initramfs that will create the target root filesystem.
-    # We do it this way so that we do not risk trashing the host mdraid
-    # devices, volume groups, encrypted partitions, etc.
-    call_dracut -i "$TESTDIR"/server/overlay / \
-        --add-confdir test-makeroot \
-        -a "bash" \
-        -i ./create-root.sh /lib/dracut/hooks/initqueue/01-create-root.sh \
-        -f "$TESTDIR"/initramfs.makeroot
-    rm -rf -- "$TESTDIR"/server
+    build_ext4_image "$TESTDIR/server-rootfs" "$TESTDIR"/server.img dracut
+}
 
-    declare -a disk_args=()
-    # shellcheck disable=SC2034
-    declare -i disk_index=0
-    qemu_add_drive disk_index disk_args "$TESTDIR"/marker.img marker 1
-    qemu_add_drive disk_index disk_args "$TESTDIR"/server.img root 1
-
-    # Invoke KVM and/or QEMU to actually create the target filesystem.
-    "$testdir"/run-qemu \
-        "${disk_args[@]}" \
-        -append "root=/dev/dracut/root rw rootfstype=ext4 quiet console=ttyS0,115200n81" \
-        -initrd "$TESTDIR"/initramfs.makeroot
-    test_marker_check dracut-root-block-created
+test_setup() {
+    make_server_rootfs
 
     # Make client's dracut image
     test_dracut \
         --no-hostonly \
         --include ./client.link /etc/systemd/network/01-client.link \
-        -a "watchdog dmsquash-live qemu-net ${USE_NETWORK}"
+        -a "watchdog dmsquash-live ${USE_NETWORK}"
 
     # Make server's dracut image
     call_dracut \
-        -a "bash qemu-net $USE_NETWORK ${SERVER_DEBUG:+debug}" \
+        -a "bash $USE_NETWORK ${SERVER_DEBUG:+debug}" \
         --include ./server.link /etc/systemd/network/01-server.link \
-        --include ./wait-if-server.sh /lib/dracut/hooks/pre-mount/99-wait-if-server.sh \
+        --include ./wait-if-server.sh /usr/lib/dracut/hooks/pre-mount/99-wait-if-server.sh \
         -N \
         -f "$TESTDIR"/initramfs.server
 }

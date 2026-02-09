@@ -16,7 +16,7 @@ check() {
 
 # Config adjustments before installing anything.
 config() {
-    add_dlopen_features+=" libsystemd-shared-*.so:kmod "
+    add_dlopen_features+=" libsystemd-shared-*.so:audit,kmod,mount,seccomp,selinux "
 }
 
 installkernel() {
@@ -34,7 +34,6 @@ install() {
 
     inst_multiple -o \
         "$systemdutildir"/systemd \
-        "$systemdutildir"/systemd-coredump \
         "$systemdutildir"/systemd-cgroups-agent \
         "$systemdutildir"/systemd-executor \
         "$systemdutildir"/systemd-shutdown \
@@ -93,7 +92,7 @@ install() {
         "$systemdsystemunitdir"/slices.target \
         "$systemdsystemunitdir"/system.slice \
         "$systemdsystemunitdir"/-.slice \
-        systemctl \
+        systemctl varlinkctl \
         echo swapoff \
         chmod \
         mount umount reboot poweroff \

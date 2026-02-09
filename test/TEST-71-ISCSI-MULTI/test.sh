@@ -15,11 +15,10 @@ run_server() {
     echo "iSCSI TEST SETUP: Starting DHCP/iSCSI server"
 
     declare -a disk_args=()
-    declare -i disk_index=0
-    qemu_add_drive disk_index disk_args "$TESTDIR"/server.img serverroot 0 1
-    qemu_add_drive disk_index disk_args "$TESTDIR"/singleroot.img singleroot
-    qemu_add_drive disk_index disk_args "$TESTDIR"/raid0-1.img raid0-1
-    qemu_add_drive disk_index disk_args "$TESTDIR"/raid0-2.img raid0-2
+    qemu_add_drive disk_args "$TESTDIR"/server.img serverroot 0 1
+    qemu_add_drive disk_args "$TESTDIR"/singleroot.img singleroot
+    qemu_add_drive disk_args "$TESTDIR"/raid0-1.img raid0-1
+    qemu_add_drive disk_args "$TESTDIR"/raid0-2.img raid0-2
 
     "$testdir"/run-qemu \
         "${disk_args[@]}" \
@@ -27,7 +26,7 @@ run_server() {
         -net nic,macaddr=52:54:00:12:34:56,model=virtio \
         -net nic,macaddr=52:54:00:12:34:57,model=virtio \
         -net socket,listen=127.0.0.1:12331 \
-        -append "panic=1 oops=panic softlockup_panic=1 systemd.crash_reboot root=/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_serverroot rootfstype=ext4 rw console=ttyS0,115200n81 ${SERVER_DEBUG-}" \
+        -append "panic=1 oops=panic softlockup_panic=1 systemd.crash_reboot root=/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_serverroot rootfstype=ext4 rw systemd.journald.forward_to_console=1 ${SERVER_DEBUG-}" \
         -pidfile "$TESTDIR"/server.pid -daemonize \
         -initrd "$TESTDIR"/initramfs.server
     chmod 644 "$TESTDIR"/server.pid
@@ -43,11 +42,10 @@ run_server() {
 run_client() {
     local test_name=$1
     shift
-    echo "CLIENT TEST START: $test_name"
+    client_test_start "$test_name"
 
     declare -a disk_args=()
-    declare -i disk_index=0
-    qemu_add_drive disk_index disk_args "$TESTDIR"/marker.img marker
+    qemu_add_drive disk_args "$TESTDIR"/marker.img marker
 
     test_marker_reset
     "$testdir"/run-qemu \
@@ -58,11 +56,11 @@ run_client() {
         -append "$TEST_KERNEL_CMDLINE rw rd.auto $*" \
         -initrd "$TESTDIR"/initramfs.testing
     if ! test_marker_check iscsi-OK; then
-        echo "CLIENT TEST END: $test_name [FAILED - BAD EXIT]"
+        client_test_end "FAILED - BAD EXIT"
         return 1
     fi
 
-    echo "CLIENT TEST END: $test_name [OK]"
+    client_test_end
     return 0
 }
 
@@ -131,19 +129,14 @@ test_check() {
     fi
 }
 
-test_setup() {
-    # Create what will eventually be our root filesystem onto an overlay
+make_client_rootfs() {
     rm -rf -- "$TESTDIR"/overlay
-    call_dracut --keep --tmpdir "$TESTDIR" \
-        --add-confdir test-root \
-        -I "ip grep setsid" \
-        --no-hostonly \
-        -f "$TESTDIR"/initramfs.root
-    mkdir -p "$TESTDIR"/overlay/source
-    mv "$TESTDIR"/dracut.*/initramfs/* "$TESTDIR"/overlay/source
-    rm -rf "$TESTDIR"/dracut.*
+    build_client_rootfs "$TESTDIR/overlay/source"
+    inst_multiple ip grep setsid
     mkdir -p -- "$TESTDIR"/overlay/source/var/lib/nfs/rpc_pipefs
     inst_init ./client-init.sh "$TESTDIR"/overlay/source
+
+    build_ext4_image "$TESTDIR/overlay/source" "$TESTDIR"/singleroot.img singleroot
 
     # create an initramfs that will create the target root filesystem.
     # We do it this way so that we do not risk trashing the host mdraid
@@ -152,78 +145,61 @@ test_setup() {
         --add-confdir test-makeroot \
         -a "crypt lvm mdraid" \
         -I "setsid blockdev" \
-        -i ./create-client-root.sh /lib/dracut/hooks/initqueue/01-create-client-root.sh \
+        -i ./create-client-root.sh /usr/lib/dracut/hooks/initqueue/01-create-client-root.sh \
         -f "$TESTDIR"/initramfs.makeroot
     rm -rf -- "$TESTDIR"/overlay
 
     declare -a disk_args=()
-    declare -i disk_index=0
-    qemu_add_drive disk_index disk_args "$TESTDIR"/marker.img marker 1
-    qemu_add_drive disk_index disk_args "$TESTDIR"/singleroot.img singleroot 1
-    qemu_add_drive disk_index disk_args "$TESTDIR"/raid0-1.img raid0-1 1
-    qemu_add_drive disk_index disk_args "$TESTDIR"/raid0-2.img raid0-2 1
+    qemu_add_drive disk_args "$TESTDIR"/marker.img marker 1
+    qemu_add_drive disk_args "$TESTDIR"/raid0-1.img raid0-1 1
+    qemu_add_drive disk_args "$TESTDIR"/raid0-2.img raid0-2 1
 
     # Invoke KVM and/or QEMU to actually create the target filesystem.
     "$testdir"/run-qemu \
         "${disk_args[@]}" \
-        -append "root=/dev/fakeroot rw rootfstype=ext4 quiet console=ttyS0,115200n81" \
+        -append "root=/dev/fakeroot rw rootfstype=ext4 quiet" \
         -initrd "$TESTDIR"/initramfs.makeroot
     test_marker_check dracut-root-block-created
     rm -- "$TESTDIR"/marker.img
+}
 
-    rm -rf -- "$TESTDIR"/overlay
+make_server_rootfs() {
     call_dracut --tmpdir "$TESTDIR" \
         --add-confdir test-root \
         -a "$USE_NETWORK iscsi" \
         -d "iscsi_tcp crc32c ipv6 af_packet" \
         -I "ip grep sleep setsid chmod modprobe pidof tgtd tgtadm" \
         --install-optional "/etc/netconfig dhcpd /etc/group /etc/nsswitch.conf /etc/rpc /etc/protocols /etc/services /usr/etc/nsswitch.conf /usr/etc/rpc /usr/etc/protocols /usr/etc/services" \
-        -i /tmp/config /etc/nbd-server/config \
         -i "./dhcpd.conf" "/etc/dhcpd.conf" \
         -f "$TESTDIR"/initramfs.root
-    mkdir -p "$TESTDIR"/overlay/source
-    mv "$TESTDIR"/dracut.*/initramfs/* "$TESTDIR"/overlay/source
+    mkdir -p "$TESTDIR"/server-rootfs
+    mv "$TESTDIR"/dracut.*/initramfs/* "$TESTDIR"/server-rootfs
     rm -rf "$TESTDIR"/dracut.*
 
-    mkdir -p -- "$TESTDIR"/overlay/source/var/lib/dhcpd "$TESTDIR"/overlay/source/etc/iscsi
-    inst_init ./server-init.sh "$TESTDIR"/overlay/source
+    mkdir -p -- "$TESTDIR"/server-rootfs/var/lib/dhcpd "$TESTDIR"/server-rootfs/etc/iscsi
+    inst_init ./server-init.sh "$TESTDIR"/server-rootfs
 
-    # create an initramfs that will create the target root filesystem.
-    # We do it this way so that we do not risk trashing the host mdraid
-    # devices, volume groups, encrypted partitions, etc.
-    call_dracut -i "$TESTDIR"/overlay / \
-        --add-confdir test-makeroot \
-        -i ./create-server-root.sh /lib/dracut/hooks/initqueue/01-create-server-root.sh \
-        -f "$TESTDIR"/initramfs.makeroot
-    rm -rf -- "$TESTDIR"/overlay
+    build_ext4_image "$TESTDIR/server-rootfs" "$TESTDIR"/server.img dracut
+    rm -rf "$TESTDIR"/server-rootfs
+}
 
-    declare -a disk_args=()
-    # shellcheck disable=SC2034  # disk_index used in qemu_add_drive
-    declare -i disk_index=0
-    qemu_add_drive disk_index disk_args "$TESTDIR"/marker.img marker 1
-    qemu_add_drive disk_index disk_args "$TESTDIR"/server.img root 1
-
-    # Invoke KVM and/or QEMU to actually create the target filesystem.
-    "$testdir"/run-qemu \
-        "${disk_args[@]}" \
-        -append "root=/dev/dracut/root rw rootfstype=ext4 quiet console=ttyS0,115200n81" \
-        -initrd "$TESTDIR"/initramfs.makeroot
-    test_marker_check dracut-root-block-created
-    rm -- "$TESTDIR"/marker.img
+test_setup() {
+    make_client_rootfs
+    make_server_rootfs
 
     # Make client's dracut image
     test_dracut \
         --no-hostonly \
-        --add "watchdog qemu-net $USE_NETWORK" \
+        --add "watchdog $USE_NETWORK" \
         -i ./client-persistent-lan0.link /etc/systemd/network/01-persistent-lan0.link \
         -i ./client-persistent-lan1.link /etc/systemd/network/01-persistent-lan1.link
 
     # Make server's dracut image
     call_dracut \
         --add-confdir test \
-        -a "qemu-net $USE_NETWORK ${SERVER_DEBUG:+debug}" \
+        -a "$USE_NETWORK ${SERVER_DEBUG:+debug}" \
         -i "./server.link" "/etc/systemd/network/01-server.link" \
-        -i "./wait-if-server.sh" "/lib/dracut/hooks/pre-mount/99-wait-if-server.sh" \
+        -i "./wait-if-server.sh" "/usr/lib/dracut/hooks/pre-mount/99-wait-if-server.sh" \
         -N \
         -f "$TESTDIR"/initramfs.server
 }

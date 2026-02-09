@@ -19,63 +19,41 @@ test_check() {
 #DEBUGFAIL="rd.shell=1 rd.break=pre-mount"
 test_run() {
     declare -a disk_args=()
-    declare -i disk_index=0
-    qemu_add_drive disk_index disk_args "$TESTDIR"/marker.img marker
-    qemu_add_drive disk_index disk_args "$TESTDIR"/root.img root
-    qemu_add_drive disk_index disk_args "$TESTDIR"/mnt.img mnt
-
-    test_marker_reset
+    qemu_add_drive disk_args "$TESTDIR"/root.img root
+    qemu_add_drive disk_args "$TESTDIR"/mnt.img mnt
 
     # This test should fail if rd.driver.export is not passed at kernel command-line
     "$testdir"/run-qemu \
         "${disk_args[@]}" \
-        -append "$TEST_KERNEL_CMDLINE rd.driver.export" \
+        -append "root=LABEL=dracut $TEST_KERNEL_CMDLINE rd.driver.export" \
         -initrd "$TESTDIR"/initramfs.testing
-
-    test_marker_check
+    check_qemu_log
 }
 
 test_setup() {
-    # Create what will eventually be our root filesystem onto an overlay
+    # Create client root filesystem
     call_dracut --tmpdir "$TESTDIR" \
         --no-kernel \
         --add "systemd-udevd systemd-journald systemd-tmpfiles systemd-ldconfig systemd-ask-password shutdown" \
         --mount "/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_mnt /mnt xfs rw" \
         --add-confdir test-root \
         -f "$TESTDIR"/initramfs.root
-    mkdir -p "$TESTDIR"/overlay/source
-    mv "$TESTDIR"/dracut.*/initramfs/* "$TESTDIR"/overlay/source
+    mkdir -p "$TESTDIR"/rootfs
+    mv "$TESTDIR"/dracut.*/initramfs/* "$TESTDIR"/rootfs
     rm -rf "$TESTDIR"/dracut.*
 
     # make sure no linux kernel driver is included in the rootfs
-    rm -rf "$TESTDIR"/overlay/source/lib/modules/*
+    rm -rf "$TESTDIR"/rootfs/lib/modules/*
 
     # make sure /lib/modules directory exists inside the rootfs
-    mkdir -p "$TESTDIR"/overlay/source/lib/modules "$TESTDIR"/overlay/source/mnt
+    mkdir -p "$TESTDIR"/rootfs/lib/modules "$TESTDIR"/rootfs/mnt
 
-    # create an initramfs that will create the target root filesystem.
-    # We do it this way so that we do not risk trashing the host mdraid
-    # devices, volume groups, encrypted partitions, etc.
-    call_dracut -i "$TESTDIR"/overlay / \
-        --add-confdir "test-makeroot" \
-        -I "mkfs.xfs" \
-        -i ./create-root.sh /lib/dracut/hooks/initqueue/01-create-root.sh \
-        -f "$TESTDIR"/initramfs.makeroot
+    build_ext4_image "$TESTDIR/rootfs" "$TESTDIR"/root.img dracut
+    rm -rf "$TESTDIR"/rootfs
 
-    declare -a disk_args=()
-    # shellcheck disable=SC2034  # disk_index used in qemu_add_drive
-    declare -i disk_index=0
-    qemu_add_drive disk_index disk_args "$TESTDIR"/marker.img marker 1
-    qemu_add_drive disk_index disk_args "$TESTDIR"/root.img root 1
-    qemu_add_drive disk_index disk_args "$TESTDIR"/mnt.img mnt 1
-
-    # Invoke KVM and/or QEMU to actually create the target filesystem.
-    "$testdir"/run-qemu \
-        "${disk_args[@]}" \
-        -append "root=/dev/fakeroot quiet console=ttyS0,115200n81" \
-        -initrd "$TESTDIR"/initramfs.makeroot
-    test_marker_check dracut-root-block-created
-    rm -- "$TESTDIR"/marker.img
+    rm -f "$TESTDIR/mnt.img"
+    truncate -s 512M "$TESTDIR/mnt.img"
+    mkfs.xfs -q "$TESTDIR/mnt.img"
 
     test_dracut \
         --add-drivers xfs \

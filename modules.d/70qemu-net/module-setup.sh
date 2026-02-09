@@ -2,7 +2,10 @@
 
 # called by dracut
 check() {
-    is_qemu_virtualized && return 0
+    if [[ $hostonly_mode != "strict" ]] && dracut_module_included "net-lib" \
+        && dracut_module_included "qemu"; then
+        return 0
+    fi
 
     if [[ $hostonly ]] || [[ $mount_needs ]]; then
         return 255

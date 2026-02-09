@@ -1,12 +1,11 @@
--include dracut-version.sh
 
 DRACUT_MAIN_VERSION ?= $(shell env GIT_CEILING_DIRECTORIES=$(CURDIR)/.. git describe --abbrev=0 --tags --always 2>/dev/null || :)
 ifeq ($(DRACUT_MAIN_VERSION),)
-DRACUT_MAIN_VERSION = $(DRACUT_VERSION)
+DRACUT_MAIN_VERSION := $(shell sed -n 's/^DRACUT_VERSION="\(.*\)"$$/\1/p' dracut.sh)
 endif
 DRACUT_FULL_VERSION ?= $(shell env GIT_CEILING_DIRECTORIES=$(CURDIR)/.. git describe --tags --always 2>/dev/null || :)
 ifeq ($(DRACUT_FULL_VERSION),)
-DRACUT_FULL_VERSION = $(DRACUT_VERSION)
+DRACUT_FULL_VERSION := $(shell sed -n 's/^DRACUT_VERSION="\(.*\)"$$/\1/p' dracut.sh)
 endif
 
 HAVE_SHELLCHECK ?= $(shell command -v shellcheck >/dev/null 2>&1 && echo yes)
@@ -32,9 +31,7 @@ configs = \
 	hostonly/10-hostonly.conf \
 	ima/10-ima.conf \
 	no-network/10-no-network.conf \
-	no-xattr/10-no-xattr.conf \
 	rescue/10-rescue.conf \
-	uki-virt/10-uki-virt.conf \
 	$(NULL)
 
 test_configs = \
@@ -111,7 +108,7 @@ indent-c:
 .PHONY: indent
 indent: indent-c
 ifeq ($(HAVE_SHFMT),yes)
-	shfmt -w -s .
+	shfmt --apply-ignore -w .
 endif
 
 src/dracut-cpio/target/release/dracut-cpio: src/dracut-cpio/src/main.rs
@@ -192,15 +189,13 @@ install: all
 	mkdir -p $(DESTDIR)$(pkglibdir)/modules.d
 	mkdir -p $(DESTDIR)$(mandir)/man1 $(DESTDIR)$(mandir)/man5 $(DESTDIR)$(mandir)/man7 $(DESTDIR)$(mandir)/man8
 	install -m 0755 dracut.sh $(DESTDIR)$(bindir)/dracut
+	sed -i 's;^\(DRACUT_VERSION\)=".*"$$;\1="$(DRACUT_FULL_VERSION)";' $(DESTDIR)$(bindir)/dracut
 	install -m 0755 dracut-catimages.sh $(DESTDIR)$(bindir)/dracut-catimages
 	install -m 0755 lsinitrd.sh $(DESTDIR)$(bindir)/lsinitrd
 	install -m 0644 dracut.conf $(DESTDIR)$(sysconfdir)/dracut.conf
 	mkdir -p $(DESTDIR)$(sysconfdir)/dracut.conf.d
 	mkdir -p $(DESTDIR)$(pkglibdir)/dracut.conf.d
-	install -m 0755 dracut-init.sh $(DESTDIR)$(pkglibdir)/dracut-init.sh
 	install -m 0755 dracut-functions.sh $(DESTDIR)$(pkglibdir)/dracut-functions.sh
-	install -m 0755 dracut-version.sh $(DESTDIR)$(pkglibdir)/dracut-version.sh
-	sed -i 's;^\(DRACUT_VERSION=\).*;\1$(DRACUT_FULL_VERSION);' $(DESTDIR)$(pkglibdir)/dracut-version.sh
 	ln -fs dracut-functions.sh $(DESTDIR)$(pkglibdir)/dracut-functions
 	install -m 0755 dracut-logger.sh $(DESTDIR)$(pkglibdir)/dracut-logger.sh
 	install -m 0755 dracut-initramfs-restore.sh $(DESTDIR)$(pkglibdir)/dracut-initramfs-restore
@@ -219,12 +214,13 @@ install: all
 		install -m 0644 dracut.conf.d/$$i/* $(DESTDIR)$(pkglibdir)/dracut.conf.d/ ;\
 	done
 ifeq ($(enable_test),yes)
-	cp -arx test $(DESTDIR)$(pkglibdir)
+	cp -a test $(DESTDIR)$(pkglibdir)
 	for conf in $(test_configs); do \
 		install -D -m 0644 "dracut.conf.d/$$conf" "$(DESTDIR)$(pkglibdir)/dracut.conf.d/$$conf"; \
 	done
 else
 	rm -rf $(DESTDIR)$(pkglibdir)/modules.d/70test*
+	rm -rf $(DESTDIR)$(pkglibdir)/dracut.conf.d/test*
 endif
 ifneq ($(enable_documentation),no)
 	for i in $(man1pages); do install -m 0644 $$i $(DESTDIR)$(mandir)/man1/$${i##*/}; done
@@ -277,9 +273,12 @@ endif
 	install -m 0644 shell-completion/bash/lsinitrd $(DESTDIR)${bashcompletiondir}/lsinitrd
 	mkdir -p $(DESTDIR)${pkgconfigdatadir}
 	install -m 0644 dracut.pc $(DESTDIR)${pkgconfigdatadir}/dracut.pc
+ifneq ($(enable_network_legacy),yes)
+	rm -r $(DESTDIR)$(pkglibdir)/modules.d/[0-9][0-9]network-legacy
+endif
 	if ! [ -n "$(systemdsystemunitdir)" ]; then \
 		rm -rf $(DESTDIR)$(pkglibdir)/test/TEST-[0-9][0-9]-*SYSTEMD* ;\
-		rm -rf $(DESTDIR)$(pkglibdir)/modules.d/*systemd* $(DESTDIR)$(mandir)/*.service.* ; \
+		rm -rf $(DESTDIR)$(pkglibdir)/modules.d/*systemd* $(DESTDIR)$(mandir)/man8/*.service.* ; \
 		for i in bluetooth connman dbus* fido2 lvmmerge lvmthinpool-monitor memstrack pcsc pkcs11 rngd squash* tpm2-tss; do \
 			rm -r $(DESTDIR)$(pkglibdir)/modules.d/[0-9][0-9]$${i}; \
 		done \

@@ -31,14 +31,14 @@ EOF
         --no-kernel --drivers "" \
         --add-confdir "test" \
         "${dracut_cpio_params[@]}" \
-        --include "$tdir/init.sh" /lib/dracut/hooks/emergency/00-init.sh \
+        --include "$tdir/init.sh" /usr/lib/dracut/hooks/emergency/00-init.sh \
         --install "poweroff" \
         "$tdir/initramfs"
 
     "$testdir"/run-qemu \
         -daemonize -pidfile "$tdir/vm.pid" \
         -serial "file:$tdir/console.out" \
-        -append "panic=1 oops=panic softlockup_panic=1 console=ttyS0 rd.shell=1" \
+        -append "panic=1 oops=panic softlockup_panic=1 rd.shell=1" \
         -initrd "$tdir/initramfs"
 
     timeout=120

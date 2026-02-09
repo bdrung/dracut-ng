@@ -4,6 +4,9 @@ set -eu
 # shellcheck disable=SC2034
 TEST_DESCRIPTION="UEFI boot (ukify, kernel-install)"
 
+# Uncomment this to debug failures
+#DEBUGFAIL="rd.debug rd.shell"
+
 test_check() {
     if ! type -p mksquashfs &> /dev/null; then
         echo "Test needs mksquashfs... Skipping"
@@ -16,7 +19,8 @@ test_check() {
         return 1
     fi
 
-    if [[ -z "$(ovmf_code)" ]]; then
+    if ! "$testdir"/run-qemu --check-uefi; then
+        echo "No UEFI firmware (for QEMU) found" >&2
         return 1
     fi
 }
@@ -24,19 +28,15 @@ test_check() {
 client_run() {
     local test_name="$1"
 
-    echo "CLIENT TEST START: $test_name"
+    client_test_start "$test_name"
 
     declare -a disk_args=()
-    # shellcheck disable=SC2034  # disk_index used in qemu_add_drive
-    declare -i disk_index=1
-    qemu_add_drive disk_index disk_args "$TESTDIR"/marker.img marker
-    qemu_add_drive disk_index disk_args "$TESTDIR"/squashfs.img root
+    qemu_add_drive disk_args "$TESTDIR"/marker.img marker
+    qemu_add_drive disk_args "$TESTDIR"/squashfs.img root
 
     test_marker_reset
     "$testdir"/run-qemu "${disk_args[@]}" -net none \
-        -drive file=fat:rw:"$TESTDIR"/ESP,format=vvfat,label=EFI \
-        -global driver=cfi.pflash01,property=secure,value=on \
-        -drive if=pflash,format=raw,unit=0,file="$(ovmf_code)",readonly=on
+        -drive file=fat:rw:"$TESTDIR"/ESP,format=vvfat,label=EFI
     test_marker_check
 }
 
@@ -45,6 +45,9 @@ test_run() {
 }
 
 test_setup() {
+    # shellcheck source=./dracut-functions.sh
+    . "$PKGLIBDIR"/dracut-functions.sh
+
     # Create what will eventually be our root filesystem
     call_dracut --tmpdir "$TESTDIR" \
         --add-confdir test-root \
@@ -77,7 +80,7 @@ test_setup() {
 
         # enable test dracut config
         mkdir -p /run/initramfs/dracut.conf.d
-        cp "${basedir}"/dracut.conf.d/test/* "${basedir}"/dracut.conf.d/uki-virt/* /run/initramfs/dracut.conf.d/
+        cp "${basedir}"/dracut.conf.d/test/* ./10-uki-virt.conf /run/initramfs/dracut.conf.d/
         echo 'add_drivers+=" squashfs "' >> /run/initramfs/dracut.conf.d/extra.conf
 
         # using kernell-install to invoke dracut
@@ -91,7 +94,8 @@ test_setup() {
 
     # test with the reference uki config when systemd is available
     if command -v systemctl &> /dev/null; then
-        cp "${basedir}"/dracut.conf.d/uki-virt/* "$TESTDIR"/dracut.conf.d/
+        cp ./10-uki-virt.conf "$TESTDIR"/dracut.conf.d/
+
     fi
 
     echo "Using dracut to create UKI"

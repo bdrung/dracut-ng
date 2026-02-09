@@ -110,6 +110,7 @@ Specify additional files to include in the initramfs, separated by spaces.
 *remove_items+=*" __<file/dir>__[ __<file/dir>__ ...] "::
 Specify additional files or directories to remove from the generated initramfs,
 separated by spaces.
+These __file/dir__ are shell wildcard patterns (see *glob*(7)).
 Warning: Avoid manually removing files or directories, as you may inadvertently
 remove essential ones that dracut won't detect or warn you about.
 Using this option is not recommended and is at your own risk.
@@ -394,6 +395,10 @@ _initr*$\{kernel\}*_ file pattern and only one file with this pattern should
 exists in the directory where initramfs is loaded from.
 +
 Defaults to _initramfs-$\{kernel\}.img_.
+
+*dracut_rescue_image=*"__{yes|no}__"::
+Let kernel-install create a rescue image (default=no).
+This configuration option applies only to kernel-install.
 
 == Files
 _/etc/dracut.conf_::

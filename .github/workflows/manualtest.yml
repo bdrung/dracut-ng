@@ -13,10 +13,9 @@ on:  # yamllint disable-line rule:truthy
                 default: 'all'
                 options:
                     - "all"
-                    - "alpine:latest"
                     - "alpine:edge"
                     - "azurelinux:3.0"
-                    - "centos:stream10-development"
+                    - "centos:latest"
                     - "fedora:latest"
                     - "fedora:rawhide"
                     - "arch:latest"
@@ -45,7 +44,7 @@ jobs:
             tests: ${{ steps.set-matrix.outputs.tests }}
         steps:
             - name: "Checkout Repository"
-              uses: actions/checkout@v5
+              uses: actions/checkout@v6
               with:
                   fetch-depth: 0
             - id: set-matrix
@@ -62,7 +61,9 @@ jobs:
         runs-on: ubuntu-24.04
         timeout-minutes: 20
         concurrency:
-            group: manual-${{ github.workflow }}-${{ github.ref }}-${{ matrix.container }}-${{ matrix.test }}
+            group: >
+                manual-${{ github.workflow }}-${{ github.ref }}
+                -${{ matrix.container }}-${{ matrix.test }}
             cancel-in-progress: true
         strategy:
             matrix:
@@ -70,11 +71,11 @@ jobs:
                 test: ${{ fromJSON(needs.matrix.outputs.tests) }}
             fail-fast: false
         container:
-            image: ${{ fromJSON(needs.matrix.outputs.registry) }}/${{ matrix.container }}-amd
+            image: ${{ fromJSON(needs.matrix.outputs.registry) }}/${{ matrix.container }}
             options: "--privileged -v /dev:/dev"
         steps:
             - name: "Checkout Repository"
-              uses: actions/checkout@v5
+              uses: actions/checkout@v6
               with:
                   fetch-depth: 0
             - name: "${{ matrix.container }} ${{ matrix.test }}"

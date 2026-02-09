@@ -3,30 +3,23 @@ set -eu
 # shellcheck disable=SC2034
 TEST_DESCRIPTION="root filesystem on ext4 filesystem"
 
+# Uncomment this to debug failures
+#DEBUGFAIL="rd.debug rd.shell"
+
 test_run() {
     declare -a disk_args=()
-    # shellcheck disable=SC2034  # disk_index used in qemu_add_drive
-    declare -i disk_index=0
-    qemu_add_drive disk_index disk_args "$TESTDIR"/marker.img marker
-    qemu_add_drive disk_index disk_args "$TESTDIR"/root.img root
-
-    test_marker_reset
+    qemu_add_drive disk_args "$TESTDIR"/root.img root
 
     "$testdir"/run-qemu -nic none \
         "${disk_args[@]}" \
-        -append "$TEST_KERNEL_CMDLINE" \
+        -append "root=LABEL=dracut $TEST_KERNEL_CMDLINE" \
         -initrd "$TESTDIR"/initramfs.testing
-
-    test_marker_check
+    check_qemu_log
 }
 
 test_setup() {
-    # create root filesystem
-    call_dracut --tmpdir "$TESTDIR" \
-        --add-confdir test-root \
-        -f "$TESTDIR"/initramfs.root
-
-    build_ext4_image "$TESTDIR"/dracut.*/initramfs/ "$TESTDIR"/root.img dracut
+    build_client_rootfs "$TESTDIR/rootfs"
+    build_ext4_image "$TESTDIR/rootfs" "$TESTDIR"/root.img dracut
 
     test_dracut
 }

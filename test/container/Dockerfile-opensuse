@@ -2,12 +2,12 @@
 # - arm64
 # - hostonly
 # - network-legacy
-# - mkosi-initrd
 # - hmaccalc (fido)
 # - rdma out of tree dracut module
 # - dbus-broker
 # - network: network-legacy, network-manager
 # - zstd compression
+# - erofs is blacklisted by default and not supported in openSUSE
 
 FROM registry.opensuse.org/opensuse/tumbleweed:latest
 
@@ -20,12 +20,13 @@ RUN zypper --non-interactive install --no-recommends \
     cryptsetup \
     dhcp-client \
     dhcp-server \
+    diffutils \
     dnsmasq \
     distribution-gpg-keys \
     e2fsprogs \
-    erofs-utils \
     gcc \
     git \
+    gpg2 \
     hmaccalc \
     iproute2 \
     iputils \
@@ -37,25 +38,27 @@ RUN zypper --non-interactive install --no-recommends \
     lvm2 \
     make \
     mdadm \
-    mkosi-initrd \
     nbd \
     NetworkManager \
     nfs-kernel-server \
     open-iscsi \
     parted \
     pciutils \
+    python3 \
     python3-pefile \
     qemu \
-    ruby3.4-rubygem-asciidoctor \
+    ruby4.0-rubygem-asciidoctor \
     squashfs \
     swtpm \
     systemd-boot \
+    systemd-container \
     systemd-devel \
     systemd-experimental \
     systemd-portable \
     tgt \
     tpm2.0-tools \
     util-linux-systemd \
+    xfsprogs \
     xorriso \
     zstd \
     && zypper --non-interactive dist-upgrade --no-recommends

@@ -18,51 +18,37 @@ test_check() {
 #DEBUGOUT="quiet systemd.log_level=debug systemd.log_target=console loglevel=77  rd.info rd.debug"
 client_run() {
     local test_name="$1"
-    local smbios="$2"
-    shift 2
+    shift
     local client_opts="$*"
 
-    echo "CLIENT TEST START: $test_name"
+    client_test_start "$test_name"
 
     declare -a disk_args=()
-    declare -i disk_index=0
-    qemu_add_drive disk_index disk_args "$TESTDIR"/marker.img marker
-    qemu_add_drive disk_index disk_args "$TESTDIR"/root.btrfs root
-    qemu_add_drive disk_index disk_args "$TESTDIR"/root_crypt.btrfs root_crypt
-    qemu_add_drive disk_index disk_args "$TESTDIR"/usr.btrfs usr
+    qemu_add_drive disk_args "$TESTDIR"/root.btrfs root
+    qemu_add_drive disk_args "$TESTDIR"/root_crypt.btrfs root_crypt
+    qemu_add_drive disk_args "$TESTDIR"/usr.btrfs usr
 
-    test_marker_reset
     "$testdir"/run-qemu \
-        "${disk_args[@]}" ${smbios:+-smbios "${smbios}"} \
-        -append "$TEST_KERNEL_CMDLINE mount.usr=LABEL=dracutusr mount.usrflags=subvol=usr $client_opts ${DEBUGOUT-}" \
+        "${disk_args[@]}" \
+        -append "root=LABEL=dracut $TEST_KERNEL_CMDLINE mount.usr=LABEL=dracutusr mount.usrflags=subvol=usr $client_opts ${DEBUGOUT-}" \
         -initrd "$TESTDIR"/initramfs.testing
+    check_qemu_log
 
-    if ! test_marker_check; then
-        echo "CLIENT TEST END: $test_name [FAILED]"
-        return 1
-    fi
-    echo "CLIENT TEST END: $test_name [OK]"
+    client_test_end
 }
 
 test_run() {
     # mask services that require rw
-    client_run "readonly root" "" "ro systemd.mask=systemd-sysusers systemd.mask=systemd-timesyncd systemd.mask=systemd-resolved"
+    client_run "readonly root" "ro systemd.mask=systemd-sysusers systemd.mask=systemd-timesyncd systemd.mask=systemd-resolved"
 
-    client_run "writeable root" "" "rw"
+    client_run "writeable root" "rw"
 
     # shellcheck source=$TESTDIR/luks.uuid
     . "$TESTDIR"/luks.uuid
 
-    if "$testdir"/run-qemu --supports -smbios; then
-        # luks
-        client_run "encrypted root with rd.luks.uuid" "type=11,value=io.systemd.credential:key=test" \
-            "rw root=LABEL=dracut_crypt rd.luks.uuid=$ID_FS_UUID rd.luks.key=/run/credentials/@system/key"
-        client_run "encrypted root with rd.luks.name" "type=11,value=io.systemd.credential:key=test" \
-            "rw root=/dev/mapper/crypt rd.luks.name=$ID_FS_UUID=crypt rd.luks.key=/run/credentials/@system/key"
-    else
-        echo "CLIENT TEST: encrypted root with rd.luks.uuid [SKIPPED]"
-        echo "CLIENT TEST: encrypted root with rd.luks.name [SKIPPED]"
-    fi
+    # luks
+    client_run "encrypted root with rd.luks.uuid" "rw root=LABEL=dracut_crypt rd.luks.uuid=$ID_FS_UUID rd.luks.key=/etc/key"
+    client_run "encrypted root with rd.luks.name" "rw root=/dev/mapper/crypt rd.luks.name=$ID_FS_UUID=crypt rd.luks.key=/etc/key"
     return 0
 }
 
@@ -84,23 +70,14 @@ test_setup() {
         dracut_modules="$dracut_modules systemd-bsod"
     fi
     if [ -f /usr/lib/systemd/systemd-pcrextend ]; then
-        dracut_modules="$dracut_modules systemd-pcrphase"
+        dracut_modules="$dracut_modules systemd-pcrextend"
     fi
     if [ -f /usr/lib/systemd/systemd-portabled ]; then
         dracut_modules="$dracut_modules systemd-portabled"
     fi
 
     # Create what will eventually be our root filesystem onto an overlay
-    call_dracut --tmpdir "$TESTDIR" \
-        --add-confdir test-root \
-        -a "$dracut_modules" \
-        -f "$TESTDIR"/initramfs.root
-
-    KVERSION=$(determine_kernel_version "$TESTDIR"/initramfs.root)
-
-    mkdir -p "$TESTDIR"/overlay/source
-    cp -a "$TESTDIR"/dracut.*/initramfs/* "$TESTDIR"/overlay/source
-    rm -rf "$TESTDIR"/dracut.*
+    build_client_rootfs "$TESTDIR/overlay/source"
 
     # create an initramfs that will create the target root filesystem.
     # We do it this way so that we do not risk trashing the host mdraid
@@ -109,30 +86,33 @@ test_setup() {
         --add-confdir test-makeroot \
         -a "btrfs crypt" \
         -I "mkfs.btrfs cryptsetup" \
-        -i ./create-root.sh /lib/dracut/hooks/initqueue/01-create-root.sh \
-        -f "$TESTDIR"/initramfs.makeroot "$KVERSION"
+        -i ./create-root.sh /usr/lib/dracut/hooks/initqueue/01-create-root.sh \
+        -f "$TESTDIR"/initramfs.makeroot
+    rm -rf "$TESTDIR"/overlay
+
+    KVERSION=$(determine_kernel_version "$TESTDIR"/initramfs.makeroot)
 
     # Create the blank file to use as a root filesystem
     declare -a disk_args=()
-    # shellcheck disable=SC2034
-    declare -i disk_index=0
-    qemu_add_drive disk_index disk_args "$TESTDIR"/marker.img marker 1
-    qemu_add_drive disk_index disk_args "$TESTDIR"/root.btrfs root 1
-    qemu_add_drive disk_index disk_args "$TESTDIR"/root_crypt.btrfs root_crypt 1
-    qemu_add_drive disk_index disk_args "$TESTDIR"/usr.btrfs usr 1
+    qemu_add_drive disk_args "$TESTDIR"/marker.img marker 1
+    qemu_add_drive disk_args "$TESTDIR"/root.btrfs root 1
+    qemu_add_drive disk_args "$TESTDIR"/root_crypt.btrfs root_crypt 1
+    qemu_add_drive disk_args "$TESTDIR"/usr.btrfs usr 1
 
     # Invoke KVM and/or QEMU to actually create the target filesystem.
     "$testdir"/run-qemu \
         "${disk_args[@]}" \
-        -append "root=/dev/fakeroot quiet console=ttyS0,115200n81" \
+        -append "root=/dev/fakeroot quiet" \
         -initrd "$TESTDIR"/initramfs.makeroot
     test_marker_check dracut-root-block-created
 
     grep -F -a -m 1 ID_FS_UUID "$TESTDIR"/marker.img > "$TESTDIR"/luks.uuid
+    echo -n test > /tmp/key
 
     # force add all available dracut modules that are dependent on systemd
-    test_dracut \
+    test_dracut --keep \
         -a "dracut-systemd $dracut_modules" \
+        -i "/tmp/key" "/etc/key" \
         --add-drivers "btrfs"
 
     # verify that systemd-coredump user exists generated by systemd-sysuser

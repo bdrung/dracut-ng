@@ -23,43 +23,33 @@ test_check() {
 test_run() {
     LUKSARGS=$(cat "$TESTDIR"/luks.txt)
 
-    echo "CLIENT TEST START: $LUKSARGS"
+    client_test_start "$LUKSARGS"
 
     declare -a disk_args=()
-    declare -i disk_index=0
-    qemu_add_drive disk_index disk_args "$TESTDIR"/marker.img marker
-    qemu_add_drive disk_index disk_args "$TESTDIR"/disk-1.img disk1
-    qemu_add_drive disk_index disk_args "$TESTDIR"/disk-2.img disk2
+    qemu_add_drive disk_args "$TESTDIR"/disk-1.img disk1
+    qemu_add_drive disk_args "$TESTDIR"/disk-2.img disk2
 
-    test_marker_reset
     "$testdir"/run-qemu \
         "${disk_args[@]}" \
         -append "$TEST_KERNEL_CMDLINE root=/dev/dracut/root ro rd.auto rootwait $LUKSARGS" \
         -initrd "$TESTDIR"/initramfs.testing
-    test_marker_check
-    echo "CLIENT TEST END: [OK]"
+    check_qemu_log
+    client_test_end
 
-    test_marker_reset
-
-    echo "CLIENT TEST START: Any LUKS"
+    client_test_start "Any LUKS"
     "$testdir"/run-qemu \
         "${disk_args[@]}" \
         -append "$TEST_KERNEL_CMDLINE root=/dev/dracut/root rd.auto" \
         -initrd "$TESTDIR"/initramfs.testing
-    test_marker_check
-    echo "CLIENT TEST END: [OK]"
+    check_qemu_log
+    client_test_end
 
     return 0
 }
 
-test_setup() {
+make_test_rootfs() {
     # Create what will eventually be our root filesystem onto an overlay
-    call_dracut --tmpdir "$TESTDIR" \
-        --add-confdir test-root \
-        -f "$TESTDIR"/initramfs.root
-    mkdir -p "$TESTDIR"/overlay/source
-    mv "$TESTDIR"/dracut.*/initramfs/* "$TESTDIR"/overlay/source
-    rm -rf "$TESTDIR"/dracut.*
+    build_client_rootfs "$TESTDIR/overlay/source"
 
     # create an initramfs that will create the target root filesystem.
     # We do it this way so that we do not risk trashing the host mdraid
@@ -68,23 +58,27 @@ test_setup() {
         --add-confdir test-makeroot \
         -a "bash crypt lvm mdraid" \
         -I "grep cryptsetup" \
-        -i ./create-root.sh /lib/dracut/hooks/initqueue/01-create-root.sh \
+        -i ./create-root.sh /usr/lib/dracut/hooks/initqueue/01-create-root.sh \
         -f "$TESTDIR"/initramfs.makeroot
 
     # Create the blank files to use as a root filesystem
     declare -a disk_args=()
-    # shellcheck disable=SC2034  # disk_index used in qemu_add_drive
-    declare -i disk_index=0
-    qemu_add_drive disk_index disk_args "$TESTDIR"/marker.img marker 1
-    qemu_add_drive disk_index disk_args "$TESTDIR"/disk-1.img disk1 1
-    qemu_add_drive disk_index disk_args "$TESTDIR"/disk-2.img disk2 1
+    qemu_add_drive disk_args "$TESTDIR"/marker.img marker 1
+    qemu_add_drive disk_args "$TESTDIR"/disk-1.img disk1 1
+    qemu_add_drive disk_args "$TESTDIR"/disk-2.img disk2 1
 
     "$testdir"/run-qemu \
         "${disk_args[@]}" \
-        -append "root=/dev/fakeroot quiet console=ttyS0,115200n81" \
+        -append "root=/dev/fakeroot quiet" \
         -initrd "$TESTDIR"/initramfs.makeroot
     test_marker_check dracut-root-block-created
-    cryptoUUIDS=$(grep -F --binary-files=text -m 3 ID_FS_UUID "$TESTDIR"/marker.img)
+    rm -rf "$TESTDIR"/overlay
+}
+
+test_setup() {
+    make_test_rootfs
+
+    cryptoUUIDS=$(grep -F -a -m 3 ID_FS_UUID "$TESTDIR"/marker.img)
     for uuid in $cryptoUUIDS; do
         eval "$uuid"
         printf ' rd.luks.uuid=luks-%s ' "$ID_FS_UUID"

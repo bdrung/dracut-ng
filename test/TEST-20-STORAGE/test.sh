@@ -31,31 +31,29 @@ client_run() {
     shift
     local client_opts="$*"
 
-    echo "CLIENT TEST START: $test_name"
+    client_test_start "$test_name"
 
     declare -a disk_args=()
-    declare -i disk_index=0
-    qemu_add_drive disk_index disk_args "$TESTDIR"/marker.img marker
-
-    qemu_add_drive disk_index disk_args "$TESTDIR/${disk}-1.img" disk1
+    qemu_add_drive disk_args "$TESTDIR/${disk}-1.img" disk1
 
     if ! grep -qF 'degraded' "$test_name"; then
         # only add disk2 if RAID is NOT degraded
-        qemu_add_drive disk_index disk_args "$TESTDIR/${disk}-2.img" disk2
+        qemu_add_drive disk_args "$TESTDIR/${disk}-2.img" disk2
     fi
 
     if [ "$TEST_FSTYPE" = "zfs" ]; then
         TEST_KERNEL_CMDLINE+=" root=ZFS=dracut/root "
+    else
+        TEST_KERNEL_CMDLINE+=" root=LABEL=dracut "
     fi
 
-    test_marker_reset
     "$testdir"/run-qemu \
         "${disk_args[@]}" \
         -append "$TEST_KERNEL_CMDLINE ro $client_opts " \
         -initrd "$TESTDIR"/initramfs.testing
-    test_marker_check
+    check_qemu_log
 
-    echo "CLIENT TEST END: $test_name [OK]"
+    client_test_end
 }
 
 test_run() {
@@ -97,15 +95,13 @@ test_makeroot() {
 
     # Create the blank files to use as a root filesystem
     declare -a disk_args=()
-    # shellcheck disable=SC2034
-    declare -i disk_index=0
-    qemu_add_drive disk_index disk_args "$TESTDIR"/marker.img marker 1
-    qemu_add_drive disk_index disk_args "$TESTDIR/${disk}-1.img" disk1 1
-    qemu_add_drive disk_index disk_args "$TESTDIR/${disk}-2.img" disk2 1
+    qemu_add_drive disk_args "$TESTDIR"/marker.img marker 1
+    qemu_add_drive disk_args "$TESTDIR/${disk}-1.img" disk1 1
+    qemu_add_drive disk_args "$TESTDIR/${disk}-2.img" disk2 1
 
     "$testdir"/run-qemu \
         "${disk_args[@]}" \
-        -append "root=/dev/fakeroot quiet console=ttyS0,115200n81 $client_opts " \
+        -append "root=/dev/fakeroot quiet $client_opts " \
         -initrd "$TESTDIR"/initramfs.makeroot
     test_marker_check dracut-root-block-created
 
@@ -114,12 +110,7 @@ test_makeroot() {
 
 test_setup() {
     # Create what will eventually be our root filesystem onto an overlay
-    call_dracut --tmpdir "$TESTDIR" \
-        --add-confdir test-root \
-        -f "$TESTDIR"/initramfs.root
-    mkdir -p "$TESTDIR"/overlay/source
-    mv "$TESTDIR"/dracut.*/initramfs/* "$TESTDIR"/overlay/source
-    rm -rf "$TESTDIR"/dracut.*
+    build_client_rootfs "$TESTDIR/overlay/source"
 
     # pass enviroment variables to make the root filesystem
     echo "TEST_FSTYPE=${TEST_FSTYPE}" > "$TESTDIR"/overlay/env
@@ -136,7 +127,7 @@ test_setup() {
         $(if command -v mdadm > /dev/null; then echo "-a mdraid"; fi) \
         $(if command -v cryptsetup > /dev/null; then echo "-a crypt -I cryptsetup"; fi) \
         $(if [ "$TEST_FSTYPE" = "zfs" ]; then echo "-a zfs"; else echo "-I mkfs.${TEST_FSTYPE} --add-drivers ${TEST_FSTYPE}"; fi) \
-        -i ./create-root.sh /lib/dracut/hooks/initqueue/01-create-root.sh \
+        -i ./create-root.sh /usr/lib/dracut/hooks/initqueue/01-create-root.sh \
         -f "$TESTDIR"/initramfs.makeroot
 
     # LVM
@@ -155,7 +146,7 @@ test_setup() {
     if [ -n "$HAVE_CRYPT" ] && [ -n "$HAVE_RAID" ]; then
         test_makeroot "raid-crypt" "raid-crypt" " "
 
-        eval "$(grep -F --binary-files=text -m 1 MD_UUID "$TESTDIR"/marker.img)"
+        eval "$(grep -F -a -m 1 MD_UUID "$TESTDIR"/marker.img)"
         echo "$MD_UUID" > "$TESTDIR"/mduuid
 
         eval "$(grep -F -a -m 1 ID_FS_UUID "$TESTDIR"/marker.img)"
@@ -164,6 +155,8 @@ test_setup() {
         echo -n "test" > /tmp/key
         chmod 0600 /tmp/key
     fi
+
+    rm -rf "$TESTDIR"/overlay
 
     # shellcheck disable=SC2046
     test_dracut \

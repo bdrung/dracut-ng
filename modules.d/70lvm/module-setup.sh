@@ -18,7 +18,7 @@ check() {
 # called by dracut
 depends() {
     # We depend on dm_mod being loaded
-    echo rootfs-block dm initqueue
+    echo dm initqueue
     return 0
 }
 
@@ -50,6 +50,52 @@ installkernel() {
 install() {
     inst_multiple lvm grep
 
+    # lvm links for recovery inside the initramfs
+    inst_multiple -o \
+        lvchange \
+        lvconvert \
+        lvcreate \
+        lvdisplay \
+        lvextend \
+        lvmconfig \
+        lvmdiskscan \
+        lvmsadc \
+        lvmsar \
+        lvreduce \
+        lvremove \
+        lvrename \
+        lvresize \
+        lvs \
+        lvscan \
+        pvchange \
+        pvck \
+        pvcreate \
+        pvdisplay \
+        pvmove \
+        pvremove \
+        pvresize \
+        pvs \
+        pvscan \
+        vgcfgbackup \
+        vgcfgrestore \
+        vgchange \
+        vgck \
+        vgconvert \
+        vgcreate \
+        vgdisplay \
+        vgexport \
+        vgextend \
+        vgimport \
+        vgimportclone \
+        vgmerge \
+        vgmknodes \
+        vgreduce \
+        vgremove \
+        vgrename \
+        vgs \
+        vgscan \
+        vgsplit
+
     if [[ $hostonly_cmdline == "yes" ]]; then
         local _lvmconf
         _lvmconf=$(cmdline)
@@ -80,9 +126,6 @@ install() {
 
     inst_rules 11-dm-lvm.rules
 
-    # Gentoo ebuild for LVM2 prior to 2.02.63-r1 doesn't install above rules
-    # files, but provides the one below:
-    inst_rules 64-device-mapper.rules
     # debian udev rules
     inst_rules 56-lvm.rules 60-persistent-storage-lvm.rules
 

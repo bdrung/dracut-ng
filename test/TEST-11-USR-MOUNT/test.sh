@@ -19,24 +19,18 @@ client_run() {
     shift
     local client_opts="$*"
 
-    echo "CLIENT TEST START: $test_name"
+    client_test_start "$test_name"
 
     declare -a disk_args=()
-    declare -i disk_index=0
-    qemu_add_drive disk_index disk_args "$TESTDIR"/marker.img marker
-    qemu_add_drive disk_index disk_args "$TESTDIR"/root.btrfs root
+    qemu_add_drive disk_args "$TESTDIR"/root.btrfs root
 
-    test_marker_reset
     "$testdir"/run-qemu \
         "${disk_args[@]}" \
-        -append "$TEST_KERNEL_CMDLINE $client_opts" \
+        -append "root=LABEL=dracut $TEST_KERNEL_CMDLINE $client_opts" \
         -initrd "$TESTDIR"/initramfs.testing
+    check_qemu_log
 
-    if ! test_marker_check; then
-        echo "CLIENT TEST END: $test_name [FAILED]"
-        return 1
-    fi
-    echo "CLIENT TEST END: $test_name [OK]"
+    client_test_end
 }
 
 test_run() {
@@ -47,15 +41,11 @@ test_run() {
     client_run "readonly root snapshot" "rd.fstab=0 subvol=snapshot-root"
 }
 
-test_setup() {
+make_test_rootfs() {
     # Create what will eventually be our root filesystem onto an overlay
-    call_dracut --tmpdir "$TESTDIR" \
-        --add-confdir test-root \
-        --mount "/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_root /usr btrfs subvol=usr,rw" \
-        -f "$TESTDIR"/initramfs.root
-    mkdir -p "$TESTDIR"/overlay/source
-    mv "$TESTDIR"/dracut.*/initramfs/* "$TESTDIR"/overlay/source
-    rm -rf "$TESTDIR"/dracut.*
+    build_client_rootfs "$TESTDIR/overlay/source"
+    echo "/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_root /usr btrfs subvol=usr,rw 0 2" \
+        >> "$TESTDIR/overlay/source/etc/fstab"
 
     # create an initramfs that will create the target root filesystem.
     # We do it this way so that we do not risk trashing the host mdraid
@@ -63,27 +53,29 @@ test_setup() {
     call_dracut -i "$TESTDIR"/overlay / \
         --add-confdir test-makeroot \
         -I "mkfs.btrfs" \
-        -i ./create-root.sh /lib/dracut/hooks/initqueue/01-create-root.sh \
+        -i ./create-root.sh /usr/lib/dracut/hooks/initqueue/01-create-root.sh \
         -f "$TESTDIR"/initramfs.makeroot
 
     # Create the blank file to use as a root filesystem
     declare -a disk_args=()
-    # shellcheck disable=SC2034  # disk_index used in qemu_add_drive
-    declare -i disk_index=0
-    qemu_add_drive disk_index disk_args "$TESTDIR"/marker.img marker 1
-    qemu_add_drive disk_index disk_args "$TESTDIR"/root.btrfs root 1
+    qemu_add_drive disk_args "$TESTDIR"/marker.img marker 1
+    qemu_add_drive disk_args "$TESTDIR"/root.btrfs root 1
 
     # Invoke KVM and/or QEMU to actually create the target filesystem.
     "$testdir"/run-qemu \
         "${disk_args[@]}" \
-        -append "root=/dev/dracut/root quiet console=ttyS0,115200n81" \
+        -append "root=/dev/dracut/root quiet" \
         -initrd "$TESTDIR"/initramfs.makeroot
+    rm -rf "$TESTDIR"/overlay
 
     if ! test_marker_check dracut-root-block-created; then
         echo "Could not create root filesystem"
         return 1
     fi
+}
 
+test_setup() {
+    make_test_rootfs
     test_dracut \
         --add-drivers "btrfs"
 }

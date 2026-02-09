@@ -20,6 +20,7 @@ FROM docker.io/archlinux
 ENV TEST_FSTYPE=btrfs
 
 RUN pacman --noconfirm -Syu \
+    3cpio \
     asciidoctor \
     bluez \
     btrfs-progs \
@@ -51,6 +52,7 @@ RUN pacman --noconfirm -Syu \
     pciutils \
     pkgconf \
     plymouth \
+    python \
     qemu \
     qrencode \
     sbsigntools \
@@ -60,5 +62,6 @@ RUN pacman --noconfirm -Syu \
     systemd-ukify \
     tgt \
     tpm2-tools \
+    xfsprogs \
     xorriso \
     && yes | pacman -Scc

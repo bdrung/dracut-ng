@@ -2,9 +2,11 @@
 
 # called by dracut
 check() {
-    [[ $hostonly ]] || [[ $mount_needs ]] && {
-        is_qemu_virtualized && return 0
+    if [[ $hostonly_mode != "strict" ]] && dracut_module_included "qemu"; then
+        return 0
+    fi
 
+    [[ $hostonly ]] || [[ $mount_needs ]] && {
         for fs in "${host_fs_types[@]}"; do
             [[ $fs == "virtiofs" ]] && return 0
         done

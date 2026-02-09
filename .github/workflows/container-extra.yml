@@ -24,12 +24,14 @@ permissions:
     contents: read
 
 jobs:
-    amd64:
+    container-extra:
         if: github.repository == 'dracut-ng/dracut-ng' || vars.CONTAINER == 'enabled'
-        name: ${{ matrix.config.tag }} on ${{ matrix.architecture.platform }}
+        name: ${{ matrix.config.tag }}-${{ matrix.architecture.tag }}
         runs-on: ${{ matrix.architecture.runner }}
         concurrency:
-            group: extra-amd64-${{ github.workflow }}-${{ github.ref }}-${{ matrix.config.tag }}-${{ matrix.architecture.platform }}
+            group: >
+                container-extra-${{ github.workflow }}-${{ github.ref }}
+                -${{ matrix.config.tag }}-${{ matrix.architecture.tag }}
             cancel-in-progress: true
         strategy:
             fail-fast: false
@@ -38,22 +40,20 @@ jobs:
                     - {platform: 'linux/amd64', runner: 'ubuntu-24.04', tag: 'amd'}
                     - {platform: 'linux/arm64', runner: 'ubuntu-24.04-arm', tag: 'arm'}
                 config:
-                    - {dockerfile: 'Dockerfile-debian', tag: 'debian:sid'}
-                    - {dockerfile: 'Dockerfile-debian', tag: 'ubuntu:devel'}
-                    - {dockerfile: 'Dockerfile-alpine', tag: 'alpine:edge'}
-                    - {dockerfile: 'Dockerfile-gentoo', tag: 'gentoo:latest', option: 'systemd'}
-                    - {dockerfile: 'Dockerfile-gentoo', tag: 'gentoo:amd64-openrc', option: 'amd64-openrc'}
-                    - {dockerfile: 'Dockerfile-fedora', tag: 'fedora:rawhide', registry: 'registry.fedoraproject.org'}
-                    - {dockerfile: 'Dockerfile-fedora', tag: 'centos:stream10-development', registry: 'quay.io/centos'}
                     - {dockerfile: 'Dockerfile-azurelinux', tag: 'azurelinux:3.0', registry: 'mcr.microsoft.com'}
+                    - {dockerfile: 'Dockerfile-fedora', tag: 'centos:latest', registry: 'quay.io/centos'}
+                    - {dockerfile: 'Dockerfile-debian', tag: 'debian:sid'}
+                    - {dockerfile: 'Dockerfile-fedora', tag: 'fedora:rawhide', registry: 'registry.fedoraproject.org'}
+                    - {dockerfile: 'Dockerfile-gentoo', tag: 'gentoo:amd64-openrc', option: 'amd64-openrc'}
+                    - {dockerfile: 'Dockerfile-gentoo', tag: 'gentoo:latest', option: 'systemd'}
                 exclude:
-                   - config: {tag: 'arch:latest'}
-                     architecture: {platform: 'linux/arm64'}
-                   - config: {tag: 'gentoo:amd64-openrc'}
-                     architecture: {platform: 'linux/arm64'}
+                    - config: {tag: 'arch:latest'}
+                      architecture: {platform: 'linux/arm64'}
+                    - config: {tag: 'gentoo:amd64-openrc'}
+                      architecture: {platform: 'linux/arm64'}
         steps:
             - name: Check out the repo
-              uses: actions/checkout@v5
+              uses: actions/checkout@v6
             - name: Set up Docker Buildx
               uses: docker/setup-buildx-action@v3
             - name: Login to GitHub Container Registry
@@ -69,10 +69,40 @@ jobs:
               with:
                   file: test/container/${{ matrix.config.dockerfile }}
                   tags: ghcr.io/${{env.repository_owner}}/${{ matrix.config.tag }}-${{ matrix.architecture.tag }}
-                  push: ${{ github.event_name == 'push' ||  github.event_name == 'schedule' }}
+                  push: ${{ github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
                   platforms: ${{ matrix.architecture.platform }}
                   build-args: |
                       DISTRIBUTION=${{ matrix.config.tag }}
                       REGISTRY=${{ matrix.config.registry }}
                       OPTION=${{ matrix.config.option }}
-                      PLATFORM=${{ matrix.config.platform }}
+    manifest:
+        needs: container-extra
+        if: github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        name: ${{ matrix.config.tag }}
+        concurrency:
+            group: manifest-${{ github.workflow }}-${{ github.ref }}-${{ matrix.config.tag }}
+            cancel-in-progress: true
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                config:
+                    - {tag: 'azurelinux:3.0', platforms: ['amd', 'arm']}
+                    - {tag: 'centos:latest', platforms: ['amd', 'arm']}
+                    - {tag: 'debian:sid', platforms: ['amd', 'arm']}
+                    - {tag: 'fedora:rawhide', platforms: ['amd', 'arm']}
+                    - {tag: 'gentoo:latest', platforms: ['amd', 'arm']}
+                    - {tag: 'gentoo:amd64-openrc', platforms: ['amd']}
+        steps:
+            - name: Login to GitHub Container Registry
+              uses: docker/login-action@v3
+              with:
+                  registry: ghcr.io
+                  username: ${{ github.repository_owner }}
+                  password: ${{ secrets.GITHUB_TOKEN }}
+            - name: Set up env
+              run: echo "repository_owner=${GITHUB_REPOSITORY_OWNER,,}" >>${GITHUB_ENV}
+            - name: Create and Push Multi-Arch Manifest
+              run: |
+                  tag="ghcr.io/${{env.repository_owner}}/${{ matrix.config.tag }}"
+                  images="$(printf "${tag}-%s " ${{ join(matrix.config.platforms, ' ') }})"
+                  docker buildx imagetools create -t ${tag} ${images}

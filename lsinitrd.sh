@@ -97,8 +97,18 @@ while (($# > 0)); do
 done
 
 CPIO=cpio
-if 3cpio --help 2> /dev/null | grep -q -- --make-directories; then
-    CPIO=3cpio
+if command -v 3cpio > /dev/null; then
+    if threecpio_help_output=$(3cpio --help); then
+        if [[ $threecpio_help_output == *--make-directories* ]]; then
+            CPIO=3cpio
+        fi
+    elif command -v cpio > /dev/null; then
+        echo "Warning: Calling '3cpio --help' failed. Cannot check if 3cpio supports --make-directories. Falling back to cpio."
+    else
+        echo "Warning: Calling '3cpio --help' failed. Cannot check if 3cpio supports --make-directories."
+        CPIO=3cpio
+    fi
+    unset threecpio_help_output
 fi
 
 if ! [[ $KERNEL_VERSION ]]; then

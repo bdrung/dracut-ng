@@ -1,6 +1,7 @@
 #!/bin/sh
 
 command -v getarg > /dev/null || . /lib/dracut-lib.sh
+command -v get_rd_overlay > /dev/null || . /lib/overlayfs-lib.sh
 
 if getargbool 0 rd.live.debug; then
     exec > /tmp/create-overlay.$$.out
@@ -9,13 +10,13 @@ if getargbool 0 rd.live.debug; then
 fi
 
 gatherData() {
-    overlay=$(getarg rd.live.overlay)
+    overlay=$(get_rd_overlay)
     if [ -z "$overlay" ]; then
-        info "Skipping overlay creation: kernel command line parameter 'rd.live.overlay' is not set"
+        info "Skipping overlay creation: kernel command line parameter 'rd.overlay' is not set"
         exit 0
     fi
     if ! str_starts "${overlay}" LABEL=; then
-        die "Overlay creation failed: the partition must be set by LABEL in the 'rd.live.overlay' kernel parameter"
+        die "Overlay creation failed: the partition must be set by LABEL in the 'rd.overlay' kernel parameter"
     fi
 
     overlayLabel=${overlay#LABEL=}
@@ -78,6 +79,7 @@ gatherData() {
 
 createPartition() {
     parted --script --align optimal "${blockDevice}" mkpart primary ${partitionStart}% 100%
+    blockdev --rereadpt "${blockDevice}"
 }
 
 createFilesystem() {

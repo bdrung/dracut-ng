@@ -26,7 +26,10 @@ dev_unit_name() {
     local dev="$1"
 
     if command -v systemd-escape > /dev/null; then
-        systemd-escape -p -- "$dev"
+        case $dev in
+            */*) systemd-escape -p -- "$dev" ;;
+            *) systemd-escape -- "$dev" ;;
+        esac
         return $?
     fi
 
@@ -69,7 +72,7 @@ set_systemd_timeout_for_dev() {
         _timeout=$(getarg rd.timeout)
     fi
 
-    _timeout=${_timeout:-0}
+    _timeout=${_timeout:-infinity}
 
     _name=$(dev_unit_name "$1")
     if ! [ -L "${PREFIX-}/etc/systemd/system/initrd.target.wants/${_name}.device" ]; then

@@ -15,24 +15,18 @@ client_run() {
     shift
     local client_opts="$*"
 
-    echo "CLIENT TEST START: $test_name"
+    client_test_start "$test_name"
 
     declare -a disk_args=()
-    declare -i disk_index=0
-    qemu_add_drive disk_index disk_args "$TESTDIR"/marker.img marker
-    qemu_add_drive disk_index disk_args "$TESTDIR"/root.img root
+    qemu_add_drive disk_args "$TESTDIR"/root.img root
 
-    test_marker_reset
     "$testdir"/run-qemu \
         "${disk_args[@]}" \
-        -append "$TEST_KERNEL_CMDLINE $client_opts" \
+        -append "root=LABEL=dracut $TEST_KERNEL_CMDLINE $client_opts" \
         -initrd "$TESTDIR"/initramfs.testing
+    check_qemu_log
 
-    if ! test_marker_check; then
-        echo "CLIENT TEST END: $test_name [FAILED]"
-        return 1
-    fi
-    echo "CLIENT TEST END: $test_name [OK]"
+    client_test_end
 }
 
 test_run() {
@@ -41,35 +35,8 @@ test_run() {
 }
 
 test_setup() {
-    # Create what will eventually be our root filesystem onto an overlay
-    call_dracut --tmpdir "$TESTDIR" \
-        --add-confdir test-root \
-        -f "$TESTDIR"/initramfs.root
-    mkdir -p "$TESTDIR"/overlay/source
-    mv "$TESTDIR"/dracut.*/initramfs/* "$TESTDIR"/overlay/source
-    rm -rf "$TESTDIR"/dracut.*
-
-    # create an initramfs that will create the target root filesystem.
-    # We do it this way so that we do not risk trashing the host mdraid
-    # devices, volume groups, encrypted partitions, etc.
-    call_dracut -i "$TESTDIR"/overlay / \
-        --add-confdir test-makeroot \
-        -i ./create-root.sh /lib/dracut/hooks/initqueue/01-create-root.sh \
-        -f "$TESTDIR"/initramfs.makeroot
-
-    declare -a disk_args=()
-    # shellcheck disable=SC2034  # disk_index used in qemu_add_drive
-    declare -i disk_index=0
-    qemu_add_drive disk_index disk_args "$TESTDIR"/marker.img marker 1
-    qemu_add_drive disk_index disk_args "$TESTDIR"/root.img root 1
-
-    # Invoke KVM and/or QEMU to actually create the target filesystem.
-    "$testdir"/run-qemu \
-        "${disk_args[@]}" \
-        -append "root=/dev/fakeroot quiet console=ttyS0,115200n81" \
-        -initrd "$TESTDIR"/initramfs.makeroot
-    test_marker_check dracut-root-block-created
-    rm -- "$TESTDIR"/marker.img
+    build_client_rootfs "$TESTDIR/rootfs"
+    build_ext4_image "$TESTDIR/rootfs" "$TESTDIR"/root.img dracut
 
     # initrd for required kernel modules
     # Improve boot time by generating two initrds. Do not re-compress kernel modules
@@ -82,7 +49,7 @@ test_setup() {
 
     # vanilla kernel-independent systemd-based minimal initrd without dracut specific customizations
     # since dracut-systemd is not included in the generated initrd, only systemd options are supported during boot
-    test_dracut --no-kernel \
+    test_dracut --keep --no-kernel \
         --omit "test systemd-sysctl systemd-modules-load" \
         -m "systemd-initrd base" \
         "$TESTDIR"/initramfs-systemd-initrd

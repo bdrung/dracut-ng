@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# this dracut module needs to be ordered after the crypt dracut module
+# to ensure that "$initdir"/etc/crypttab is computed
+
 # called by dracut
 check() {
     local fs
@@ -19,7 +22,7 @@ check() {
 # called by dracut
 depends() {
     local deps
-    deps="dm rootfs-block crypt systemd-ask-password"
+    deps="crypt systemd-ask-password"
     if [[ $hostonly && -f "${dracutsysrootdir-}"/etc/crypttab ]]; then
         if grep -q -e "fido2-device=" -e "fido2-cid=" "${dracutsysrootdir-}"/etc/crypttab; then
             deps+=" fido2"
