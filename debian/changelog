@@ -18,6 +18,16 @@ dracut (110-1) unstable; urgency=medium
 
  -- Benjamin Drung <bdrung@debian.org>  Mon, 09 Feb 2026 02:05:10 +0100
 
+dracut (109-11ubuntu1) resolute; urgency=medium
+
+  * Merge with Debian unstable. Remaining changes:
+    - autopkgtest: skip failing 43-kernel-install on arm64 (see LP 2133402)
+    - autopkgtest: skip too slow 41-full-systemd on arm64 and armhf
+      (see LP 2133401)
+    - dracut-core: Declare breaking rust-coreutils before version 0.5.0
+
+ -- Benjamin Drung <bdrung@ubuntu.com>  Wed, 04 Feb 2026 01:04:58 +0100
+
 dracut (109-11) unstable; urgency=medium
 
   * autopkgtest: explicitly depend on dmsetup for test 60-nfs
@@ -37,6 +47,26 @@ dracut (109-10) unstable; urgency=medium
 
  -- Benjamin Drung <bdrung@debian.org>  Fri, 30 Jan 2026 15:08:55 +0100
 
+dracut (109-9ubuntu1) resolute; urgency=medium
+
+  * Merge with Debian unstable. Remaining changes:
+    - Let linux-firmware updates trigger the dracut autopkgtest
+    - autopkgtest: skip failing 43-kernel-install on arm64 (see LP 2133402)
+    - autopkgtest: skip too slow 41-full-systemd on arm64 and armhf
+      (see LP 2133401)
+  * Dropped changes:
+    - dracut-core: demote binutils to suggests. its only needed when using UEFI
+      executables
+    - fix(udev-rules): exclude udev rules from snapd. Let snapd ship a Dracut
+      config file instead (see LP 2139065)
+    - feat(dmsquash-live-autooverlay): support readlink from uutils
+      (fixed by rust-coreutils 0.5.0)
+    - test: use GNU dd instead of uutil's dd (to work around bug LP 2129037)
+      (fixed by rust-coreutils 0.4.0)
+  * dracut-core: Declare breaking rust-coreutils before version 0.5.0
+
+ -- Benjamin Drung <bdrung@ubuntu.com>  Mon, 26 Jan 2026 11:47:44 +0100
+
 dracut (109-9) unstable; urgency=medium
 
   * feat: warn in case 3cpio is present but not suitable (Closes: #1125948)
@@ -53,6 +83,22 @@ dracut (109-8) unstable; urgency=medium
   * Drop unneeded udevsettle patch (see upstream issue 2067)
 
  -- Bastian Blank <waldi@debian.org>  Fri, 23 Jan 2026 20:40:34 +0100
+
+dracut (109-7ubuntu1) resolute; urgency=medium
+
+  * Merge with Debian unstable. Remaining changes:
+    - drop udevsettle patch (these kind of patches should be applied upstream)
+    - dracut-core: demote binutils to suggests. its only needed when using UEFI
+      executables
+    - Let linux-firmware updates trigger the dracut autopkgtest
+    - fix(udev-rules): exclude udev rules from snapd
+    - feat(dmsquash-live-autooverlay): support readlink from uutils
+    - test: use GNU dd instead of uutil's dd (to work around bug LP 2129037)
+    - autopkgtest: skip failing 43-kernel-install on arm64 (see LP 2133402)
+    - autopkgtest: skip too slow 41-full-systemd on arm64 and armhf
+      (see LP 2133401)
+
+ -- Benjamin Drung <bdrung@ubuntu.com>  Sat, 17 Jan 2026 01:27:36 +0100
 
 dracut (109-7) unstable; urgency=medium
 
@@ -81,6 +127,23 @@ dracut (109-6) unstable; urgency=medium
   * Bump Standards-Version to 4.7.3
 
  -- Benjamin Drung <bdrung@debian.org>  Mon, 12 Jan 2026 15:44:08 +0100
+
+dracut (109-5ubuntu1) resolute; urgency=medium
+
+  * Merge with Debian unstable. Remaining changes:
+    - drop udevsettle patch (these kind of patches should be applied upstream)
+    - dracut-core: demote binutils to suggests. its only needed when using UEFI
+      executables
+    - Let linux-firmware updates trigger the dracut autopkgtest
+    - fix(udev-rules): exclude udev rules from snapd
+    - feat(dmsquash-live-autooverlay): support readlink from uutils
+    - test: use GNU dd instead of uutil's dd (to work around bug LP 2129037)
+  * test(sysroot): run with --no-hostonly-cmdline
+  * autopkgtest: skip failing 43-kernel-install on arm64 (see LP 2133402)
+  * autopkgtest: skip too slow 41-full-systemd on arm64 and armhf
+    (see LP 2133401)
+
+ -- Benjamin Drung <bdrung@ubuntu.com>  Mon, 01 Dec 2025 11:49:45 +0100
 
 dracut (109-5) unstable; urgency=medium
 
@@ -152,6 +215,33 @@ dracut (109-1) unstable; urgency=medium
 
  -- Benjamin Drung <bdrung@debian.org>  Wed, 05 Nov 2025 10:27:36 +0100
 
+dracut (108-8ubuntu1) resolute; urgency=medium
+
+  * Merge with Debian unstable. Remaining changes:
+    - drop udevsettle patch (these kind of patches should be applied upstream)
+    - dracut-core:
+      - demote cryptsetup, systemd-cryptsetup, dmsetup, kpartx, lvm2,
+        and mdadm to suggests
+      - demote binutils to suggests. its only needed when using UEFI executables
+    - Include all packages with dracut modules in Apport bug reports
+    - autopkgtest: enable tests for s390x again
+    - Plymouth hook: Use alternatives instead of plymouth-set-default-theme
+    - run upstream-dracut-live autopkgtest on armhf and ppc64el
+    - Drop debian-initramfs-post-update.patch. Let update-initramfs call the
+      bootloader hooks instead of dracut itself.
+    - plymouth: Only pull in the SimpleDRM driver by default
+    - Let linux-firmware updates trigger the dracut autopkgtest
+    - Cherry-pick some upstream fixes:
+      - fix(dracut): use "-name" to avoid find matching temporary directory
+      - fix(systemd-sysusers): increase ordering from 68 to 78
+      - fix(dracut-systemd): avoid matching extra root= substrings in cmdline
+      - fix(resume): avoid matching extra resume= substrings in cmdline
+    - fix(udev-rules): exclude udev rules from snapd
+  * feat(dmsquash-live-autooverlay): support readlink from uutils
+  * test: use GNU dd instead of uutil's dd (to work around bug LP 2129037)
+
+ -- Benjamin Drung <bdrung@ubuntu.com>  Mon, 20 Oct 2025 18:37:02 +0200
+
 dracut (108-8) unstable; urgency=medium
 
   * dracut-test: fix dropped dependencies on i386
@@ -194,6 +284,44 @@ dracut (108-4) unstable; urgency=medium
 
  -- Benjamin Drung <bdrung@debian.org>  Thu, 25 Sep 2025 16:23:44 +0200
 
+dracut (108-3ubuntu3) questing; urgency=medium
+
+  * Default to cpio until 3cpio MIR is complete
+  * Cherry-pick some upstream fixes:
+    - fix(dracut): use "-name" to avoid find matching temporary directory
+    - fix(systemd-sysusers): increase ordering from 68 to 78
+    - fix(dracut-systemd): avoid matching extra root= substrings in cmdline
+    - fix(resume): avoid matching extra resume= substrings in cmdline
+  * fix(udev-rules): exclude udev rules from snapd
+
+ -- Benjamin Drung <bdrung@ubuntu.com>  Thu, 04 Sep 2025 23:20:52 +0200
+
+dracut (108-3ubuntu2) questing; urgency=medium
+
+  * fix(dracut): library directory creation in --kernel-only
+
+ -- Benjamin Drung <bdrung@ubuntu.com>  Thu, 14 Aug 2025 20:39:46 +0200
+
+dracut (108-3ubuntu1) questing; urgency=medium
+
+  * Merge with Debian unstable. Remaining changes:
+    - drop udevsettle patch (these kind of patches should be applied upstream)
+    - dracut-core:
+      - demote cryptsetup, systemd-cryptsetup, dmsetup, kpartx, lvm2,
+        and mdadm to suggests
+      - demote binutils to suggests. its only needed when using UEFI executables
+    - Include all packages with dracut modules in Apport bug reports
+    - autopkgtest: enable tests for s390x again
+    - Plymouth hook: Use alternatives instead of plymouth-set-default-theme
+    - run upstream-dracut-live autopkgtest on armhf and ppc64el
+    - Drop debian-initramfs-post-update.patch. Let update-initramfs call the
+      bootloader hooks instead of dracut itself.
+    - plymouth: Only pull in the SimpleDRM driver by default
+    - Let linux-firmware updates trigger the dracut autopkgtest
+  * Depend on 3cpio instead of cpio
+
+ -- Benjamin Drung <bdrung@ubuntu.com>  Wed, 13 Aug 2025 23:08:38 +0200
+
 dracut (108-3) unstable; urgency=medium
 
   * Cherry-pick upstream commits to simplify debian/rules:
@@ -210,6 +338,26 @@ dracut (108-3) unstable; urgency=medium
   * Support 3cpio for creating and listing initrds
 
  -- Benjamin Drung <bdrung@debian.org>  Wed, 13 Aug 2025 14:07:00 +0200
+
+dracut (108-2ubuntu1) questing; urgency=medium
+
+  * Merge with Debian unstable. Remaining changes:
+    - drop udevsettle patch (these kind of patches should be applied upstream)
+    - dracut-core:
+      - demote cryptsetup, systemd-cryptsetup, dmsetup, kpartx, lvm2,
+        and mdadm to suggests
+      - demote binutils to suggests. its only needed when using UEFI executables
+    - Include all packages with dracut modules in Apport bug reports
+    - autopkgtest: enable tests for s390x again
+    - Plymouth hook: Use alternatives instead of plymouth-set-default-theme
+    - run upstream-dracut-live autopkgtest on armhf and ppc64el
+    - Drop debian-initramfs-post-update.patch. Let update-initramfs call the
+      bootloader hooks instead of dracut itself.
+    - plymouth: Only pull in the SimpleDRM driver by default
+    - Let linux-firmware updates trigger the dracut autopkgtest
+  * fix(dracut-util): crash if CMDLINE ends with quotation mark
+
+ -- Benjamin Drung <bdrung@ubuntu.com>  Fri, 08 Aug 2025 02:17:39 +0200
 
 dracut (108-2) unstable; urgency=medium
 
@@ -229,6 +377,26 @@ dracut (108-2) unstable; urgency=medium
   * Set Dracut version in dracut-version.sh on install
 
  -- Benjamin Drung <bdrung@debian.org>  Thu, 07 Aug 2025 14:26:28 +0200
+
+dracut (108-1ubuntu1) questing; urgency=medium
+
+  * Merge with Debian unstable. Remaining changes:
+    - drop udevsettle patch (these kind of patches should be applied upstream)
+    - dracut-core:
+      - demote cryptsetup, systemd-cryptsetup, dmsetup, kpartx, lvm2,
+        and mdadm to suggests
+      - demote binutils to suggests. its only needed when using UEFI executables
+    - Include all packages with dracut modules in Apport bug reports
+    - autopkgtest: enable tests for s390x again
+    - autopkgtest: add TEST-70-ISCSI and TEST-71-ISCSI-MULTI
+    - Plymouth hook: Use alternatives instead of plymouth-set-default-theme
+    - run upstream-dracut-live autopkgtest on armhf and ppc64el
+    - Drop debian-initramfs-post-update.patch. Let update-initramfs call the
+      bootloader hooks instead of dracut itself.
+    - plymouth: Only pull in the SimpleDRM driver by default
+    - Let linux-firmware updates trigger the dracut autopkgtest
+
+ -- Benjamin Drung <bdrung@ubuntu.com>  Tue, 05 Aug 2025 10:40:05 +0200
 
 dracut (108-1) unstable; urgency=medium
 
@@ -262,6 +430,62 @@ dracut (107-2) unstable; urgency=medium
   * Run syncheck on package test phase
 
  -- Benjamin Drung <bdrung@debian.org>  Tue, 29 Jul 2025 23:31:39 +0200
+
+dracut (107-1ubuntu5) questing; urgency=medium
+
+  * fix(lsinitrd): resolve initrd to real path (LP: #2116183)
+
+ -- Benjamin Drung <bdrung@ubuntu.com>  Tue, 08 Jul 2025 23:12:17 +0200
+
+dracut (107-1ubuntu4) questing; urgency=medium
+
+  * Fix trigger looping when installing dracut (LP: #2116073)
+  * Add autopkgtest for lsinitrd
+  * Let linux-firmware updates trigger the dracut autopkgtest (LP: #2116067)
+
+ -- Benjamin Drung <bdrung@ubuntu.com>  Mon, 07 Jul 2025 13:30:54 +0200
+
+dracut (107-1ubuntu3) questing; urgency=medium
+
+  * Skip missing shellcheck on i386
+
+ -- Benjamin Drung <bdrung@ubuntu.com>  Mon, 30 Jun 2025 11:58:56 +0200
+
+dracut (107-1ubuntu2) questing; urgency=medium
+
+  * autopkgtest: replace qemu-kvm by qemu-system-native
+  * update-initramfs: support deferring update by trigger (LP: #2114683)
+  * Revert "Avoid updating the initramfs twice for some cases" (LP: #2115490)
+  * dracut-network: default to systemd-networkd as network manager
+  * source.apport: import packaging from apport
+  * Fix shellcheck in Debian packaging scripts
+  * Run syncheck, TEST-80-GETARGS, and TEST-81-SKIPCPIO during build
+
+ -- Benjamin Drung <bdrung@ubuntu.com>  Fri, 27 Jun 2025 16:51:35 +0200
+
+dracut (107-1ubuntu1) questing; urgency=medium
+
+  * Merge with Debian unstable (LP: #2111570). Remaining changes:
+    - drop udevsettle patch (these kind of patches should be applied upstream)
+    - dracut-core:
+      - demote cryptsetup, systemd-cryptsetup, dmsetup, kpartx, lvm2,
+        and mdadm to suggests
+      - demote binutils to suggests. its only needed when using UEFI executables
+    - Include all packages with dracut modules in Apport bug reports
+    - autopkgtest: enable tests for s390x again
+    - autopkgtest: add TEST-70-ISCSI and TEST-71-ISCSI-MULTI
+    - Plymouth hook: Use alternatives instead of plymouth-set-default-theme
+    - run upstream-dracut-live autopkgtest on armhf and ppc64el
+    - Add update-initramfs (derived from initramfs-tools)
+    - Drop debian-initramfs-post-update.patch. Let update-initramfs call the
+      bootloader hooks instead of dracut itself.
+    - Add bash completion for update-initramfs
+    - Avoid updating the initramfs twice for some cases
+    - plymouth: Only pull in the SimpleDRM driver by default
+  * autopkgtest: depend on curl for test 60-NFS
+  * fix(simpledrm): add =drivers/gpu/drm/panel (LP: #2107477)
+
+ -- Benjamin Drung <bdrung@ubuntu.com>  Fri, 23 May 2025 14:54:03 +0200
 
 dracut (107-1) unstable; urgency=medium
 
@@ -309,6 +533,54 @@ dracut (106-3) unstable; urgency=medium
 
  -- Thomas Lange <lange@debian.org>  Thu, 20 Feb 2025 11:02:07 +0100
 
+dracut (106-2ubuntu5) plucky; urgency=medium
+
+  * update-initramfs: add -s parameter
+  * Avoid updating the initramfs twice for some cases (LP: #1466965)
+  * add simple-drm module
+  * plymouth: Only pull in the SimpleDRM driver by default (LP: #2105377)
+
+ -- Benjamin Drung <bdrung@ubuntu.com>  Wed, 02 Apr 2025 10:39:23 +0200
+
+dracut (106-2ubuntu4) plucky; urgency=medium
+
+  * update-initramfs: add --version parameter
+  * Add bash completion for update-initramfs (LP: #2103540)
+
+ -- Benjamin Drung <bdrung@ubuntu.com>  Sat, 22 Mar 2025 00:32:49 +0100
+
+dracut (106-2ubuntu3) plucky; urgency=medium
+
+  * fix(systemd-sysusers): silence "Creating " on stderr
+
+ -- Benjamin Drung <bdrung@ubuntu.com>  Tue, 25 Feb 2025 17:18:28 +0100
+
+dracut (106-2ubuntu2) plucky; urgency=medium
+
+  * Add update-initramfs (derived from initramfs-tools) (LP: #2098525)
+  * Drop debian-initramfs-post-update.patch. Let update-initramfs call the
+    bootloader hooks instead of dracut itself.
+
+ -- Benjamin Drung <bdrung@ubuntu.com>  Fri, 21 Feb 2025 01:23:03 +0100
+
+dracut (106-2ubuntu1) plucky; urgency=medium
+
+  * Merge from Debian unstable. Remaining changes:
+    - drop udevsettle patch (these kind of patches should be applied upstream)
+    - drop 90overlay-root in favor of 90overlayfs (Closes: #1017039)
+    - dracut-core:
+      - demote cryptsetup, systemd-cryptsetup, dmraid, dmsetup, kpartx, lvm2,
+        and mdadm to suggests
+      - demote binutils to suggests. its only needed when using UEFI executables
+    - Include all packages with dracut modules in Apport bug reports
+    - autopkgtest: add TEST-70-ISCSI and TEST-71-ISCSI-MULTI
+    - Plymouth hook: Use alternatives instead of plymouth-set-default-theme
+    - Set -H --hostonly-mode=sloppy as default arguments via a config file.
+  * run upstream-dracut-live autopkgtest on armhf and ppc64el
+  * move 99-ubuntu.conf to 10-ubuntu.conf (to ease overwriting it)
+
+ -- Benjamin Drung <bdrung@ubuntu.com>  Thu, 13 Feb 2025 12:29:40 +0100
+
 dracut (106-2) unstable; urgency=medium
 
   * new patches (all accepted upstream):
@@ -355,6 +627,48 @@ dracut (105-3) unstable; urgency=medium
 
  -- Benjamin Drung <bdrung@debian.org>  Tue, 07 Jan 2025 10:25:32 +0100
 
+dracut (105-2ubuntu5) plucky; urgency=medium
+
+  * test: run RAID and ENC-RAID-LVM with --no-hostonly (LP: #2091954)
+
+ -- Benjamin Drung <bdrung@ubuntu.com>  Sat, 21 Dec 2024 01:28:52 +0100
+
+dracut (105-2ubuntu4) plucky; urgency=medium
+
+  * Install 99-ubuntu.conf in /usr/lib/dracut/dracut.conf.d instead of /etc
+
+ -- Benjamin Drung <bdrung@ubuntu.com>  Wed, 27 Nov 2024 15:47:41 +0100
+
+dracut (105-2ubuntu3) plucky; urgency=medium
+
+  * Set -H --hostonly-mode=sloppy as default arguments via a config file.
+
+ -- Simon Quigley <tsimonq2@ubuntu.com>  Sun, 24 Nov 2024 21:46:30 -0600
+
+dracut (105-2ubuntu2) plucky; urgency=medium
+
+  * Plymouth hook: Use alternatives instead of plymouth-set-default-theme
+    (LP: #1596220).
+
+ -- Simon Quigley <tsimonq2@ubuntu.com>  Thu, 21 Nov 2024 14:54:12 -0600
+
+dracut (105-2ubuntu1) plucky; urgency=medium
+
+  * Merge from Debian unstable. Remaining changes:
+    - run autopkgtest on all architectures
+    - Run upstream autopkgtest as root
+    - drop udevsettle patch (these kind of patches should be applied upstream)
+    - drop 90overlay-root in favor of 90overlayfs (Closes: #1017039)
+    - dracut-core:
+      - demote cryptsetup, systemd-cryptsetup, dmraid, dmsetup, kpartx, lvm2,
+        and mdadm to suggests
+      - demote binutils to suggests. its only needed when using UEFI executables
+    - Include all packages with dracut modules in Apport bug reports
+      (LP: #2081183)
+  * autopkgtest: also run TEST-20-NFS, TEST-30-ISCSI, and TEST-35-ISCSI-MULTI
+
+ -- Benjamin Drung <bdrung@ubuntu.com>  Thu, 21 Nov 2024 15:16:59 +0100
+
 dracut (105-2) unstable; urgency=medium
 
   * autopkgtest:
@@ -374,6 +688,22 @@ dracut (105-2) unstable; urgency=medium
   * fix(dracut-init): add compatibility with Debian/Ubuntu for libdirs detection
 
  -- Benjamin Drung <bdrung@debian.org>  Thu, 21 Nov 2024 14:30:47 +0100
+
+dracut (105-1ubuntu1) plucky; urgency=medium
+
+  * Merge from Debian unstable. Remaining changes:
+    - Run upstream autopkgtest as root
+    - disable using DH_VERBOSE=1
+    - drop udevsettle patch (these kind of patches should be applied upstream)
+    - drop 90overlay-root in favor of 90overlayfs (Closes: #1017039)
+    - dracut-core:
+      - demote cryptsetup, systemd-cryptsetup, dmraid, dmsetup, kpartx, lvm2,
+        and mdadm to suggests
+      - demote binutils to suggests. its only needed when using UEFI executables
+    - Include all packages with dracut modules in Apport bug reports
+      (LP: #2081183)
+
+ -- Benjamin Drung <bdrung@ubuntu.com>  Thu, 14 Nov 2024 14:06:43 +0100
 
 dracut (105-1) unstable; urgency=low
 
@@ -435,6 +765,53 @@ dracut (103-1.1) unstable; urgency=medium
 
  -- Marco d'Itri <md@linux.it>  Tue, 20 Aug 2024 23:36:24 +0200
 
+dracut (103-1ubuntu3) oracular; urgency=medium
+
+  * Regenerate only the latest and missing initrds (LP: #2048990)
+  * Include all packages with dracut modules in Apport bug reports
+    (LP: #2081183)
+
+ -- Benjamin Drung <bdrung@ubuntu.com>  Mon, 30 Sep 2024 15:04:58 +0200
+
+dracut (103-1ubuntu2) oracular; urgency=medium
+
+  * autopkgtest: Drop dmraid upstream test 14 (LP: #2073677)
+  * Add systemd-coredump, systemd-cryptsetup, and systemd-repart as
+    dependencies for upstream-dracut-core autopkgtest.
+
+ -- Benjamin Drung <bdrung@ubuntu.com>  Tue, 03 Sep 2024 11:02:08 +0200
+
+dracut (103-1ubuntu1) oracular; urgency=medium
+
+  * Merge from Debian unstable. Remaining changes:
+    - autopkgtest: Enable dmraid upstream test 14
+    - Run upstream autopkgtest as root
+    - disable using DH_VERBOSE=1
+    - dracut-core: add new modules 01systemd-bsod, 01systemd-creds, 90numlock,
+      90pcmcia
+    - Explicitly mark 45ifcfg module as not installed
+    - Switch to debhelper 13
+    - dracut: use await variant of update-initramfs trigger
+    - drop udevsettle patch (these kind of patches should be applied upstream)
+    - drop nm-path patch (network-manager ships the helpers in /usr/libexec)
+    - drop 90overlay-root in favor of 90overlayfs (Closes: #1017039)
+    - run autopkgtest with V=2
+    - run autopkgtest on all architectures
+    - autopkgtest: disable using KVM for ppc64el
+    - autopkgtest: set ARCH to dpkg architecture
+    - dracut-core:
+      - drop recommending pkgconf
+      - drop depending directly on libkmod2. dracut-install links against it.
+      - demote cryptsetup, dmraid, dmsetup, kpartx, lvm2, mdadm to suggests
+      - demote binutils to suggests. its only needed when using UEFI executables
+      - recommend zstd instead of pigz and default to zstd
+    - Drop dracut-config-generic. Building a generic image is and will be the
+      default.
+    - Default initrdname to initrd.img-${kernel}
+  * All submitted patches were accepted upstream and could be dropped.
+
+ -- Benjamin Drung <bdrung@ubuntu.com>  Fri, 09 Aug 2024 11:26:10 +0200
+
 dracut (103-1) unstable; urgency=low
 
   * new upstream version 103
@@ -442,6 +819,65 @@ dracut (103-1) unstable; urgency=low
   * add new dracut module
 
  -- Thomas Lange <lange@debian.org>  Thu, 25 Jul 2024 13:30:18 +0900
+
+dracut (102-3ubuntu4) oracular; urgency=medium
+
+  * Cherry-pick upstream fixes for systemd 256 (LP: #2069290):
+    - fix(test): use --add instead of --modules to create test-makeroot
+    - test: avoid writing to rootfs as it might be read-only
+  * fix(dracut-initramfs-restore.sh): correct initrd globbing
+  * feat(lsinitrd.sh): support configurable initrd filenames
+  * Default initrdname to initrd.img-${kernel}
+  * Cherry-pick upstream performance fixes (LP: #2065180):
+    - perf(dracut-install): memoize find_kmod_module_from_sysfs_node
+    - perf(dracut-install): use driver/module sysfs dirs for module name
+  * test: virtual hardware watchdog not available on s390x
+
+ -- Benjamin Drung <bdrung@ubuntu.com>  Mon, 08 Jul 2024 20:37:51 +0200
+
+dracut (102-3ubuntu3) oracular; urgency=medium
+
+  * autopkgtest: set ARCH to dpkg architecture
+  * dracut-core:
+    - drop recommending pkgconf
+    - drop depending directly on libkmod2. dracut-install links against it.
+    - demote cryptsetup, dmraid, dmsetup, kpartx, lvm2, mdadm to suggests
+    - demote binutils to suggests. its only needed when using UEFI executables.
+    - recommend zstd instead of pigz and default to zstd
+  * Drop dracut-config-generic. Building a generic image is and will be the
+    default.
+
+ -- Benjamin Drung <bdrung@ubuntu.com>  Thu, 27 Jun 2024 23:07:12 +0200
+
+dracut (102-3ubuntu2) oracular; urgency=medium
+
+  * dracut: use await variant of update-initramfs trigger
+  * fix(shell-completion): remove hashbang from bash completions
+  * drop udevsettle patch (these kind of patches should be applied upstream)
+  * drop nm-path patch (network-manager ships the helpers in /usr/libexec)
+  * drop 90overlay-root in favor of 90overlayfs (Closes: #1017039)
+  * run autopkgtest with V=2
+  * autopkgtest: depend on tpm2-tools for systemd-pcrphase (LP: #2069290)
+  * run autopkgtest on all architectures
+  * autopkgtest: disable using KVM for ppc64el
+
+ -- Benjamin Drung <bdrung@ubuntu.com>  Fri, 14 Jun 2024 01:57:17 +0200
+
+dracut (102-3ubuntu1) oracular; urgency=medium
+
+  * Merge from Debian unstable. Remaining changes:
+    - autopkgtest: Enable dmraid upstream test 14
+    - Run upstream autopkgtest as root
+    - disable using DH_VERBOSE=1
+    - perf(dracut-install): preload kmod resources for quicker module lookup
+      (LP: #2065180)
+  * dracut-core: add new modules 01systemd-bsod, 01systemd-creds, 90numlock,
+    90pcmcia
+  * Explicitly mark 45ifcfg module as not installed
+  * Switch to debhelper 13
+  * test(RAID-DEG): fix running test out of tree
+
+ -- Benjamin Drung <bdrung@ubuntu.com>  Wed, 12 Jun 2024 19:38:43 +0200
 
 dracut (102-3) unstable; urgency=medium
 
@@ -468,6 +904,24 @@ dracut (102-1) unstable; urgency=low
 
  -- Thomas Lange <lange@debian.org>  Mon, 03 Jun 2024 14:14:11 +0200
 
+dracut (060+5-8ubuntu2) oracular; urgency=medium
+
+  * perf(dracut-install): preload kmod resources for quicker module lookup
+    (LP: #2065180)
+
+ -- Benjamin Drung <bdrung@ubuntu.com>  Tue, 04 Jun 2024 16:33:13 +0200
+
+dracut (060+5-8ubuntu1) oracular; urgency=medium
+
+  * Merge from Debian unstable. Remaining changes:
+    - autopkgtest: Enable dmraid upstream test 14
+    - Run upstream autopkgtest as root
+    - disable using DH_VERBOSE=1
+    - d/p/ldconfig-real.patch: make sure ldconfig.real is installed where
+      needed (LP: #2053057)
+
+ -- Benjamin Drung <bdrung@ubuntu.com>  Tue, 21 May 2024 17:38:39 +0200
+
 dracut (060+5-8) unstable; urgency=low
 
   * control: adjust breaks, replaces, Closes: #1071208, #1071244
@@ -489,6 +943,32 @@ dracut (060+5-2) unstable; urgency=low
   * enable autopkgtest test suite, MR #24
 
  -- Thomas Lange <lange@debian.org>  Sun, 31 Mar 2024 19:05:19 +0200
+
+dracut (060+5-1ubuntu3) noble; urgency=high
+
+  * No change rebuild for 64-bit time_t and frame pointers.
+
+ -- Julian Andres Klode <juliank@ubuntu.com>  Mon, 08 Apr 2024 17:56:43 +0200
+
+dracut (060+5-1ubuntu2) noble; urgency=medium
+
+  * d/p/ldconfig-real.patch: make sure ldconfig.real is installed where needed
+    (LP: #2053057)
+
+ -- Nick Rosbrook <enr0n@ubuntu.com>  Tue, 13 Feb 2024 11:26:56 -0500
+
+dracut (060+5-1ubuntu1) noble; urgency=medium
+
+  * Merge from Debian unstable. Remaining changes:
+    - fix(test): running tests no longer requires to be root
+    - Add modules 80test, 80test-makeroot, and 80test-root to dracut-core
+    - Add autopkgtest to run upstream test cases on amd64 (LP: #2031417)
+    - Split dracut-install into separate package for initramfs-tools
+      (LP: #2031185)
+  * test(FULL SYSTEMD): no need to include dbus to the target rootfs
+  * Drop dbus-broker from autopkgtest
+
+ -- Benjamin Drung <bdrung@ubuntu.com>  Wed, 07 Feb 2024 18:44:09 +0100
 
 dracut (060+5-1) unstable; urgency=medium
 
@@ -516,6 +996,35 @@ dracut (059+212-1) unstable; urgency=low
   * merge upstream changes, Closes: #1056059, #1041562, #1054400, #1016052
 
  -- Thomas Lange <lange@debian.org>  Thu, 30 Nov 2023 22:10:02 +0100
+
+dracut (059-4ubuntu2) mantic; urgency=medium
+
+  * Split dracut-install into separate package for initramfs-tools
+    (LP: #2031185)
+  * Update out-of-tree patches to final version merged upstream
+  * Cherry-pick upstream fixes:
+    - fix(dracut-systemd): rootfs-generator issues
+    - test: increase test VM memory from 512M to 1024M to avoid OOM killer
+  * Address lintian complains:
+    - Remove empty directories in /usr/lib/dracut/modules.d
+    - Add ${misc:Depends} to all binary package dependencies
+    - Override lintian complaint executable-in-usr-lib (reported upstream)
+    - Override false positive about missing init.d scripts
+  * Install files from debian/tmp to make dh_missing happy
+  * Install dracut.kernel.7 man page (link to dracut.cmdline.7)
+  * Restrict autopkgtest to amd64 (other architectures need upstrem work)
+  * autopkgtest: run more upstream test cases
+
+ -- Benjamin Drung <bdrung@ubuntu.com>  Tue, 22 Aug 2023 16:34:06 +0200
+
+dracut (059-4ubuntu1) mantic; urgency=medium
+
+  * fix(test): running tests no longer requires to be root
+  * test: Make dracut and modules.d directory configurable
+  * Add upstream autopkgtest to run four test cases (LP: #2031417)
+  * Add modules 80test, 80test-makeroot, and 80test-root to dracut-core
+
+ -- Benjamin Drung <bdrung@ubuntu.com>  Wed, 16 Aug 2023 02:02:13 +0200
 
 dracut (059-4) unstable; urgency=low
 
