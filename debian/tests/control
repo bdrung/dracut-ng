@@ -75,6 +75,18 @@ Architecture: !armel !i386
 Restrictions: allow-stderr, needs-root
 Depends: dracut-test, xfsprogs
 
+Tests: 45-systemd-import
+Architecture: !armel !i386
+Restrictions: allow-stderr, needs-root
+Depends: dracut-network,
+         dracut-test,
+         erofs-utils,
+         gpg,
+         gpg-agent,
+         python3,
+         squashfs-tools,
+         systemd-container
+
 Tests: 50-network
 Architecture: !armel !i386
 Restrictions: allow-stderr, needs-root
