@@ -32,4 +32,5 @@ rm -f /etc/systemd/system/systemd-udevd.service
 # Prapare out-of-tree test directory
 cp -r dracut.conf.d test "$TESTDIR"
 
-make -C "$TESTDIR/test" V=1 check TESTS="$test"
+cd "$TESTDIR/test/TEST-${test}"*
+V=1 testdir="$TESTDIR/test" exec ./test.sh --all

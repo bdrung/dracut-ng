@@ -118,7 +118,6 @@ Multi-Arch: foreign
 Depends: dracut-core,
          ipxe-qemu,
          linux-image-generic [!i386],
-         make,
          mount,
          ovmf [amd64],
          qemu-efi-aarch64 [arm64],
@@ -139,6 +138,5 @@ Description: dracut is an event driven initramfs infrastructure (test modules)
  of dependencies needed in autopkgtest:
  .
   * Linux kernel
-  * make
   * QEMU
   * Recommends from dracut-core
