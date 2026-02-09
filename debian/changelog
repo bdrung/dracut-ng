@@ -1,3 +1,15 @@
+dracut (110-1ubuntu1) resolute; urgency=medium
+
+  * Merge with Debian unstable. Remaining changes:
+    - autopkgtest: skip too slow 41-full-systemd on arm64 and armhf
+      (see LP 2133401)
+    - dracut-core: Declare breaking rust-coreutils before version 0.5.0
+  * autopkgtest: run 43-kernel-install on arm64 again (LP: #2133402)
+  * dracut-test: add run-qemu and test-functions
+  * autopkgtest: depend on libarchive13t64 (fixed in systemd 259.1-1)
+
+ -- Benjamin Drung <bdrung@ubuntu.com>  Mon, 09 Feb 2026 13:20:58 +0100
+
 dracut (110-1) unstable; urgency=medium
 
   * New upstream release.
