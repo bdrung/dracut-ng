@@ -28,7 +28,6 @@ usr/lib/dracut/modules.d/11systemd-battery-check
 usr/lib/dracut/modules.d/11systemd-bsod
 usr/lib/dracut/modules.d/11systemd-coredump
 usr/lib/dracut/modules.d/11systemd-creds
-usr/lib/dracut/modules.d/11systemd-cryptsetup
 usr/lib/dracut/modules.d/11systemd-hostnamed
 usr/lib/dracut/modules.d/11systemd-initrd
 usr/lib/dracut/modules.d/11systemd-integritysetup
@@ -84,6 +83,7 @@ usr/lib/dracut/modules.d/70overlayfs
 usr/lib/dracut/modules.d/70pcmcia
 usr/lib/dracut/modules.d/70ppcmac
 usr/lib/dracut/modules.d/70qemu
+usr/lib/dracut/modules.d/71systemd-cryptsetup
 usr/lib/dracut/modules.d/73crypt-gpg
 usr/lib/dracut/modules.d/73crypt-loop
 usr/lib/dracut/modules.d/73fido2
