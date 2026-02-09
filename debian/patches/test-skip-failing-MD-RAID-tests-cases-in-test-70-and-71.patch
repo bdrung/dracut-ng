@@ -1,0 +1,58 @@
+From: Benjamin Drung <benjamin.drung@canonical.com>
+Date: Mon, 9 Feb 2026 02:04:27 +0100
+Subject: test: skip failing MD RAID tests cases in test 70 and 71
+
+Some MD RAID tests cases fail due to an mdadm 4.5 bug:
+https://github.com/md-raid-utilities/mdadm/issues/238
+
+Forwarded: not-needed
+---
+ test/TEST-70-ISCSI/test.sh       | 17 +++++++++++------
+ test/TEST-71-ISCSI-MULTI/test.sh |  6 ++++++
+ 2 files changed, 17 insertions(+), 6 deletions(-)
+
+diff --git a/test/TEST-70-ISCSI/test.sh b/test/TEST-70-ISCSI/test.sh
+index c157d71..afa2909 100755
+--- a/test/TEST-70-ISCSI/test.sh
++++ b/test/TEST-70-ISCSI/test.sh
+@@ -80,12 +80,17 @@ do_test_run() {
+         "ip=192.168.50.101::192.168.50.1:255.255.255.0:iscsi-1:lan0:off" \
+         "rd.iscsi.initiator=$initiator"
+ 
+-    run_client "netroot=iscsi target1 target2" "" \
+-        "root=LABEL=sysroot" \
+-        "ip=dhcp" \
+-        "netroot=iscsi:192.168.51.1::::iqn.2009-06.dracut:target1" \
+-        "netroot=iscsi:192.168.50.1::::iqn.2009-06.dracut:target2" \
+-        "rd.iscsi.initiator=$initiator"
++    . /etc/os-release
++    if [[ $ID == debian ]]; then
++        echo 'Warning: Skipping client test "netroot=iscsi target1 target2" due to mdadm 4.5 bug: https://github.com/md-raid-utilities/mdadm/issues/238'
++    else
++        run_client "netroot=iscsi target1 target2" "" \
++            "root=LABEL=sysroot" \
++            "ip=dhcp" \
++            "netroot=iscsi:192.168.51.1::::iqn.2009-06.dracut:target1" \
++            "netroot=iscsi:192.168.50.1::::iqn.2009-06.dracut:target2" \
++            "rd.iscsi.initiator=$initiator"
++    fi
+ 
+     if "$testdir"/run-qemu --supports -acpitable; then
+         run_client "root=ibft" "ibft.table" \
+diff --git a/test/TEST-71-ISCSI-MULTI/test.sh b/test/TEST-71-ISCSI-MULTI/test.sh
+index cc5e401..7f8522c 100755
+--- a/test/TEST-71-ISCSI-MULTI/test.sh
++++ b/test/TEST-71-ISCSI-MULTI/test.sh
+@@ -65,6 +65,12 @@ run_client() {
+ }
+ 
+ do_test_run() {
++    . /etc/os-release
++    if [[ $ID == debian ]]; then
++        echo 'Warning: Skipping client tests due to mdadm 4.5 bug: https://github.com/md-raid-utilities/mdadm/issues/238'
++        return 0
++    fi
++
+     initiator=$(iscsi-iname)
+     run_client "netroot=iscsi target1 target2" \
+         "root=LABEL=sysroot" \
