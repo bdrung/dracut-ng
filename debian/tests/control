@@ -6,6 +6,7 @@ Restrictions: needs-root, superficial
 Tests: 10-basic,
        13-sysroot,
        14-hooks,
+       21-overlayfs,
        40-systemd,
        42-systemd-initrd,
        43-kernel-install,
