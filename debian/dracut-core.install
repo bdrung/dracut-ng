@@ -17,7 +17,6 @@ usr/lib/dracut/dracut.conf.d/generic
 usr/lib/dracut/dracut.conf.d/hostonly
 usr/lib/dracut/dracut.conf.d/ima
 usr/lib/dracut/dracut.conf.d/no-network
-usr/lib/dracut/dracut.conf.d/no-xattr
 usr/lib/dracut/dracut.conf.d/rescue
 usr/lib/dracut/modules.d/10bash
 usr/lib/dracut/modules.d/10dash
