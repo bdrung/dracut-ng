@@ -98,8 +98,7 @@ Architecture: all
 Multi-Arch: foreign
 Depends: dracut-core,
          iproute2,
-         iputils-arping,
-         network-manager | systemd | connman | isc-dhcp-client,
+         network-manager | systemd | connman,
          ${misc:Depends}
 Recommends: curl, nbd-client, nfs-common, open-iscsi
 Suggests: iscsiuio, systemd-container
