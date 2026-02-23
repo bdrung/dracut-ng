@@ -1,4 +1,3 @@
-fix-multipath-include-Debian-specific-priority-of-udev-ru.patch
 fix-kernel-modules-export-use-return-instead-of-exit-in-p.patch
 fix-memdisk-use-return-instead-of-exit-in-cmdline-hook.patch
 fix-ppcmac-use-return-instead-of-exit-in-pre-udev-hook.patch
