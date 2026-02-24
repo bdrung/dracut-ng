@@ -45,6 +45,10 @@ test_run() {
     root_dir="root"
     client_run "Download tar disk image into /run/machines/$root_dir, verify $IMPORT_VERIFY and bind mount it into /sysroot" \
         "rd.systemd.pull=tar,machine,verify=$IMPORT_VERIFY:$root_dir:http://10.0.2.2:$port/root.tar.zst root=bind:/run/machines/$root_dir"
+    client_run "root=tar:http://server/root.tar.zst" "root=tar:http://10.0.2.2:$port/root.tar.zst"
+    client_run "root=http://server/root.tar.zst" "root=http://10.0.2.2:$port/root.tar.zst"
+    client_run "root=tar:http://server/root.tgz" "root=tar:http://10.0.2.2:$port/root.tgz"
+    client_run "root=http://server/root.tgz" "root=http://10.0.2.2:$port/root.tgz"
 
     image_name="image"
     client_run "Download ext4 raw image into memory, verify $IMPORT_VERIFY and attach it to a loopback block device" \
@@ -53,6 +57,8 @@ test_run() {
     if command -v mksquashfs &> /dev/null; then
         client_run "Download squashfs image into memory, verify $IMPORT_VERIFY and attach it to a loopback block device" \
             "rd.systemd.pull=raw,machine,verify=$IMPORT_VERIFY,blockdev:$image_name:http://10.0.2.2:$port/root_squashfs.img root=/dev/disk/by-loop-ref/$image_name.raw"
+        client_run "root=squash:http://server/root_squashfs.img" "root=squash:http://10.0.2.2:$port/root_squashfs.img"
+        client_run "root=http://server/root.squashfs" "root=http://10.0.2.2:$port/root.squashfs"
     fi
 
     if command -v mkfs.erofs &> /dev/null \
@@ -71,6 +77,7 @@ test_setup() {
     # Create a compressed tarball with the plain rootfs
     tar -C "$TESTDIR/rootfs" --zstd -cf "$TESTDIR/root.tar.zst" .
     images+=("root.tar.zst")
+    tar -C "$TESTDIR/rootfs" --gzip -cf "$TESTDIR/root.tgz" .
 
     # Create an ext4 image with the rootfs
     build_ext4_image "$TESTDIR/rootfs" "$TESTDIR/root_ext4.img" dracut
@@ -80,6 +87,7 @@ test_setup() {
     if command -v mksquashfs &> /dev/null; then
         mksquashfs "$TESTDIR/rootfs" "$TESTDIR/root_squashfs.img" -quiet -no-progress
         images+=("root_squashfs.img")
+        cp "$TESTDIR/root_squashfs.img" "$TESTDIR/root.squashfs"
     fi
 
     # erofs is supported, but can be explicitly blacklisted by the OS
@@ -122,7 +130,7 @@ test_setup() {
     test_dracut \
         --no-hostonly-cmdline \
         "${local_pubring[@]}" \
-        -a "systemd-import $network_handler"
+        -a "rooturl systemd-import $network_handler"
 }
 
 test_cleanup() {
