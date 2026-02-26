@@ -1,3 +1,9 @@
+dracut (110+git20260226-1) unstable; urgency=medium
+
+  * New upstream snapshot.
+
+ -- Benjamin Drung <bdrung@debian.org>  Thu, 26 Feb 2026 17:21:29 +0100
+
 dracut (110-3) unstable; urgency=medium
 
   [ Hector Cao ]
