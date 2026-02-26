@@ -1,0 +1,51 @@
+From: Benjamin Drung <benjamin.drung@canonical.com>
+Date: Mon, 23 Feb 2026 11:48:59 +0100
+Subject: fix(multipath): include Debian-specific priority of udev rules
+
+In Debian multipath-tools 0.13.0-1 carries
+0004-Debian-specific-priority-of-udev-rules.patch which changes the
+priority of udev rules with following reasoning:
+
+11-dm-*.rules supposedly should apply after dmsetup rules, but in Debian
+these have priority 55 instead of 11. Also for historic reasons,
+multipath.rules and kpartx.rules have a slightly higher prio in Debian
+than upstream.
+
+The result is that kpartx is not run when booting, multipath disk
+partitions are not found, and boot fails.
+
+Until Debian/Ubuntu and upstream agrees on one common naming, include
+the renumbered udev rules (similar to what has been done in the dm and
+lvm Dracut modules).
+
+Bug-Ubuntu: https://launchpad.net/bugs/2137190
+Forwarded: not-needed
+---
+ modules.d/70dmraid/module-setup.sh    | 2 ++
+ modules.d/70multipath/module-setup.sh | 2 ++
+ 2 files changed, 4 insertions(+)
+
+diff --git a/modules.d/70dmraid/module-setup.sh b/modules.d/70dmraid/module-setup.sh
+index b3318fe..1ace135 100755
+--- a/modules.d/70dmraid/module-setup.sh
++++ b/modules.d/70dmraid/module-setup.sh
+@@ -78,6 +78,8 @@ install() {
+     inst "$moddir/dmraid.sh" /sbin/dmraid_scan
+ 
+     inst_rules 66-kpartx.rules 67-kpartx-compat.rules
++    # Debian/Ubuntu renumbers these udev rules. See https://launchpad.net/bugs/2137190
++    inst_rules 60-kpartx.rules
+ 
+     inst_libdir_file "libdmraid-events*.so*"
+ 
+diff --git a/modules.d/70multipath/module-setup.sh b/modules.d/70multipath/module-setup.sh
+index 8508229..28bde30 100755
+--- a/modules.d/70multipath/module-setup.sh
++++ b/modules.d/70multipath/module-setup.sh
+@@ -165,4 +165,6 @@ EOF
+         66-kpartx.rules 67-kpartx-compat.rules \
+         11-dm-mpath.rules 11-dm-parts.rules \
+         99-z-dm-mpath-late.rules
++    # Debian/Ubuntu renumbers these udev rules. See https://launchpad.net/bugs/2137190
++    inst_rules 56-dm-mpath.rules 56-dm-parts.rules 60-kpartx.rules 60-multipath.rules
+ }

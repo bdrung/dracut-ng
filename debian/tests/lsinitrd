@@ -1,0 +1,9 @@
+#!/bin/sh
+set -eu
+
+# Smoke test for dracut to build an initrd in /boot/
+
+lsinitrd
+
+echo "Checking that the initrd uses systemd..."
+lsinitrd -m | grep -q '^systemd$'

@@ -1,0 +1,43 @@
+From: Benjamin Drung <benjamin.drung@canonical.com>
+Date: Wed, 11 Feb 2026 14:52:03 +0100
+Subject: fix(memdisk): use return instead of exit in cmdline hook
+
+The `memdisk.sh` cmdline hook calls `exit 0`. This causes the sourcing
+script (`dracut-cmdline.sh` on systemd or `init.sh` from the base Dracut
+module) to exit. The subsequent hooks are not executed.
+
+Use `return` instead of `exit` in the memdisk cmdline hook.
+
+Fixes: https://github.com/dracut-ng/dracut-ng/issues/2227
+Forwarded: https://github.com/dracut-ng/dracut-ng/pull/2238
+---
+ modules.d/70memdisk/memdisk.sh | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/modules.d/70memdisk/memdisk.sh b/modules.d/70memdisk/memdisk.sh
+index 67884bd..69f5398 100755
+--- a/modules.d/70memdisk/memdisk.sh
++++ b/modules.d/70memdisk/memdisk.sh
+@@ -3,7 +3,7 @@
+ set -e
+ 
+ if ! [ -x /usr/bin/memdiskfind ]; then
+-    exit 0
++    return 0
+ fi
+ 
+ if ! dd if=/dev/mem of=/dev/null bs=1 count=1 > /dev/null 2>&1; then
+@@ -11,11 +11,11 @@ if ! dd if=/dev/mem of=/dev/null bs=1 count=1 > /dev/null 2>&1; then
+     # where /dev/mem is unreadable.
+     # Avoids ugly error message from memdiskfind.
+     printf "access to /dev/mem is restricted, skipping memdisk setup"
+-    exit 0
++    return 0
+ fi
+ 
+ if ! MEMDISK=$(/usr/bin/memdiskfind); then
+-    exit 0
++    return 0
+ fi
+ 
+ # We found a memdisk, set up phram

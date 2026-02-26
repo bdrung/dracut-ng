@@ -1,0 +1,143 @@
+Source: dracut
+Section: utils
+Maintainer: Debian Kernel Team <debian-kernel@lists.debian.org>
+Uploaders: Thomas Lange <lange@debian.org>, Benjamin Drung <bdrung@debian.org>
+Build-Depends: debhelper-compat (= 13),
+               3cpio [!alpha !hppa !m68k !sh4] <!nocheck>,
+               asciidoctor,
+               bash-completion,
+               cpio [alpha hppa m68k sh4] <!nocheck>,
+               libkmod-dev,
+               libsystemd-dev,
+               pkgconf,
+               shellcheck [!i386 !m68k !powerpc !sh4 !x32] <!nocheck>,
+               shfmt [!alpha !hppa !i386 !m68k !powerpc !sh4 !sparc64 !x32] <!nocheck>,
+               systemd-dev
+Standards-Version: 4.7.3
+Vcs-Browser: https://salsa.debian.org/kernel-team/dracut
+Vcs-Git: https://salsa.debian.org/kernel-team/dracut.git
+Homepage: https://github.com/dracut-ng/dracut-ng/wiki
+
+Package: dracut-core
+Architecture: any
+Multi-Arch: foreign
+Depends: 3cpio | cpio,
+         dracut-install,
+         e2fsprogs,
+         kmod,
+         systemd-sysv | initscripts | sysvinit-core,
+         udev,
+         ${misc:Depends},
+         ${shlibs:Depends}
+Recommends: binutils, console-setup, systemd, zstd
+Suggests: cryptsetup,
+          dmsetup,
+          isomd5sum,
+          kpartx,
+          lvm2,
+          mdadm,
+          parted,
+          squashfs-tools,
+          systemd-cryptsetup
+Breaks: dracut-live (<< 109-10~), dracut-network (<< 057+157-2), dracut-squash
+Replaces: dracut-live (<< 109-10~),
+          dracut-network (<< 057+157-2),
+          dracut-squash
+Provides: dracut-live
+Description: dracut is an event driven initramfs infrastructure (core tools)
+ Unlike existing initramfs's, this is an attempt at having as little as
+ possible hard-coded into the initramfs as possible.  The initramfs has
+ (basically) one purpose in life -- getting the rootfs mounted so that
+ it can transition to the real rootfs.  This is all driven off of
+ device availability.  Therefore, instead of scripts hard-coded to do
+ various things, it depends on udev to create device nodes and
+ to detect the rootfs.
+ Having the root on MD, LVM2, LUKS is supported as well as NFS, iSCSI,
+ NBD and FCOE with dracut-network.
+ .
+ These Dracut modules need suggested packages:
+  * crypt: cryptsetup or systemd-cryptsetup
+  * dm: dmsetup
+  * dmraid: kpartx
+  * dmsquash-live: isomd5sum (optionally)
+  * dmsquash-live-autooverlay: parted
+  * dracut-systemd: systemd-cryptsetup (when crypt and systemd are used)
+  * lvm: lvm2
+  * lvmmerge: lvm2
+  * lvmthinpool-monitor: lvm2
+  * mdraid: mdadm
+  * multipath: kpartx
+  * squash-squashfs: squashfs-tools
+  * systemd-cryptsetup: systemd-cryptsetup
+
+Package: dracut
+Architecture: all
+Multi-Arch: foreign
+Depends: dracut-core (<< ${binary:Version}+b+~),
+         dracut-core (>= ${binary:Version}),
+         linux-base,
+         ${misc:Depends}
+Suggests: dracut-network
+Provides: linux-initramfs-tool
+Conflicts: initramfs-tools, live-tools
+Description: Initramfs generator using udev
+ This package builds a bootable initramfs for Linux kernel packages.  The
+ initramfs is loaded along with the kernel and is responsible for
+ mounting the root filesystem and starting the main init system.
+
+Package: dracut-install
+Architecture: any
+Depends: ${misc:Depends}, ${shlibs:Depends}
+Breaks: dracut-core (<< 060+5-7~)
+Replaces: dracut-core (<< 060+5-7~)
+Description: dracut is an event driven initramfs infrastructure (dracut-install)
+ This package just contains the dracut-install command to be used by
+ initramfs generating tools.
+
+Package: dracut-network
+Architecture: all
+Multi-Arch: foreign
+Depends: dracut-core,
+         iproute2,
+         network-manager | systemd | connman,
+         ${misc:Depends}
+Recommends: curl, nbd-client, nfs-common, open-iscsi
+Suggests: iscsiuio, systemd-container
+Breaks: dracut-core (<< 105), dracut-live (<< 109-10~)
+Replaces: dracut-core (<< 105), dracut-live (<< 109-10~)
+Description: dracut is an event driven initramfs infrastructure (network modules)
+ Package to build a dracut initramfs with network support. This
+ includes dracut modules for NFS, CIFS, iSCSI, HTTP, NBD, FCP and FCOE.
+ .
+ These Dracut modules need suggested packages:
+  * systemd-import: systemd-container
+  * iscsi: iscsiuio (optionally)
+
+Package: dracut-test
+Architecture: any
+Multi-Arch: foreign
+Depends: dracut-core,
+         ipxe-qemu,
+         linux-image-generic [!i386],
+         mount,
+         ovmf [amd64],
+         qemu-efi-aarch64 [arm64],
+         qemu-system-native [!i386],
+         seabios [ppc64el],
+         systemd (>= 259~rc1),
+         zstd,
+         ${misc:Depends}
+Breaks: dracut-core (<< 105)
+Replaces: dracut-core (<< 105)
+Description: dracut is an event driven initramfs infrastructure (test modules)
+ This package provides the Dracut modules and configuration files for the
+ Dracut test suite. This package is intended for testing Dracut itself
+ and is of no use for ordinary users. If you're not sure about this package,
+ you don't need it.
+ .
+ This package has following additional dependencies for reducing the amount
+ of dependencies needed in autopkgtest:
+ .
+  * Linux kernel
+  * QEMU
+  * Recommends from dracut-core

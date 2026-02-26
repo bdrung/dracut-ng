@@ -1,0 +1,43 @@
+#!/bin/sh
+set -eu
+
+script_name="${0##*/}"
+test="${script_name%%-*}"
+
+if test -n "${AUTOPKGTEST_TMP-}"; then
+	TESTDIR="${AUTOPKGTEST_TMP}"
+else
+	TESTDIR="$(mktemp -d -t dracut-test.XXXXXXXXXX)"
+fi
+
+ARCH=$(dpkg --print-architecture)
+export ARCH
+export DRACUT=dracut
+export PKGLIBDIR=/usr/lib/dracut
+
+if test "$ARCH" = "ppc64el"; then
+	# KVM fails on the Ubuntu ppc64el autopkgtest runners:
+	# $ /usr/bin/qemu-system-ppc64el -enable-kvm -cpu host [...]
+	# ioctl(KVM_CREATE_VM) failed: 22 Invalid argument
+	# PPC KVM module is not loaded. Try modprobe kvm_hv.
+	# qemu-system-ppc64el: failed to initialize kvm: Invalid argument
+	# $ modprobe kvm_hv
+	# modprobe: ERROR: could not insert 'kvm_hv': No such device
+	export NO_KVM=1
+fi
+
+case "$ARCH" in
+	armhf | riscv64)
+		# Doule timeout to 20 min for slow architectures
+		export QEMU_TIMEOUT=1200
+		;;
+esac
+
+# Workaround masked systemd-udevd bug: https://github.com/dracut-ng/dracut-ng/issues/1318
+rm -f /etc/systemd/system/systemd-udevd.service
+
+# Prapare out-of-tree test directory
+cp -r dracut.conf.d test "$TESTDIR"
+
+cd "$TESTDIR/test/TEST-${test}"*
+V=1 testdir="$TESTDIR/test" exec ./test.sh --all

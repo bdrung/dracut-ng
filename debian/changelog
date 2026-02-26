@@ -1,0 +1,1227 @@
+dracut (110-3) unstable; urgency=medium
+
+  [ Hector Cao ]
+  * test: force cpu to neoverse-n1 for arm64 when QEMU_CPU not set
+    (Closes: #1128969, LP: #2142121)
+
+ -- Benjamin Drung <bdrung@debian.org>  Thu, 26 Feb 2026 17:08:57 +0100
+
+dracut (110-2) unstable; urgency=medium
+
+  * Run MD RAID test cases in test 70 and 71 again (fixed in mdadm 4.5-5)
+  * fix(multipath): include Debian-specific priority of udev rules until
+    Debian and upstream agrees on one common numbering (see LP 2137190)
+  * Build-depend on libsystemd-dev to build dracut-install with JSON support
+    (Closes: #1128349)
+  * Apply upstream patches to fix failing autopkgtest 14-hooks on Ubuntu:
+    - fix(kernel-modules-export): use return instead of exit in pre-pivot hook
+    - fix(memdisk): use return instead of exit in cmdline hook
+    - fix(ppcmac): use return instead of exit in pre-udev hook
+    - fix(syslog): use return instead of exit in initqueue/online hook
+  * dracut-test: add run-qemu and test-functions
+  * autopkgtest: Doule timeout to 20 min for slow architectures armhf, riscv64
+
+ -- Benjamin Drung <bdrung@debian.org>  Mon, 23 Feb 2026 14:25:02 +0100
+
+dracut (110-1) unstable; urgency=medium
+
+  * New upstream release.
+  * Drop all patches applied upstream
+  * dracut-core:
+    - remove dropped uki-virt and no-xattr Dracut config
+    - remove merged dracut-init.sh and dracut-version.sh
+    - rename systemd-pcrphase to systemd-pcrextend
+    - order systemd-cryptsetup after crypt Dracut module
+    - add new memdisk Dracut module
+  * dracut-network:
+    - add new systemd-import Dracut module and suggest systemd-container for it
+    - Drop network-legacy dracut module (and isc-dhcp-client support)
+  * autopkgtest: add new upstream tests 14-hooks, 21-overlayfs, 31-livenet,
+    and 45-systemd-import
+  * autopkgtest: do not require make for running upstream tests
+  * test: skip failing MD RAID tests cases in test 70 and 71 (mdadm 4.5 bug)
+
+ -- Benjamin Drung <bdrung@debian.org>  Mon, 09 Feb 2026 02:05:10 +0100
+
+dracut (109-11) unstable; urgency=medium
+
+  * autopkgtest: explicitly depend on dmsetup for test 60-nfs
+
+ -- Benjamin Drung <bdrung@debian.org>  Fri, 30 Jan 2026 22:36:56 +0100
+
+dracut (109-10) unstable; urgency=medium
+
+  * Let firmware package updates trigger the dracut autopkgtest
+  * dracut-core: document which Dracut module needs suggested packages
+  * Merge dracut-squash into dracut-core
+  * Move the livenet Dracut module to dracut-network and merge the remaining
+    dracut-live into dracut-core
+  * fix(tpm2-tss): add tss user/group in addition to sysusers config
+    (LP: #2127725)
+  * autopkgtest: depend on erofs-utils and xorriso in test 30
+
+ -- Benjamin Drung <bdrung@debian.org>  Fri, 30 Jan 2026 15:08:55 +0100
+
+dracut (109-9) unstable; urgency=medium
+
+  * feat: warn in case 3cpio is present but not suitable (Closes: #1125948)
+  * dracut-core: Prefer 3cpio over cpio again
+
+ -- Benjamin Drung <bdrung@debian.org>  Sat, 24 Jan 2026 19:43:56 +0100
+
+dracut (109-8) unstable; urgency=medium
+
+  [ Bastian Blank ]
+  * Revert to use cpio. (closes: #1125948)
+
+  [ Benjamin Drung ]
+  * Drop unneeded udevsettle patch (see upstream issue 2067)
+
+ -- Bastian Blank <waldi@debian.org>  Fri, 23 Jan 2026 20:40:34 +0100
+
+dracut (109-7) unstable; urgency=medium
+
+  [ Salvatore Bonaccorso ]
+  * debian/control: Set Debian Kernel Team address as maintainer.
+    Move Thomas Lange to Uploaders.
+
+  [ Benjamin Drung ]
+  * fix(dracut): source dracut-functions.sh before calling dwarning
+    (Closes: #1124479)
+
+ -- Benjamin Drung <bdrung@debian.org>  Fri, 16 Jan 2026 19:01:26 +0100
+
+dracut (109-6) unstable; urgency=medium
+
+  * Move packaging git repository to the kernel team
+  * dracut-test: drop removed qemu-efi-arm [armhf] (Closes: #1124247)
+  * test(run-qemu): support RISC-V
+  * test(sysroot): run with --no-hostonly-cmdline
+  * test: drop --auto=yes from mdadm call
+  * test: run QEMU with a timeout unless daemonized (Closes: #1121884)
+  * autopkgtest: do not exclude riscv64 any more
+  * debian/control: drop explicit priority optional
+  * Update year in debian/copyright
+  * Update upstream information about dracut-ng in debiian/copyright
+  * Bump Standards-Version to 4.7.3
+
+ -- Benjamin Drung <bdrung@debian.org>  Mon, 12 Jan 2026 15:44:08 +0100
+
+dracut (109-5) unstable; urgency=medium
+
+  * test(run-qemu): use hvc0 console on s390x (Closes: #1120955)
+
+ -- Benjamin Drung <bdrung@debian.org>  Sat, 29 Nov 2025 00:43:17 +0100
+
+dracut (109-4) unstable; urgency=medium
+
+  * test: update UEFI patches to the version merged upstream
+
+ -- Benjamin Drung <bdrung@debian.org>  Wed, 26 Nov 2025 01:17:48 +0100
+
+dracut (109-3) unstable; urgency=medium
+
+  * test:
+    - forward journald logs to console in V=1 or V=2
+    - replace rev command by sed and drop bsdextrautils dependency
+    - use UEFI for QEMU when available and support UEFI on ARM
+  * dracut-test: ovmf is only needed for amd64
+  * Drop debian-initramfs-post-update.patch because the update-initramfs
+    script (shipped by dracut) invokes the bootloader hooks from
+    /etc/initramfs/post-update.d. (Closes: #1091455)
+  * autopkgtest: Skip failing (hanging) 41-full-systemd on s390x
+    (Closes: #1120955)
+
+ -- Benjamin Drung <bdrung@debian.org>  Tue, 25 Nov 2025 19:40:40 +0100
+
+dracut (109-2) unstable; urgency=medium
+
+  * Fix FTCBFS: Export ARCH for make (Closes: #1120911)
+  * fix(systemd-networkd): install and enable
+    systemd-networkd-resolve-hook.socket (Closes: #1120955)
+  * dracut-live: depend on parted for dmsquash-live-autooverlay
+  * autopkgtest: remove unneeded dependencies
+  * autopkgtest: run kernel-install tests again after #1117563 got fixed
+  * Add Apport hook to include all packages with dracut modules in report
+    (LP: #2081183)
+  * test: exit with code 77 if test is skipped
+  * dracut-core: demote *cryptsetup, dmsetup, kpartx, lvm2, mdadm to suggests
+    These packages should be installed in case they are needed for the disk
+    setup but should not installed by default via Recommends.
+  * test: set console cmdline depending on the architecture
+  * run autopkgtest on all relevant architectures (LP: #2115532)
+
+ -- Benjamin Drung <bdrung@debian.org>  Wed, 19 Nov 2025 17:15:22 +0100
+
+dracut (109-1) unstable; urgency=medium
+
+  * New upstream release.
+  * Drop patches applied upstream and refresh remaining patches
+  * test: remove test module
+  * fix(debian): lower the ordering number for debian conf
+  * fix(systemd-sysusers): increase ordering from 68 to 78
+  * Provide separate install files for s390x
+  * dracut-core: add new module kernel-modules-export
+  * autopkgtest: test 30-DMSQUASH requires dracut-network now
+  * autopkgtest: run full systemd test separately with a separate set of
+    additional dependencies.
+  * autopkgtest: add test 44-drivers and 50-network
+  * debian/rules: drop explicit --configprofile configure option
+  * fix(dracut): decrease logging by default
+  * autopkgtest: drop unneeded dbus and isc-dhcp-client dependency
+  * update-initramfs: drop intermediate initrd.new (see bug 1116593)
+  * autopkgtest: drop setting KVERSION
+  * configure: disable dracut-cpio explicitly
+  * Upgrade debian/watch to version 5
+  * Drop Rules-Requires-Root: no, which is the default now
+
+ -- Benjamin Drung <bdrung@debian.org>  Wed, 05 Nov 2025 10:27:36 +0100
+
+dracut (108-8) unstable; urgency=medium
+
+  * dracut-test: fix dropped dependencies on i386
+
+ -- Benjamin Drung <bdrung@debian.org>  Tue, 14 Oct 2025 18:35:08 +0200
+
+dracut (108-7) unstable; urgency=medium
+
+  * dracut-test: drop dependencies on i386 that are not present
+
+ -- Benjamin Drung <bdrung@debian.org>  Tue, 14 Oct 2025 17:27:09 +0200
+
+dracut (108-6) unstable; urgency=medium
+
+  * test: allow running UEFI and kernel-install tests in chroot
+  * autopkgtest: depend on bsdextrautils for rev command
+  * Move common autopkgtest dependencies to dracut-test
+  * autopkgtest: run every upstream test as separate test
+  * autopkgtest: depend on util-linux-extra for switch_root in 30-dmsquash
+  * test: skip using kernel-install due to bug #1117563
+  * autopkgtest: copy dracut.conf.d into test directory
+
+ -- Benjamin Drung <bdrung@debian.org>  Tue, 07 Oct 2025 23:45:56 +0200
+
+dracut (108-5) unstable; urgency=medium
+
+  * autopkgtest: drop skipping removed TEST-23-IMSM
+  * Fix kernel-install test cases by avoiding add-all call
+  * fix(Makefile): exclude hidden directories from shellcheck part 2
+
+ -- Benjamin Drung <bdrung@debian.org>  Fri, 26 Sep 2025 10:55:23 +0200
+
+dracut (108-4) unstable; urgency=medium
+
+  * Drop build dependency on shfmt on archs where it is not available
+  * fix(dracut): library directory creation in --kernel-only
+  * dracut-core: Prefer 3cpio over cpio
+  * autopkgtest: install pkgconf for TEST-40-SYSTEMD
+  * fix(lsinitrd): use lowercase skip variable name
+
+ -- Benjamin Drung <bdrung@debian.org>  Thu, 25 Sep 2025 16:23:44 +0200
+
+dracut (108-3) unstable; urgency=medium
+
+  * Cherry-pick upstream commits to simplify debian/rules:
+    - feat(Makefile): introduce distclean target
+    - fix(hwdb): make module-setup.sh executable
+    - fix(Makefile): use install for installing files
+  * autopkgtest: drop sysvinit-utils and util-linux dependencies
+  * dracut-test: depend on mount for mount/umount commands
+  * Support shellcheck 0.11
+  * Cherry-pick some upstream fixes:
+    - fix(dracut-util): crash if CMDLINE ends with quotation mark
+    - fix(kernel-modules): add Cadence USB driver to base (Closes: #1108924)
+    - fix(lsinitrd): avoid rechecking for squash images
+  * Support 3cpio for creating and listing initrds
+
+ -- Benjamin Drung <bdrung@debian.org>  Wed, 13 Aug 2025 14:07:00 +0200
+
+dracut (108-2) unstable; urgency=medium
+
+  * debian/rules: drop obsolete removal of modified adoc line
+  * debian/rules: remove unwanted files directly after dh_auto_install
+  * Override package-contains-documentation-outside-usr-share-doc
+  * Drop extend-diff-ignore from source options
+  * Drop dracut-config-generic and dracut-config-rescue (Closes: #968039)
+  * Mark dracut-network, dracut-squash, dracut-live, dracut-test as multi-arch
+    foreign
+  * dracut-network: depend on iproute2 for ip command
+  * dracut-network: demote iscsiuio to suggests (iscsiuio is only needed for
+    specific hardware and Dracut works without it)
+  * autopkgtest: add TEST-70-ISCSI and TEST-71-ISCSI-MULTI
+  * dracut-network: use order from Dracut network module in dependencies which
+    makes network-manager the first alternative (closes: #1110188)
+  * Set Dracut version in dracut-version.sh on install
+
+ -- Benjamin Drung <bdrung@debian.org>  Thu, 07 Aug 2025 14:26:28 +0200
+
+dracut (108-1) unstable; urgency=medium
+
+  * New upstream release
+  * Drop patches applied upstream and refresh remaining patches
+  * Skip lsinitrd autopkgtest on armel and i386
+  * Switch to asciidoctor for man generation (LP: #2115494)
+  * Drop fix-revdate script (asciidoctor honors SOURCE_DATE_EPOCH)
+  * Follow upstream's module and configuration renumbering
+  * Add factored out initqueue and rootfs-block-fallback modules to dracut-core
+  * Use debian config profile
+  * fix(dracut): do not call uname -r in chroot environments
+  * Run TEST-80-GETARGS and TEST-81-SKIPCPIO during build
+  * Drop removing obsolete 11-ifcfg.conf on upgrades
+  * Update initrdname patch
+
+ -- Benjamin Drung <bdrung@debian.org>  Mon, 04 Aug 2025 17:21:16 +0200
+
+dracut (107-2) unstable; urgency=medium
+
+  * autopkgtest: depend on curl for test 60-NFS
+  * Bump Standards-Version to 4.7.2
+  * Add update-initramfs (derived from initramfs-tools) (LP: #2098525)
+  * Add bash completion for update-initramfs (LP: #2103540)
+  * autopkgtest: replace qemu-kvm by qemu-system-native
+  * Fix shellcheck in Debian packaging scripts
+  * fix(lsinitrd): resolve initrd to real path (LP: #2116183)
+  * Add autopkgtest for lsinitrd
+  * dracut-network: default to systemd-networkd as network manager
+  * dracut-core: silence "cannot break line" groff warnings
+  * Run syncheck on package test phase
+
+ -- Benjamin Drung <bdrung@debian.org>  Tue, 29 Jul 2025 23:31:39 +0200
+
+dracut (107-1) unstable; urgency=medium
+
+  [ Thomas Lange ]
+  * new upstream 107
+  * drop 90overlay-root in favor of the overlayfs, Closes: #1017039
+  * refresh patches, drop patches included upstream
+  * rename module systemd-sysusers
+  * add module 45simpledrm
+  * update revdate for man pages
+
+  [ Benjamin Drung ]
+  * Stop shipping the dmraid module (Closes: #1099698)
+  * Set -H --hostonly-mode=sloppy as default arguments via a config file
+  * d/copyright: fix lintian's old-fsf-address-in-copyright-file
+  * autopkgtest:
+    - enable test 12 but skip using kernel-install due to bug #1104848
+    - Remove possible masked systemd-udevd to avoid test 10 to fail
+
+ -- Thomas Lange <lange@debian.org>  Tue, 20 May 2025 11:21:44 +0200
+
+dracut (106-6) unstable; urgency=medium
+
+  [ cacin ]
+  * Drop nonexistent Recommends: dmraid (Closes: #1099698)
+
+ -- Andreas Tille <tille@debian.org>  Fri, 11 Apr 2025 13:34:23 +0200
+
+dracut (106-5) unstable; urgency=medium
+
+  * disable upstream test 43
+
+ -- Thomas Lange <lange@debian.org>  Sat, 22 Feb 2025 14:06:40 +0100
+
+dracut (106-4) unstable; urgency=medium
+
+  * skip upstream test 12, time out on Debian
+
+ -- Thomas Lange <lange@debian.org>  Fri, 21 Feb 2025 17:53:33 +0100
+
+dracut (106-3) unstable; urgency=medium
+
+  * disable autopkgtest for s390x, Closes: #1096001
+  * debian/rules: remove dracut.html which does not exist
+
+ -- Thomas Lange <lange@debian.org>  Thu, 20 Feb 2025 11:02:07 +0100
+
+dracut (106-2) unstable; urgency=medium
+
+  * new patches (all accepted upstream):
+    - test(ISCSI): skip root=ibft if qemu -acpitable is not supported
+    - test(FULL-SYSTEMD): skip encrypted root if qemu -smbios is not supported
+    - test: use persistent names for network devices
+    - fix(dracut-install): install compressed blobs that match wildcard fwpath
+      (LP: #2095518)
+  * autopkgtest: explicitly depend on ipxe-qemu
+  * dracut-core: install upstream dracut.conf.d subdirectories
+    (to be used with --confdir)
+  * Enable autopkgtest for s390x
+
+ -- Benjamin Drung <bdrung@debian.org>  Thu, 13 Feb 2025 01:05:51 +0100
+
+dracut (106-1) unstable; urgency=medium
+
+  * New upstream release.
+  * Update debian/watch to point to dracut-ng upstream
+  * dracut-live: suggest isomd5sum (for checkisomd5 command) (Closes: #1095162)
+  * dracut-core: install /usr/lib/kernel/install.d (Closes: #1082811)
+  * Drop patches included upstream and refresh remaining patches
+  * Move modules:
+    - reserve range 50-59 to out of tree dracut modules
+    - fix(shell-interpreter): move later in the module ordering
+    - move 01systemd-sysusers to 60systemd-sysusers
+  * dracut-core: remove moved upstream docs
+  * dracut-core: drop dracut.html (please use man pages instead)
+  * dracut-core: add new modules 01systemd-battery-check and 97systemd-emergency
+  * test: reorganize tests (new numbering schema)
+  * Run upstream autopkgtest as root
+  * test: depend on dbus and systemd-container for TEST-41-FULL-SYSTEMD
+  * new patches:
+    - test: log error when constructing sysroot
+    - test(FULL-SYSTEMD): skip systemd-network-management if missing
+  * dracut-core: drop gawk dependency
+
+ -- Benjamin Drung <bdrung@debian.org>  Fri, 07 Feb 2025 21:21:31 +0100
+
+dracut (105-3) unstable; urgency=medium
+
+  * Add patches to improve test cases in error case
+  * autopkgtest: add TEST-20-NFS test
+
+ -- Benjamin Drung <bdrung@debian.org>  Tue, 07 Jan 2025 10:25:32 +0100
+
+dracut (105-2) unstable; urgency=medium
+
+  * autopkgtest:
+    - run network tests with systemd-networkd
+    - drop explicit gawk dependency
+    - run test with zstd
+    - restrict to amd64 again (Closes: #1087834)
+    - update reasons for skipped tests
+    - run tests with V=1
+    - drop unneeded vim and iputils-ping dependencies
+    - rename upstream-dracut-network to upstream-dracut-network-nbd
+  * disable using DH_VERBOSE=1
+  * fix(iscsi): include /usr/lib/open-iscsi/startup-checks.sh if needed
+    (LP: #2081172)
+  * Add upstream metadata
+  * Let dracut-network recommend iscsiuio (for iscsi module)
+  * fix(dracut-init): add compatibility with Debian/Ubuntu for libdirs detection
+
+ -- Benjamin Drung <bdrung@debian.org>  Thu, 21 Nov 2024 14:30:47 +0100
+
+dracut (105-1) unstable; urgency=low
+
+  [ Thomas Lange ]
+  * new upstream, Closes: #1081566
+  * add systemd-cryptsetup as Recommends, Closes: #1078792
+  * add Benjamin as uploader
+  * update standards version, no changes needed
+  * instead of depend on init, now recommend systemd-sysv, Closes: #1056382
+  * Do not call clean target in tests, Closes: #1086085
+
+  [ Benjamin Drung ]
+  * dracut-core:
+    - add new modules 00shell-interpreter, 01fips-crypto-policies,
+      01systemd-bsod, 01systemd-creds, 90numlock, 90pcmcia
+    - drop recommending pkgconf
+    - drop depending directly on libkmod2. dracut-install links against it.
+    - recommend zstd instead of pigz and default to zstd
+  * Switch to debhelper 13
+  * dracut: use await variant of update-initramfs trigger
+  * drop nm-path patch (network-manager ships the helpers in /usr/libexec)
+  * Add systemd-coredump, systemd-cryptsetup, and systemd-repart as
+    dependencies for upstream-dracut-core autopkgtest.
+  * Regenerate only the latest and missing initrds (LP: #2048990)
+  * Move module 95nvmf from dracut-core to dracut-network (LP: #2083881)
+  * Drop unneeded quilt from build dependencies
+  * Default initrdname to initrd.img-${kernel}
+  * Enable all hardening flags
+  * fix-01fips-crypto-policies-use-bin-in-shebang.patch: use /bin in shebang
+  * Add a dracut-test package to ship the files needed for the test suite
+  * autopkgtest:
+    - run autopkgtest with V=2 (for maximum verbosity)
+    - run autopkgtest on all architectures
+    - disable using KVM for ppc64el
+    - set ARCH to dpkg architecture
+    - Depend on ovmf, squashfs-tools, and systemd-ukify for TEST-18-UEFI
+    - Depend on systemd-cryptsetup for TEST-40-NBD
+    - restrict systemd-boot-efi to supported archs
+  * dracut-config-generic: ship upstream 50-generic.conf instead of Debian
+    specific one and put it into /usr/lib/dracut/dracut.conf.d
+  * dracut-config-rescue: ship upstream 50-rescue.conf instead of Debian
+    specific one and put it into /usr/lib/dracut/dracut.conf.d
+  * Set Rules-Requires-Root: no
+  * test: decrease default VM memory size to 1 GiB
+  * Run wrap-and-sort
+
+ -- Benjamin Drung <bdrung@debian.org>  Thu, 14 Nov 2024 12:29:30 +0100
+
+dracut (103-2) unstable; urgency=low
+
+  * control: add depends on gawk, init, Closes: #1056382, #1081005
+
+ -- Thomas Lange <lange@debian.org>  Wed, 11 Sep 2024 11:16:43 +0200
+
+dracut (103-1.1) unstable; urgency=medium
+
+  * no changes non-maintainer upload to rebuild the package with a newer
+    libkmod2 (see #1079022)
+
+ -- Marco d'Itri <md@linux.it>  Tue, 20 Aug 2024 23:36:24 +0200
+
+dracut (103-1) unstable; urgency=low
+
+  * new upstream version 103
+  * sync and delete patches
+  * add new dracut module
+
+ -- Thomas Lange <lange@debian.org>  Thu, 25 Jul 2024 13:30:18 +0900
+
+dracut (102-3) unstable; urgency=medium
+
+  * add module net-lib, Closes: #1072744
+  * remove obsolete patch fido-libz
+
+ -- Thomas Lange <lange@debian.org>  Fri, 07 Jun 2024 13:57:47 +0200
+
+dracut (102-2) unstable; urgency=medium
+
+  * add 90systemd-cryptsetup module, Closes: 1072538
+
+ -- Thomas Lange <lange@debian.org>  Tue, 04 Jun 2024 11:38:08 +0200
+
+dracut (102-1) unstable; urgency=low
+
+  * new upstream:
+    Closes: 1029324, 1041614, 1022129, 1071592, 1072174, 1068250
+    Closes: 1071182, 1059501
+  * change to new dracut-ng upstream repository, the package name remains
+    unchanged
+  * apply salsa MR #11, Closes: 753752
+  * move kpartx from depends to recommends, Closes: 1033158
+
+ -- Thomas Lange <lange@debian.org>  Mon, 03 Jun 2024 14:14:11 +0200
+
+dracut (060+5-8) unstable; urgency=low
+
+  * control: adjust breaks, replaces, Closes: #1071208, #1071244
+  * add patch taken from dracut-ng, Closes: #1071182
+
+ -- Thomas Lange <lange@debian.org>  Sun, 19 May 2024 16:45:33 +0200
+
+dracut (060+5-7) unstable; urgency=low
+
+  * control: update package depends name
+  * add lintian override
+
+ -- Thomas Lange <lange@debian.org>  Mon, 01 Apr 2024 23:01:58 +0200
+
+dracut (060+5-2) unstable; urgency=low
+
+  * set --systemdsystemunitdir from pkg-config, MR #32, Closes: #1057927
+  * split dracut-install into separate package for initramfs-tools, MR #27
+  * enable autopkgtest test suite, MR #24
+
+ -- Thomas Lange <lange@debian.org>  Sun, 31 Mar 2024 19:05:19 +0200
+
+dracut (060+5-1) unstable; urgency=medium
+
+  * upstream changed the release process, and do not tag the releases any
+    more
+  * 059+212 was already version 060+5
+  * add dracut-network.conffiles, Closes: 1057807
+
+ -- Thomas Lange <lange@debian.org>  Fri, 08 Dec 2023 21:09:47 +0100
+
+dracut (059+212-3) unstable; urgency=medium
+
+  * fix handling of dracut-version.sh
+
+ -- Thomas Lange <lange@debian.org>  Wed, 06 Dec 2023 14:36:26 +0100
+
+dracut (059+212-2) unstable; urgency=low
+
+  * debian/rules: use correct Debian version
+
+ -- Thomas Lange <lange@debian.org>  Wed, 06 Dec 2023 12:00:30 +0100
+
+dracut (059+212-1) unstable; urgency=low
+
+  * merge upstream changes, Closes: #1056059, #1041562, #1054400, #1016052
+
+ -- Thomas Lange <lange@debian.org>  Thu, 30 Nov 2023 22:10:02 +0100
+
+dracut (059-4) unstable; urgency=low
+
+  * Fix file name in patch initrd-not-initramfs.patch
+    Closes: #1029413, #1030191
+    Thanks to nabijaczleweli for the patch
+
+ -- Thomas Lange <lange@debian.org>  Thu, 09 Mar 2023 19:13:42 +0100
+
+dracut (059-3) unstable; urgency=low
+
+  * control: add breaks + replaces, Closes: #1028303
+
+ -- Thomas Lange <lange@debian.org>  Mon, 09 Jan 2023 20:56:29 +0100
+
+dracut (059-2) unstable; urgency=low
+
+  * add patches from Laszlo Gombos
+    dracut-live only depends on dracut-core not on dracut-network
+    overlayfs dracut module belongs to dracut-core and not to dracut-live
+    wicked dracut module is not supported by debian
+    remove multipath patch, no longer needed
+
+ -- Thomas Lange <lange@debian.org>  Sat, 07 Jan 2023 11:43:33 +0100
+
+dracut (059-1) unstable; urgency=low
+
+  * new upstream version
+  * control: new homepage, new standards version
+  * remove 10-debian.conf, build generic initrd by default
+  * rules: run script explicitly as shell, Closes: #1025378
+  * nm-path: fix more paths, Closes: #1016741
+  * patches/udevsettle: fix broken network in kvm in some cases
+  * remove dev-shm patch which is not needed, Closes: #1025996
+  * remove systemd-users patch, Closes: #1025951
+
+ -- Thomas Lange <lange@debian.org>  Sun, 25 Dec 2022 17:09:02 +0100
+
+dracut (057+157-4) unstable; urgency=low
+
+  * add missing module 90overlayfs
+
+ -- Thomas Lange <lange@debian.org>  Fri, 02 Dec 2022 16:19:16 +0100
+
+dracut (057+157-3) unstable; urgency=low
+
+  * control: add breaks and replaces, Closes: #1024435
+
+ -- Thomas Lange <lange@debian.org>  Sun, 20 Nov 2022 08:56:26 +0100
+
+dracut (057+157-2) unstable; urgency=low
+
+  * remove duplicate virtfs module, Closes: #1024390
+
+ -- Thomas Lange <lange@debian.org>  Fri, 18 Nov 2022 20:54:29 +0100
+
+dracut (057+157-1) unstable; urgency=low
+
+  * new upstream: Closes: #1023239, #1015922, #1016051, #1017411
+  * update initrd-not-initramfs.patch Closes: #1021229
+  * add patch for missing libz, Closes: #1016727
+  * add patch for Debian path in 35network-manager, Closes: #1016741
+
+ -- Thomas Lange <lange@debian.org>  Thu, 17 Nov 2022 21:48:24 +0100
+
+dracut (056-3) unstable; urgency=low
+
+  * new upstream, Closes: #991918
+  * control: Remove unnecessary constraints, demote pkg-config to
+    Recommends, Closes: #991920
+  * set Debian version in dracut-version.sh, Closes: #987320
+  * 90overlay-root/module-setup.sh: fix loading overlayfs kernel module
+
+ -- Thomas Lange <lange@debian.org>  Tue, 24 May 2022 21:29:13 +0200
+
+dracut (056-2) experimental; urgency=low
+
+  * Team upload.
+  * Fix conflict between dracut-{core,live,network} after failed amendment
+    of modules list
+
+ -- Dominik George <natureshadow@debian.org>  Wed, 11 May 2022 12:39:03 +0200
+
+dracut (056-1) experimental; urgency=low
+
+  * Team upload.
+  * New upstream version
+  * Refresh patches for dracut 056
+  * Update d/copyright
+    + Accounted for moved source files
+    + Accounted for source files written by authors not mentioned yet
+    + Accounted for a vendored Rust module (crosvm).
+  * Install all modules
+  * Install dracut-util
+
+ -- Dominik George <natureshadow@debian.org>  Tue, 10 May 2022 16:53:52 +0200
+
+dracut (055-1) experimental; urgency=low
+
+  [ Dominik George ]
+  * Team upload.
+  * New upstream version (Closes: #991918)
+
+  [ Andre Russ ]
+  * Refresh patches for dracut 055
+    + systemd needs more users in Debian
+    + crc32c patch was applied upstream
+    + several minor changes
+  * Update installed files
+    + Several docs were moved upstream
+    + mkinitrd was removed
+
+ -- Dominik George <natureshadow@debian.org>  Fri, 06 Aug 2021 11:36:31 +0200
+
+dracut (051-1) unstable; urgency=low
+
+  * new upstream version
+  * control: change description, Closes: #967923
+  * source/options: add pattern for files to ignore by dpkg-source
+  * fix-revdate: update modification dates
+
+  [ Antonio Russo ]
+  * Patch occurrences of /boot/initramfs to /boot/initrd to match Debian
+    default names, Closes: #972809
+
+ -- Thomas Lange <lange@debian.org>  Tue, 15 Dec 2020 16:23:33 +0100
+
+dracut (050+65-1) unstable; urgency=medium
+
+  * control: add breaks and replaces, Closes: #959852
+  * merge upstream changes, Closes: #963989
+  * add module nvmf
+
+ -- Thomas Lange <lange@debian.org>  Wed, 01 Jul 2020 12:13:36 +0200
+
+dracut (050+35-4) unstable; urgency=high
+
+  * add git tag, so dracut shows correct version
+
+ -- Thomas Lange <lange@debian.org>  Wed, 22 Apr 2020 22:43:28 +0200
+
+dracut (050+35-3) unstable; urgency=high
+
+  * fix microcode loading, Closes: #958191
+
+ -- Thomas Lange <lange@debian.org>  Wed, 22 Apr 2020 22:09:22 +0200
+
+dracut (050+35-2) unstable; urgency=low
+
+  * source only upload needed, after 050+35-1 went through new queue
+
+ -- Thomas Lange <lange@debian.org>  Thu, 16 Apr 2020 10:55:04 +0200
+
+dracut (050+35-1) unstable; urgency=low
+
+  * new upstream
+  * debian/copyright: fix entries, Closes: #956288
+
+ -- Thomas Lange <lange@debian.org>  Fri, 10 Apr 2020 21:57:03 +0200
+
+dracut (050+31-1) unstable; urgency=low
+
+  * new upstream: Closes: #954019
+  * add module 90nvdimm
+
+ -- Thomas Lange <lange@debian.org>  Thu, 19 Mar 2020 23:01:22 +0100
+
+dracut (050-1) unstable; urgency=low
+
+  [ Thomas Lange ]
+  * new upstream version, Closes: #948135, #945596, #952820
+  * additional packages dracut-live and dracut-squash were added by
+    upstream
+  * fix dpkg triggers, Closes: #720081
+  * kernel/postinst.d/dracut: avoid running multiple times
+  * update standards version
+  * control: use debhelper-compat, upgrade to 12
+  * add patch systemd-vconsole-setup.service
+  * remove 90aufs, only supported until 3.X
+  * add dracut module 06rngd
+  * add README.cross, rename README -> README.md
+  * add mkinitrd script
+
+  [ Ondřej Nový ]
+  * d/copyright: Change Format URL to correct one
+
+ -- Thomas Lange <lange@debian.org>  Fri, 06 Mar 2020 13:30:46 +0100
+
+dracut (048+80-2) unstable; urgency=medium
+
+  * fix bashism in several scripts, Closes: #772260
+  * add patch to workaround changes in bash-5 while fsck'ing,
+    Closes: #920563
+
+ -- Thomas Lange <lange@debian.org>  Tue, 07 May 2019 13:11:11 +0200
+
+dracut (048+80-1) unstable; urgency=low
+
+  * new upstream
+  * fix duplicate copy of README.Debian: Closes: #905281
+  * 10-debian.conf: remove prelink option
+  * remove 02fips-aesni, 90multipath-hostonly
+  * new standards version
+
+ -- Thomas Lange <lange@debian.org>  Fri, 24 Aug 2018 14:29:22 +0200
+
+dracut (047+31-2) unstable; urgency=low
+
+  [ Helmut Grohne ]
+  * Fix FTCBFS: Let buildtools.mk export PKG_CONFIG etc. Closes: #901173
+
+  [ Thomas Lange ]
+  * add patch for adding crc32c when using ext3
+
+ -- Thomas Lange <lange@debian.org>  Tue, 12 Jun 2018 13:29:28 +0200
+
+dracut (047+31-1) unstable; urgency=medium
+
+  * new upstream version
+  * add patch for early microcode loading, Closes: #875297
+  * rules: remove quilt option
+  * control: update standards version, no changes
+  * 10-debian.conf: crc32c modules not needed any more
+  * add dracut.pc to debian-core, Closes: #880984
+
+ -- Thomas Lange <lange@debian.org>  Thu, 17 May 2018 17:44:36 +0200
+
+dracut (047-2) unstable; urgency=low
+
+  * add missing depends, Closes: #890990
+
+ -- Thomas Lange <lange@debian.org>  Wed, 21 Feb 2018 14:55:16 +0100
+
+dracut (047-1) unstable; urgency=low
+
+  * new upstream version
+  * control: add depends, Closes: #887202, update Vcs fields,
+    update standards version
+  * add modules.d/81cio_ignore
+
+ -- Thomas Lange <lange@debian.org>  Wed, 21 Feb 2018 09:49:15 +0100
+
+dracut (045+132-1) unstable; urgency=low
+
+  * new upstream version, Closes: #867568, #862845, #743791
+  * replace crc32 patch by adding driver to entry in dracut.conf.d
+  * add lvmmerge and multipath-hostonly modules
+  * make man pages reproducible, Thanks to Jeremy Bobbio for the
+    patch, Closes: #783131
+
+ -- Thomas Lange <lange@debian.org>  Fri, 11 Aug 2017 22:05:11 +0200
+
+dracut (044+241-3) unstable; urgency=low
+
+  * control: fix Recommends, Closes: #852083
+
+ -- Thomas Lange <lange@debian.org>  Wed, 22 Mar 2017 18:52:25 +0000
+
+dracut (044+241-2) unstable; urgency=low
+
+  * add patch for dkms aufs modules, Closes: #855370
+
+ -- Thomas Lange <lange@debian.org>  Tue, 28 Feb 2017 11:29:58 +0100
+
+dracut (044+241-1) unstable; urgency=low
+
+  * merge upstream changes
+  * 09console-setup/module-setup.sh: fix cp, Closes: #828915
+  * control: add recommends, Closes: #852083
+
+ -- Thomas Lange <lange@debian.org>  Tue, 24 Jan 2017 14:40:24 +0000
+
+dracut (044+223-1) unstable; urgency=low
+
+  * new upstream
+  * control: only depend on asciidoc-base
+
+ -- Thomas Lange <lange@debian.org>  Tue, 17 Jan 2017 16:20:51 +0100
+
+dracut (044+189-2) unstable; urgency=high
+
+  * rules: set libdir
+  * set compat level to 9, Closes: #830229
+
+ -- Thomas Lange <lange@debian.org>  Wed, 14 Dec 2016 11:41:52 +0000
+
+dracut (044+189-1) unstable; urgency=high
+
+  * upgrade to a newer upstream: Closes: #843697, which is CVE-2016-8637
+  * dracut.maintscript: remove parameter from mainscript, Closes: #839951
+  * new patch crc32, adding crc32c driver for ext4, Closes: #835060
+
+ -- Thomas Lange <lange@debian.org>  Tue, 13 Dec 2016 21:45:01 +0100
+
+dracut (044+109-1) unstable; urgency=low
+
+  * merge upstream 044+109+g3889234
+  * update standards version, no changes needed
+  * add README.Debian
+  * add patch systemd-udev
+  * add check for aufs and overlayfs if filesystem is supported
+
+ -- Thomas Lange <lange@debian.org>  Sun, 31 Jul 2016 21:18:04 +0200
+
+dracut (044+105-2) unstable; urgency=medium
+
+  * overlay-mount.sh: remove debuging
+
+ -- Thomas Lange <lange@debian.org>  Mon, 27 Jun 2016 17:00:26 +0200
+
+dracut (044+105-1) unstable; urgency=medium
+
+  * merge upstream 044-105-gf6fa9ef
+  * add overlayfs support for the root file system
+
+ -- Thomas Lange <lange@debian.org>  Sat, 25 Jun 2016 16:10:25 +0200
+
+dracut (044+38-1) unstable; urgency=low
+
+  * merge upstream 044+38+gb127294
+  * make console-setup a recommends instead of depends, Closes: #812943
+  * 90console-setup: Fix console-setup module-setup script to not
+    terminate
+  * rules: fix permissions
+
+ -- Thomas Lange <lange@debian.org>  Mon, 21 Mar 2016 13:47:15 +0100
+
+dracut (044+3-3) unstable; urgency=low
+
+  * add dracut.maintscript, so the duplicate logrotate entry is removed
+
+ -- Thomas Lange <lange@debian.org>  Sun, 20 Mar 2016 21:03:49 +0100
+
+dracut (044+3-2) unstable; urgency=medium
+
+  [ Ben Hutchings ]
+  * Split dracut binary package into core and automation hooks,
+    Closes: #808787
+
+ -- Thomas Lange <lange@debian.org>  Wed, 23 Dec 2015 23:13:50 +0100
+
+dracut (044+3-1) unstable; urgency=low
+
+  * new upstream, Closes: #802823
+  * new patch libdir, multipath Closes: #796329
+  * fix plymouth path and remove items, Closes: #796110
+  * dracut.install: add dracut-init.sh
+  * aufs-mount.sh: use getargbool
+
+ -- Thomas Lange <lange@debian.org>  Sun, 29 Nov 2015 13:49:04 +0100
+
+dracut (043-4) unstable; urgency=low
+
+  * add more man pages to package
+
+ -- Thomas Lange <lange@debian.org>  Thu, 17 Sep 2015 03:34:44 +0200
+
+dracut (043-3) unstable; urgency=low
+
+  * dracut-network: activate ifcfg module
+
+ -- Thomas Lange <lange@debian.org>  Mon, 07 Sep 2015 12:56:46 +0200
+
+dracut (043-2) unstable; urgency=medium
+
+  * control: add breaks and replaces, Closes: #796163
+
+ -- Thomas Lange <lange@debian.org>  Thu, 20 Aug 2015 11:56:25 +0200
+
+dracut (043-1) unstable; urgency=low
+
+  * new upstream, Closes: #771413
+  * control: add packages dracut-config-{rescue,generic} which include
+    config files how dracut will build the initrd
+  * 10-debian.conf: generate hostonly initrd by default
+  * aufs module: transform aufs patch to files in a directory, use --bind
+    instead of --move, move module from dracut-network to dracut,
+    make aufs independent of nfs
+
+ -- Thomas Lange <lange@debian.org>  Wed, 12 Aug 2015 22:27:18 +0200
+
+dracut (040+1-1) unstable; urgency=low
+
+  * new upstream, Closes: #739794, #758655, #754062, #755271
+
+ -- Thomas Lange <lange@debian.org>  Fri, 24 Oct 2014 15:32:38 +0200
+
+dracut (038-3) unstable; urgency=low
+
+  * add systemd units to package Closes: #764393
+  * add patch for dracut-initramfs-restore, Closes: #764393
+    Thanks to Lukas Wunner for the patch
+
+ -- Thomas Lange <lange@debian.org>  Wed, 08 Oct 2014 11:55:35 +0200
+
+dracut (038-2) unstable; urgency=low
+
+  * control: change depends on kbd to console-setup
+
+ -- Thomas Lange <lange@debian.org>  Thu, 17 Jul 2014 13:40:08 +0200
+
+dracut (038-1) unstable; urgency=low
+
+  * new upstream
+  * remove 10i18n patch, not needed any more
+  * update standards version, no changes needed
+
+ -- Thomas Lange <lange@debian.org>  Thu, 03 Jul 2014 15:12:26 +0200
+
+dracut (037-2) unstable; urgency=low
+
+  * add i18n support for Debian using new module 09-console-setup,
+    Closes: #640101, Thanks to Anton Zinoviev for the patches
+  * add README.Debian, which includes info about i18n in Debian
+  * disable module 10i18n, Closes: #664678
+  * control: add pkg-config to depends, Closes: #748084
+  * add dracut-version.sh to package, Closes: #749849
+
+ -- Thomas Lange <lange@debian.org>  Mon, 16 Jun 2014 14:37:52 +0200
+
+dracut (037-1) unstable; urgency=low
+
+  * new upstream
+
+ -- Thomas Lange <lange@debian.org>  Wed, 02 Apr 2014 22:26:45 +0200
+
+dracut (036-1) unstable; urgency=low
+
+  * new upstream, Closes: #720105
+  * control: use kmod in depends, Closes: #733699
+  * control: add conflicts, closes: #729809
+  * control: change package description one liner
+  * aufs: mount /cow with mode 0775, Closes: #737554
+  * add NEWS.Debian
+  * adjust patches
+  * improve watch file
+
+ -- Thomas Lange <lange@debian.org>  Mon, 17 Feb 2014 15:53:00 +0100
+
+dracut (034-2) unstable; urgency=low
+
+  * postinst, preinst: respect second argument, Closes: #729621
+  * postinst: do nothing if no initrd is needed, Closes: #729622
+    Thanks to Ben Hutchings for both patches
+
+ -- Thomas Lange <lange@debian.org>  Fri, 15 Nov 2013 21:14:42 +0100
+
+dracut (034-1) unstable; urgency=low
+
+  * new upstream
+  * patches/libdir: add space to string, Closes: #724514
+  * debian/etc/10-debian.conf: disable prelink by default, Closes: #719608
+  * dracut.install: remove bcache module
+
+ -- Thomas Lange <lange@debian.org>  Wed, 09 Oct 2013 11:38:06 +0200
+
+dracut (033-1) unstable; urgency=low
+
+  * new upstream
+  * fix path for resume binary, Closes: #708253
+
+ -- Thomas Lange <lange@debian.org>  Thu, 19 Sep 2013 17:28:20 +0200
+
+dracut (032-1) unstable; urgency=low
+
+  * new upstream
+  * add bash completion for lsinitrd
+  * add bash module
+  * postinst.d/dracut: remove code since dracut now handles multiarch lib
+    dirs
+  * refresh patches
+
+ -- Thomas Lange <lange@debian.org>  Fri, 23 Aug 2013 13:18:38 +0200
+
+dracut (031-2) unstable; urgency=low
+
+  * control: move arch from all to any,
+    add Multi-Arch line, Closes: #719610
+  * use dracut-install executable instead of shell implementation
+  * dracut.install,dracut-network.install: add all dracut modules
+
+ -- Thomas Lange <lange@debian.org>  Fri, 16 Aug 2013 11:03:44 +0200
+
+dracut (031-1) unstable; urgency=low
+
+  * new upstream
+  * update debian patches
+  * control: add curl to recommends of dracut-network
+  * copyright: add entry for dracut-install.c
+
+ -- Thomas Lange <lange@debian.org>  Sun, 11 Aug 2013 11:49:45 +0200
+
+dracut (027-1) unstable; urgency=low
+
+  * new upstream
+  * update copyright information
+
+ -- Thomas Lange <lange@debian.org>  Thu, 28 Mar 2013 20:52:50 +0100
+
+dracut (026+71+g78d1d4f-1) unstable; urgency=low
+
+  * new upstream 026+71+g78d1d4f
+  * add man pages
+  * add bash completions
+  * add cifs module to dracut-network
+  * cleanup patches
+
+ -- Thomas Lange <lange@debian.org>  Mon, 25 Mar 2013 14:03:36 +0100
+
+dracut (020-2) unstable; urgency=low
+
+  * use $kernel when calling modprobe: Closes: #685004
+
+ -- Thomas Lange <lange@debian.org>  Wed, 07 Nov 2012 17:55:07 +0100
+
+dracut (020-1.1) unstable; urgency=medium
+
+  * Non-maintainer upload by the Security Team.
+  * Fixing CVE-2012-4453: Create the initramfs non-world readable
+    (Closes: #688956).
+
+ -- Luk Claes <luk@debian.org>  Sun, 04 Nov 2012 18:47:50 +0100
+
+dracut (020-1) unstable; urgency=low
+
+  * new upstream version
+  * disable building of dracut-install executable, the package should
+    remain architecture all for now
+  * add qemu modules
+
+ -- Thomas Lange <lange@debian.org>  Sat, 30 Jun 2012 17:24:54 +0200
+
+dracut (019+39+gf48f934-1) unstable; urgency=high
+
+  * sync to upstream, get important fix for missing libraries needed for
+    nfs module
+  * add nogroup to /etc/group inside the initrd
+  * use /etc/ld.so.conf.d/ for creating list of library pathes
+
+ -- Thomas Lange <lange@debian.org>  Tue, 19 Jun 2012 10:30:39 +0200
+
+dracut (019+9+g521c57a-1) unstable; urgency=high
+
+  * import some upstream patches which fixes the "pkg-config command not
+    found" errors
+  * postinst.d/dracut: create modules.dep if it not already exists
+
+ -- Thomas Lange <lange@debian.org>  Tue, 12 Jun 2012 16:59:41 +0200
+
+dracut (019+1+gd77540c-1) unstable; urgency=medium
+
+  * new upstream
+  * add build-depends Closes: #674326
+  * do not mount /dev/shm, Closes: #637286
+
+ -- Thomas Lange <lange@debian.org>  Mon, 04 Jun 2012 16:59:14 +0200
+
+dracut (018+32+geb6e141-1) unstable; urgency=low
+
+  * add Debian multiarch support
+  * dracut.postinst: do not use uname -r for kernel version
+  * control: add depends on kbd
+  * postinst.d/dracut: use --libdirs for multiarch support
+
+ -- Thomas Lange <lange@debian.org>  Thu, 26 Apr 2012 17:46:53 +0200
+
+dracut (018-2) unstable; urgency=low
+
+  * postinst.d/dracut: only execute if dracut command is available
+  * postrm.d/dracut: fix file name
+
+ -- Thomas Lange <lange@debian.org>  Thu, 19 Apr 2012 10:25:02 +0200
+
+dracut (018-1) unstable; urgency=low
+
+  * new upstream version
+  * control: dracut now uses asciidoc, add conflicts on initramfs-tools
+  * postinst.d/dracut: new file name for initrd
+  * add 80cms modules to dracut-network
+
+ -- Thomas Lange <lange@debian.org>  Wed, 18 Apr 2012 13:30:05 +0200
+
+dracut (017-1) unstable; urgency=low
+
+  * new upstream version
+  * do not call dracut if no kernel was found, fix code Closes: #657754
+  * control: update to 3.9.3, no changes needed, add Build-depends
+  * patches/aufs: aufs was always enabled, now aufs is only activated if
+    the string aufs was given on the command line
+  * control: update to Standards version 3.9.2, no changes needed, needs
+    util-linux >= 2.20
+  * debian/patches, rules: add quilt support
+  * add aufs patch
+  * control: fix VCS fields
+  * add url-lib, img-lib, ssh-client modules
+  * add add dracut-initramfs-restore
+  * add patch for missing rpc user and group
+  * add patch for missing unimaps directory Closes: #637296 #661531
+
+ -- Thomas Lange <lange@debian.org>  Wed, 29 Feb 2012 20:15:50 +0100
+
+dracut (013-5) unstable; urgency=high
+
+  * do not call dracut if no kernel was found Closes: #657754
+
+ -- Thomas Lange <lange@debian.org>  Tue, 14 Feb 2012 10:32:02 +0100
+
+dracut (013-4) unstable; urgency=low
+
+  * patches/aufs: aufs was always enabled, now aufs is only activated if
+    the string aufs was given on the command line
+
+ -- Thomas Lange <lange@debian.org>  Sat, 11 Feb 2012 12:14:23 +0100
+
+dracut (013-3) unstable; urgency=low
+
+  * add aufs module, for booting a read-only nfsroot and make it writeable
+  * control: fix VCS fields, update to Standards 3.9.2, no changes needed
+
+ -- Thomas Lange <lange@debian.org>  Mon, 16 Jan 2012 12:32:30 +0100
+
+dracut (013-2) unstable; urgency=low
+
+  * control: add Build-Depends Closes: #642683
+  * control: add Depends on kpartx Closes: #636549
+
+ -- Thomas Lange <lange@debian.org>  Mon, 26 Sep 2011 17:49:46 +0200
+
+dracut (013-1) unstable; urgency=low
+
+  * new upstream version, Closes: #636549
+  * source/format: use 3.0 quilt format
+  * control: fix Vcs-Browser Closes: #637305
+  * add dracut.postrm, dracut.logrotate Closes: #637306
+  * postrm.d,postinst.d: remove obsolete else part, Closes: #627023
+  * add missing dracut.kernel.7
+  * add fs-lib module to dracut
+  * add livenet module to dracut-network
+  * move znet and zfcp to dracut-network
+
+ -- Thomas Lange <lange@debian.org>  Fri, 02 Sep 2011 11:51:41 +0200
+
+dracut (011+36+gd727c5a-1) unstable; urgency=low
+
+  * new upstream release Closes: #617893, #628190, #581092, #581091
+  * new maintainer
+  * dracut.install,dracut.dirs: remove non-existing modules, add
+    dracut.logger, lsinitrd and new modules
+  * rules: use new debhelper, no more cdbs
+  * control: new URL for git repository, update dependencies, update to
+    standards 3.9.1, add URL for homepage
+  * add file watch
+  * copyright: move to machine readable format, fix URLs
+  * compat: update to 8
+  * dracut.docs: add missing files, remove COPYING
+  * postinst.d/dracut: add script that creates the initrd Closes: #627023
+  * postrm.d/dracut: add script that removes initrd Closes: #627023
+
+ -- Thomas Lange <lange@debian.org>  Wed, 03 Aug 2011 17:01:36 +0200
+
+dracut (005-1) unstable; urgency=low
+
+  * Version 005
+  * First dracut release to unstable. Closes: #558274
+
+ -- Philippe Seewer <philippe.seewer@bfh.ch>  Fri, 9 May 2010 11:20:00 +0100
+
+dracut (004-1) unreleased; urgency=low
+
+  * Version 004
+
+ -- Philippe Seewer <philippe.seewer@bfh.ch>  Fri, 5 Mar 2010 15:25:00 +0100
+
+dracut (003-1) unreleased; urgency=low
+
+  * Version 003
+
+ -- Philippe Seewer <philippe.seewer@bfh.ch>  Fri, 27 Nov 2009 15:52:00 +0100
+
+dracut (002-1) unreleased; urgency=low
+
+  * Version 002
+
+ -- Philippe Seewer <philippe.seewer@bfh.ch>  Fri, 27 Nov 2009 15:52:00 +0100

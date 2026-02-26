@@ -1,0 +1,138 @@
+Tests: lsinitrd
+Architecture: !armel !i386
+Depends: dracut, linux-image-generic, zstd
+Restrictions: needs-root, superficial
+
+Tests: 10-basic,
+       13-sysroot,
+       14-hooks,
+       21-overlayfs,
+       40-systemd,
+       42-systemd-initrd,
+       43-kernel-install,
+       80-getarg,
+       81-skipcpio
+Architecture: !armel !i386
+Restrictions: allow-stderr, needs-root
+Depends: dracut-test
+
+Tests: 11-usr-mount
+Architecture: !armel !i386
+Restrictions: allow-stderr, needs-root
+Depends: btrfs-progs, dracut-test
+
+# Fails on arm64: https://github.com/dracut-ng/dracut-ng/issues/1862
+Tests: 12-uefi
+Architecture: amd64
+Restrictions: allow-stderr, needs-root
+Depends: dracut-test,
+         kbd,
+         lvm2,
+         squashfs-tools,
+         systemd-boot-efi,
+         systemd-cryptsetup,
+         systemd-ukify
+
+Tests: 20-storage, 26-enc-raid-lvm
+Architecture: !armel !i386
+Restrictions: allow-stderr, needs-root
+Depends: cryptsetup, dracut-test, lvm2, mdadm, systemd-cryptsetup
+
+Tests: 30-dmsquash
+Architecture: !armel !i386
+Restrictions: allow-stderr, needs-root
+Depends: dmsetup,
+         dracut-network,
+         dracut-test,
+         erofs-utils,
+         fdisk,
+         parted,
+         squashfs-tools,
+         util-linux-extra,
+         xorriso
+
+Tests: 31-livenet
+Architecture: !armel !i386
+Restrictions: allow-stderr, needs-root
+Depends: curl, dmsetup, dracut-network, dracut-test, python3, squashfs-tools
+
+Tests: 41-full-systemd
+Architecture: !armel !i386
+Restrictions: allow-stderr, needs-root
+Depends: btrfs-progs,
+         cryptsetup,
+         dracut-network,
+         dracut-test,
+         systemd-container,
+         systemd-coredump,
+         systemd-cryptsetup,
+         systemd-repart,
+         systemd-resolved,
+         systemd-timesyncd
+
+Tests: 44-drivers
+Architecture: !armel !i386
+Restrictions: allow-stderr, needs-root
+Depends: dracut-test, xfsprogs
+
+Tests: 45-systemd-import
+Architecture: !armel !i386
+Restrictions: allow-stderr, needs-root
+Depends: dracut-network,
+         dracut-test,
+         erofs-utils,
+         gpg,
+         gpg-agent,
+         python3,
+         squashfs-tools,
+         systemd-container
+
+Tests: 50-network
+Architecture: !armel !i386
+Restrictions: allow-stderr, needs-root
+Depends: dracut-network, dracut-test
+
+Tests: 60-nfs
+Architecture: !armel !i386
+Restrictions: allow-stderr, needs-root
+Depends: curl,
+         dmsetup,
+         dracut-network,
+         dracut-test,
+         isc-dhcp-server,
+         nfs-kernel-server,
+         procps
+
+Tests: 70-iscsi, 71-iscsi-multi
+Architecture: !armel !i386
+Restrictions: allow-stderr, needs-root
+Depends: cryptsetup,
+         dracut-network,
+         dracut-test,
+         isc-dhcp-server,
+         lvm2,
+         mdadm,
+         open-iscsi,
+         procps,
+         systemd-cryptsetup,
+         tgt
+
+Tests: 72-nbd
+Architecture: !armel !i386
+Restrictions: allow-stderr, needs-root
+Depends: cryptsetup,
+         dracut-network,
+         dracut-test,
+         isc-dhcp-server,
+         lvm2,
+         mdadm,
+         nbd-client,
+         nbd-server,
+         procps,
+         systemd-cryptsetup
+
+# Dummy test so that firmware package updates trigger our other autopkgtests
+Features: test-name=hint-testsuite-triggers
+Test-Command: false
+Depends: firmware-linux-free, firmware-linux-nonfree, linux-firmware
+Restrictions: hint-testsuite-triggers
