@@ -1,3 +1,9 @@
+dracut (110+git20260313-1) unstable; urgency=medium
+
+  * New upstream snapshot.
+
+ -- Benjamin Drung <bdrung@debian.org>  Fri, 13 Mar 2026 16:24:32 +0100
+
 dracut (110-5) unstable; urgency=medium
 
   * fix(crypt): honor timeout setting when using UUID, LABEL, etc
