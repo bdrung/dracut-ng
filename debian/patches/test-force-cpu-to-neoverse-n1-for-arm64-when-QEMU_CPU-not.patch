@@ -1,0 +1,45 @@
+From: Hector Cao <hector.cao@canonical.com>
+Date: Wed, 25 Feb 2026 12:12:34 +0100
+Subject: test: force cpu to neoverse-n1 for arm64 when QEMU_CPU not set
+
+using cpu=max might expose new unstable features with qemu/edk2
+upgrades, this unstability might cause test failures to happen
+, we are experiencing that in Debian/Ubuntu with edk2 latest version
+that enables LPA2 that is still unstable.
+
+since using cpu=max is not required for dracut tests, using a
+named model will offer a better stability for the tests for future
+qemu/edk2 upgrades. the chosen cpu model for arm64 is neoverse-n1
+since it is one of the most stable and proven CPU model from a
+virtualization standpoint.
+
+Co-authored-by: Benjamin Drung <bdrung@ubuntu.com>
+Forwarded: https://github.com/dracut-ng/dracut-ng/pull/2261
+Bug-Debian: https://bugs.debian.org/1128969
+Bug-Ubuntu: https://bugs.launchpad.net/bugs/2142121
+---
+ test/run-qemu | 11 ++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletion(-)
+
+diff --git a/test/run-qemu b/test/run-qemu
+index 8bfd86c..369313b 100755
+--- a/test/run-qemu
++++ b/test/run-qemu
+@@ -5,7 +5,16 @@ set -eu
+ 
+ export PATH=/usr/sbin:/usr/bin:/sbin:/bin
+ ARCH="${ARCH-$(uname -m)}"
+-QEMU_CPU="${QEMU_CPU:-max}"
++if [ -z "${QEMU_CPU-}" ]; then
++    case "$ARCH" in
++        aarch64 | arm64)
++            QEMU_CPU="neoverse-n1"
++            ;;
++        *)
++            QEMU_CPU="max"
++            ;;
++    esac
++fi
+ 
+ add_to_append() {
+     local extra="$1"

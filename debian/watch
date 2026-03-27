@@ -1,0 +1,5 @@
+Version: 5
+Template: Github
+Owner: dracut-ng
+Project: dracut-ng
+Matching-Pattern: https://api.github.com/repos/[^/]+/[^/]+/git/refs/tags/(\d+)

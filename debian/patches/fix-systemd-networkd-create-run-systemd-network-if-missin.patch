@@ -1,0 +1,37 @@
+From: Benjamin Drung <benjamin.drung@canonical.com>
+Date: Wed, 18 Mar 2026 12:45:43 +0100
+Subject: fix(systemd-networkd): create /run/systemd/network if missing
+
+During testing this error could be found in the logs:
+
+```
+[FAILED] Failed to start systemd-network-generator.service - Generate Network Units from Kernel Command Line.
+[...]
+[    3.034981] dracut-cmdline[198]: + cp -a /usr/lib/dracut/dracut-default.network /run/systemd/network/zzzz-dracut-default.network
+[    3.038326] dracut-cmdline[301]: cp: cannot create regular file '/run/systemd/network/zzzz-dracut-default.network': No such file or directory
+```
+
+`systemd-network-generator` creates `/run/systemd/network` in
+`context_save` by calling `mkdir_p(p, 0755)`. In case
+`systemd-network-generator.service` fails this directory might not have
+been created.
+
+So create `/run/systemd/network` if missing.
+
+Forwarded: https://github.com/dracut-ng/dracut-ng/pull/2306
+---
+ modules.d/11systemd-networkd/networkd-config.sh | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/modules.d/11systemd-networkd/networkd-config.sh b/modules.d/11systemd-networkd/networkd-config.sh
+index 89556ef..8f742d0 100755
+--- a/modules.d/11systemd-networkd/networkd-config.sh
++++ b/modules.d/11systemd-networkd/networkd-config.sh
+@@ -26,6 +26,7 @@ done
+ 
+ # Add the default network if none was generated
+ if [ "$generated" -eq "0" ]; then
++    mkdir -m 0755 -p /run/systemd/network
+     cp -a /usr/lib/dracut/dracut-default.network /run/systemd/network/zzzz-dracut-default.network
+ fi
+ 
