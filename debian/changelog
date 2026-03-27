@@ -1,3 +1,9 @@
+dracut (110+git20260327-1) unstable; urgency=medium
+
+  * New upstream snapshot.
+
+ -- Benjamin Drung <bdrung@debian.org>  Fri, 27 Mar 2026 23:09:48 +0100
+
 dracut (110-8) unstable; urgency=medium
 
   * Cherry-pick upstream fixes:
