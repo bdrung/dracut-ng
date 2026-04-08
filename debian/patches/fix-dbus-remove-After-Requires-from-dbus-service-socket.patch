@@ -1,0 +1,117 @@
+From: Benjamin Drung <benjamin.drung@canonical.com>
+Date: Tue, 3 Mar 2026 12:32:33 +0100
+Subject: fix(dbus): remove After/Requires from dbus service/socket
+
+Following dependencies are added to sockets unless
+`DefaultDependencies=no` is set (according to systemd.socket man page):
+
+```
+Before=sockets.target shutdown.target
+After=sysinit.target
+Requires=sysinit.target
+Conflicts=shutdown.target
+```
+
+Following dependencies are added to units unless
+`DefaultDependencies=no` is set (according to systemd.service man page):
+
+```
+Requires=sysinit.target
+After=sysinit.target basic.target
+Conflicts=shutdown.target
+Before=shutdown.target
+```
+
+The dbus-broker and dbus-daemon Dracut modules want to remove
+`After=sysinit.target` and `Requires=sysinit.target` from `dbus.service`
+and `dbus.socket`. This is done by setting `DefaultDependencies=no` and
+specifying the remaining default dependencies. The relevant code has
+been there since the introduction (see commit e1845955ff3d).
+
+The Ubuntu package of dbus already removes some of the default
+dependencies from the `dbus.service` and `dbus.socket` (see
+https://launchpad.net/bugs/1438612):
+
+```
+DefaultDependencies=no
+Wants=sysinit.target
+After=sysinit.target basic.target
+```
+
+This results in not removing the `sysinit.target` dependency on Ubuntu
+and causes the dbus service to start too late. Since NetworkManager
+depends on dbus, it will start too late as well. That causes the NBD
+test cases to fail.
+
+So remove the `After` and `Requires` entries from the `dbus.service` and
+`dbus.socket` before setting `DefaultDependencies=no`. Also restore
+`Before=sockets.target` in `dbus.socket`.
+
+Fixes: https://github.com/dracut-ng/dracut-ng/issues/1815
+Bug-Ubuntu: https://launchpad.net/bugs/2141603
+Forwarded: https://github.com/dracut-ng/dracut-ng/pull/2273
+---
+ .github/workflows/daily-network.yml     |  6 ------
+ modules.d/16dbus-broker/module-setup.sh |  5 +++--
+ modules.d/16dbus-daemon/module-setup.sh | 10 ++++++----
+ 3 files changed, 9 insertions(+), 12 deletions(-)
+
+diff --git a/.github/workflows/daily-network.yml b/.github/workflows/daily-network.yml
+index e104d7a..18955b2 100644
+--- a/.github/workflows/daily-network.yml
++++ b/.github/workflows/daily-network.yml
+@@ -48,12 +48,6 @@ jobs:
+                       architecture: {runner: 'ubuntu-24.04-arm', tag: 'arm'}
+                     - container: fedora:rawhide
+                       architecture: {runner: 'ubuntu-24.04-arm', tag: 'arm'}
+-                    # https://github.com/dracut-ng/dracut-ng/issues/1815
+-                    - container: ubuntu:devel
+-                      test: "72"
+-                    # https://github.com/dracut-ng/dracut-ng/issues/1815
+-                    - container: ubuntu:rolling
+-                      test: "72"
+                     # https://github.com/dracut-ng/dracut-ng/issues/1988
+                     - container: debian:sid
+                       architecture: {runner: 'ubuntu-24.04-arm', tag: 'arm'}
+diff --git a/modules.d/16dbus-broker/module-setup.sh b/modules.d/16dbus-broker/module-setup.sh
+index 8b41a5f..2bc3924 100755
+--- a/modules.d/16dbus-broker/module-setup.sh
++++ b/modules.d/16dbus-broker/module-setup.sh
+@@ -53,9 +53,10 @@ install() {
+         "$systemdsystemunitdir"/dbus.target.wants \
+         busctl dbus-broker dbus-broker-launch
+ 
+-    # Adjusting dependencies for initramfs in the dbus socket unit.
++    # Remove After/Requires=sysinit.target for initramfs in the dbus socket unit.
+     sed -i -e \
+-        '/^\[Unit\]/aDefaultDependencies=no\nConflicts=shutdown.target\nBefore=shutdown.target
++        '/^\(After\|DefaultDependencies\|Requires\)=/d
++        /^\[Unit\]/aDefaultDependencies=no\nConflicts=shutdown.target\nBefore=shutdown.target sockets.target
+         /^\[Socket\]/aRemoveOnStop=yes' \
+         "$initdir$systemdsystemunitdir/dbus.socket"
+ 
+diff --git a/modules.d/16dbus-daemon/module-setup.sh b/modules.d/16dbus-daemon/module-setup.sh
+index c2238f7..6758c52 100755
+--- a/modules.d/16dbus-daemon/module-setup.sh
++++ b/modules.d/16dbus-daemon/module-setup.sh
+@@ -50,14 +50,16 @@ install() {
+         "$systemdsystemunitdir"/sockets.target.wants/dbus.socket \
+         busctl dbus-send dbus-daemon
+ 
+-    # Adjusting dependencies for initramfs in the dbus service unit.
++    # Remove After/Requires=sysinit.target and After=basic.target for initramfs in the dbus service unit.
+     sed -i -e \
+-        '/^\[Unit\]/aDefaultDependencies=no\nConflicts=shutdown.target\nBefore=shutdown.target' \
++        '/^\(After\|DefaultDependencies\|Requires\)=/d
++        /^\[Unit\]/aDefaultDependencies=no\nConflicts=shutdown.target\nBefore=shutdown.target' \
+         "$initdir$systemdsystemunitdir/dbus.service"
+ 
+-    # Adjusting dependencies for initramfs in the dbus socket unit.
++    # Remove After/Requires=sysinit.target for initramfs in the dbus socket unit.
+     sed -i -e \
+-        '/^\[Unit\]/aDefaultDependencies=no\nConflicts=shutdown.target\nBefore=shutdown.target
++        '/^\(After\|DefaultDependencies\|Requires\)=/d
++        /^\[Unit\]/aDefaultDependencies=no\nConflicts=shutdown.target\nBefore=shutdown.target sockets.target
+         /^\[Socket\]/aRemoveOnStop=yes' \
+         "$initdir$systemdsystemunitdir/dbus.socket"
+ 
