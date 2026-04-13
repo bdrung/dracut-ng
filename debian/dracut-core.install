@@ -65,6 +65,7 @@ usr/lib/dracut/modules.d/68lvmthinpool-monitor
 usr/lib/dracut/modules.d/70bluetooth
 usr/lib/dracut/modules.d/70btrfs
 usr/lib/dracut/modules.d/70crypt
+usr/lib/dracut/modules.d/70crypt-lib
 usr/lib/dracut/modules.d/70devicetree-firmware
 usr/lib/dracut/modules.d/70dm
 usr/lib/dracut/modules.d/70dmsquash-live
