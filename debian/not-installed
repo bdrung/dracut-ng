@@ -1,0 +1,6 @@
+# dmraid was removed, see https://bugs.debian.org/1056944
+usr/lib/dracut/modules.d/70dmraid
+# dh_missing is complaining about some symlinks (dpkg-buildpackage -A)
+usr/lib/systemd/system/*.service
+usr/lib/systemd/system/initrd.target.wants/*.service
+usr/lib/systemd/system/sysinit.target.wants/dracut-shutdown.service

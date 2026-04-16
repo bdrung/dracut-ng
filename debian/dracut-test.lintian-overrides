@@ -1,0 +1,4 @@
+# one single directory for modules is needed, see https://github.com/dracutdevs/dracut/issues/2485
+dracut-test: executable-in-usr-lib [usr/lib/dracut/*]
+# test-functions is only sourced by other scripts
+dracut-test: script-not-executable [usr/lib/dracut/test/test-functions]

@@ -1,0 +1,86 @@
+From: Jo Zzsi <jozzsicsataban@gmail.com>
+Date: Fri, 10 Apr 2026 09:21:51 -0400
+Subject: feat(dracut): add a DRACUT_EXTRA_ARGS environment variable
+
+Some build tools (e.g. autopkgtest-build-qemu) invoke dracut indirectly
+through update-initramfs via dpkg triggers, making it impossible to pass
+extra flags directly on the command line.
+
+Add a DRACUT_EXTRA_ARGS environment variable whose contents are
+word-split and prepended to the dracut argument list before option
+parsing.  This allows callers to inject arbitrary flags without modifying
+the configuration on disk:
+
+  DRACUT_EXTRA_ARGS=--no-hostonly autopkgtest-build-qemu ...
+
+The variable is intentionally word-split (like MAKEFLAGS), so arguments
+that themselves contain spaces must be shell-quoted within the value:
+
+  DRACUT_EXTRA_ARGS='--add "mod1 mod2"' dracut
+
+Changed test 13 to provide test coverage for DRACUT_EXTRA_ARGS variable.
+
+Origin: upstream, https://github.com/dracut-ng/dracut-ng/pull/2369
+---
+ dracut.sh                    |  7 +++++++
+ man/dracut.8.adoc            | 12 ++++++++++++
+ test/TEST-13-SYSROOT/test.sh |  5 ++++-
+ 3 files changed, 23 insertions(+), 1 deletion(-)
+
+diff --git a/dracut.sh b/dracut.sh
+index b74ba89..57f17ae 100755
+--- a/dracut.sh
++++ b/dracut.sh
+@@ -601,6 +601,13 @@ PARMS_TO_STORE=""
+ 
+ eval set -- "$TEMP"
+ 
++if [[ -n ${DRACUT_EXTRA_ARGS-} ]]; then
++    mapfile -d '' _extra_args < <(xargs printf '%s\0' <<< "$DRACUT_EXTRA_ARGS" 2> /dev/null \
++        || printf "%s\n" "dracut[W]: Ignoring malformed DRACUT_EXTRA_ARGS: $DRACUT_EXTRA_ARGS" >&2)
++    set -- "${_extra_args[@]}" "$@"
++    unset _extra_args
++fi
++
+ while :; do
+     case $1 in
+         -h | --help)
+diff --git a/man/dracut.8.adoc b/man/dracut.8.adoc
+index 8397e58..6c46e07 100644
+--- a/man/dracut.8.adoc
++++ b/man/dracut.8.adoc
+@@ -734,6 +734,18 @@ _DRACUT_ARCH_::
+ Default:
+     _empty_ (the value of **uname -m** on the host system)
+ 
++_DRACUT_EXTRA_ARGS_::
++    A string of additional _dracut_ command-line arguments.  The value is
++    word-split and prepended to the argument list before option parsing, so
++    explicit flags supplied directly on the command line will override the
++    values set here.
+++
++Arguments that contain spaces must be shell-quoted within the value:
+++
++----
++DRACUT_EXTRA_ARGS='--add "module1 module2"' dracut
++----
++
+ _SYSTEMD_VERSION_::
+     overrides systemd version. Used for **--sysroot**.
+ 
+diff --git a/test/TEST-13-SYSROOT/test.sh b/test/TEST-13-SYSROOT/test.sh
+index 3002ade..a8fab18 100755
+--- a/test/TEST-13-SYSROOT/test.sh
++++ b/test/TEST-13-SYSROOT/test.sh
+@@ -23,7 +23,10 @@ test_setup() {
+     build_ext4_image "$TESTDIR/rootfs" "$TESTDIR"/root.img dracut
+ 
+     ln -s / "$TESTDIR"/sysroot
+-    test_dracut --keep --hostonly --sysroot "$TESTDIR"/sysroot
++    # test DRACUT_EXTRA_ARGS
++    DRACUT_EXTRA_ARGS="--keep --hostonly --sysroot '$TESTDIR/sysroot'" test_dracut
++
++    grep 'hostonly' "$TESTDIR"/initrd/dracut.*/initramfs/usr/lib/dracut/build-parameter.txt
+ 
+     if grep -q '^root:' /etc/shadow; then
+         if ! grep -q '^root:' "$TESTDIR"/initrd/dracut.*/initramfs/etc/shadow; then

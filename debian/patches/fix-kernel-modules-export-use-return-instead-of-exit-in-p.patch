@@ -1,0 +1,87 @@
+From: Benjamin Drung <benjamin.drung@canonical.com>
+Date: Wed, 11 Feb 2026 14:33:51 +0100
+Subject: fix(kernel-modules-export): use return instead of exit in pre-pivot
+ hook
+
+The `modules-export.sh` pre-pivot hook calls `exit 0`. This causes the
+sourcing script (`dracut-pre-pivot.sh` on systemd or `init.sh` from the
+base Dracut module) to exit. The subsequent hooks are not executed.
+
+Use `return` instead of `exit` in kernel-modules-export pre-pivot hook.
+
+Co-authored-by: Neal Gompa <neal@gompa.dev>
+Fixes: https://github.com/dracut-ng/dracut-ng/issues/2227
+Forwarded: https://github.com/dracut-ng/dracut-ng/pull/2238
+---
+ man/dracut.modules.7.adoc                           |  7 ++++++-
+ modules.d/70kernel-modules-export/modules-export.sh | 12 ++++++------
+ 2 files changed, 12 insertions(+), 7 deletions(-)
+
+diff --git a/man/dracut.modules.7.adoc b/man/dracut.modules.7.adoc
+index fc31af6..44f77f6 100644
+--- a/man/dracut.modules.7.adoc
++++ b/man/dracut.modules.7.adoc
+@@ -44,7 +44,12 @@ scripts and udev rules.
+ dracut modules can insert custom script at various points, to control the boot
+ process.
+ These hooks are plain directories containing shell scripts ending with ".sh",
+-which are sourced by init.
++which are sourced by init or other scripts.
++Since hook scripts are sourced instead of directly executed, "return" must
++be used instead of "exit" at the end of a hook to avoid having dracut quit
++prematurely.
++Please unset any used variables (or, better yet, use local variables within
++functions) to avoid influencing subsequent code.
+ Common used functions are in _dracut-lib.sh_, which can be sourced by any script.
+ 
+ dracut looks for custom hook scripts in subdirectories (cmdline, pre-udev,
+diff --git a/modules.d/70kernel-modules-export/modules-export.sh b/modules.d/70kernel-modules-export/modules-export.sh
+index 71494a3..f795335 100755
+--- a/modules.d/70kernel-modules-export/modules-export.sh
++++ b/modules.d/70kernel-modules-export/modules-export.sh
+@@ -3,7 +3,7 @@
+ command -v getarg > /dev/null || . /lib/dracut-lib.sh
+ 
+ if ! getargbool 0 rd.driver.export; then
+-    exit 0
++    return 0
+ fi
+ 
+ driver_export=$(getarg rd.driver.export=)
+@@ -12,19 +12,19 @@ KVERSION="$(uname -r)"
+ 
+ if [ ! -d "/lib/modules/$KVERSION" ]; then
+     warn "Something odd, no /lib/modules/$KVERSION in initramfs."
+-    exit 0
++    return 0
+ fi
+ 
+ [ -d "$NEWROOT/lib/modules" ] || mkdir -p "$NEWROOT/lib/modules" \
+     || {
+         warn "No /lib/modules in target. cannot help."
+-        exit 0
++        return 0
+     }
+ 
+ if [ -d "$NEWROOT/lib/modules/$KVERSION" ]; then
+     if [ "${driver_export#*force}" = "$driver_export" ]; then
+         warn "/lib/modules/$KVERSION exists. To export modules set rd.driver.export=force!"
+-        exit 0
++        return 0
+     else
+         info "Due to rd.driver.export=force exporting over existing modules!"
+     fi
+@@ -33,11 +33,11 @@ fi
+ mount -t tmpfs driver_export "$NEWROOT/lib/modules" \
+     || {
+         warn "Failed mount of tmpfs."
+-        exit 0
++        return 0
+     }
+ 
+ cp -a "/lib/modules/$KVERSION" "$NEWROOT/lib/modules" \
+     || {
+         warn "Failed to export modules to target root."
+-        exit 0
++        return 0
+     }
