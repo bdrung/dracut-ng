@@ -1,0 +1,84 @@
+From: Benjamin Drung <benjamin.drung@canonical.com>
+Date: Mon, 13 Apr 2026 22:25:37 +0200
+Subject: test(ISCSI): wait for tgtd startup
+
+Test 71 (ISCSI-MULTI) sometimes fails when starting the server:
+
+```
++ tgtd
++ tgtadm --lld iscsi --mode target --op new --tid 1 --targetname iqn.2009-06.dracut:target0
+tgtadm: failed to send request hdr to tgt daemon, Transport endpoint is not connected
++ _poweroff
++ local exit_code=107
++ set +x
+Error: /sbin/init failed with exit code 107.
+Powering down.
+```
+
+The tgtadm command is called before tgtd finished starting up. So add
+waiting for tgtd service to be ready.
+
+Forwarded: https://github.com/dracut-ng/dracut-ng/pull/2385
+---
+ test/TEST-70-ISCSI/server-init.sh       | 11 +++++++++++
+ test/TEST-71-ISCSI-MULTI/server-init.sh | 11 +++++++++++
+ 2 files changed, 22 insertions(+)
+
+diff --git a/test/TEST-70-ISCSI/server-init.sh b/test/TEST-70-ISCSI/server-init.sh
+index 39cd5b5..2eb0dca 100755
+--- a/test/TEST-70-ISCSI/server-init.sh
++++ b/test/TEST-70-ISCSI/server-init.sh
+@@ -42,6 +42,16 @@ wait_for_route_ok() {
+     return 1
+ }
+ 
++wait_for_tgtd_startup() {
++    local cnt=0
++    while [ $cnt -lt 200 ]; do
++        tgtadm --mode target --op show && return 0
++        sleep 0.1
++        cnt=$((cnt + 1))
++    done
++    return 1
++}
++
+ linkup() {
+     wait_for_if_link "$1" 2> /dev/null && ip link set "$1" up 2> /dev/null && wait_for_if_up "$1" 2> /dev/null
+ }
+@@ -63,6 +73,7 @@ modprobe af_packet
+ dnsmasq
+ 
+ tgtd
++wait_for_tgtd_startup
+ tgtadm --lld iscsi --mode target --op new --tid 1 --targetname iqn.2009-06.dracut:target0
+ tgtadm --lld iscsi --mode target --op new --tid 2 --targetname iqn.2009-06.dracut:target1
+ tgtadm --lld iscsi --mode target --op new --tid 3 --targetname iqn.2009-06.dracut:target2
+diff --git a/test/TEST-71-ISCSI-MULTI/server-init.sh b/test/TEST-71-ISCSI-MULTI/server-init.sh
+index d652396..68af0a2 100755
+--- a/test/TEST-71-ISCSI-MULTI/server-init.sh
++++ b/test/TEST-71-ISCSI-MULTI/server-init.sh
+@@ -42,6 +42,16 @@ wait_for_route_ok() {
+     return 1
+ }
+ 
++wait_for_tgtd_startup() {
++    local cnt=0
++    while [ $cnt -lt 200 ]; do
++        tgtadm --mode target --op show && return 0
++        sleep 0.1
++        cnt=$((cnt + 1))
++    done
++    return 1
++}
++
+ linkup() {
+     wait_for_if_link "$1" 2> /dev/null && ip link set "$1" up 2> /dev/null && wait_for_if_up "$1" 2> /dev/null
+ }
+@@ -63,6 +73,7 @@ modprobe af_packet
+ dnsmasq
+ 
+ tgtd
++wait_for_tgtd_startup
+ tgtadm --lld iscsi --mode target --op new --tid 1 --targetname iqn.2009-06.dracut:target0
+ tgtadm --lld iscsi --mode target --op new --tid 2 --targetname iqn.2009-06.dracut:target1
+ tgtadm --lld iscsi --mode target --op new --tid 3 --targetname iqn.2009-06.dracut:target2

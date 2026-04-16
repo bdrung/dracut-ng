@@ -1,0 +1,491 @@
+From: Nadzeya Hutsko <nadzeya.hutsko@canonical.com>
+Date: Fri, 10 Apr 2026 20:51:12 +0200
+Subject: feat(overlayfs-crypt): add new encrypted persistent overlay support
+
+Add a new overlayfs-crypt dracut module that supports LUKS-encrypted
+persistent overlay devices via the rd.overlay.crypt kernel parameter,
+similar to the overlayroot=crypt in cloud-initramfs-tools.
+
+If the device already contains a LUKS volume, the user is prompted for
+the passphrase interactively (via Plymouth if available, otherwise
+TTY). Otherwise, the device is wiped, formatted with LUKS using a
+randomly generated passphrase, and a new filesystem is created on it.
+
+The overlayfs-crypt module depends on the overlayfs module and signals
+mount-overlayfs.sh to proceed via a shared marker file
+(/run/overlayfs-crypt-ready).
+
+Forwarded: https://github.com/dracut-ng/dracut-ng/pull/2161
+---
+ man/dracut.cmdline.7.adoc                          |  32 +++
+ modules.d/70overlayfs/mount-overlayfs.sh           |   2 +-
+ modules.d/71overlayfs-crypt/module-setup.sh        |  24 +++
+ modules.d/71overlayfs-crypt/overlayfs-crypt-lib.sh | 220 +++++++++++++++++++++
+ .../71overlayfs-crypt/prepare-overlayfs-crypt.sh   |  50 +++++
+ test/TEST-21-OVERLAYFS/assertion.sh                |  27 +++
+ test/TEST-21-OVERLAYFS/test.sh                     |  15 +-
+ 7 files changed, 368 insertions(+), 2 deletions(-)
+ create mode 100755 modules.d/71overlayfs-crypt/module-setup.sh
+ create mode 100755 modules.d/71overlayfs-crypt/overlayfs-crypt-lib.sh
+ create mode 100755 modules.d/71overlayfs-crypt/prepare-overlayfs-crypt.sh
+
+diff --git a/man/dracut.cmdline.7.adoc b/man/dracut.cmdline.7.adoc
+index 67b9794..fb4d3b0 100644
+--- a/man/dracut.cmdline.7.adoc
++++ b/man/dracut.cmdline.7.adoc
+@@ -1157,6 +1157,38 @@ rd.overlay=UUID=12345678-1234-1234-1234-123456789abc
+ rd.overlay=/dev/sdb1
+ ----
+ 
++**rd.overlay.crypt=**__<device>__[**,**__<option>__]...::
++Requires the dracut 'overlayfs-crypt' module.
+++
++Specifies an encrypted (LUKS) device for persistent overlay storage.  If the
++device already contains a valid LUKS volume, the user will be prompted for the
++passphrase interactively (via Plymouth if available, otherwise via TTY).
++Otherwise, the device will be wiped, formatted with LUKS using a randomly
++generated passphrase, and a new filesystem will be created on it.  The random
++passphrase is stored in `/run/initramfs/overlayfs.passwd` for the duration of
++the boot.
+++
++The device is specified as the first argument, followed by optional
++comma-separated options:
+++
++--
++* _<device>_ - (Required) Device specification: LABEL=, UUID=, PARTLABEL=,
++  PARTUUID=, or /dev/<device>.
++* _mapname=<name>_ - Device mapper name (default: overlay-crypt).
++* _fstype=<type>_ - Filesystem type: ext2, ext3, or ext4 (default: ext4).
++* _mkfs=<0|1>_ - Filesystem creation behavior: 0=never create (require existing
++  LUKS), 1=create if needed (default).
++* _timeout=<seconds>_ - Time to wait for the device to appear.  By default,
++  the global `rd.timeout` value is used.  Set to 0 to skip waiting entirely.
++--
+++
++[listing]
++.Examples
++----
++rd.overlay.crypt=LABEL=CRYPTOVL
++rd.overlay.crypt=UUID=12345678-1234-1234-1234-123456789abc,fstype=ext3
++----
++
+ Booting live images
+ ~~~~~~~~~~~~~~~~~~~
+ Requires the dracut 'dmsquash-live' module.
+diff --git a/modules.d/70overlayfs/mount-overlayfs.sh b/modules.d/70overlayfs/mount-overlayfs.sh
+index 8514211..dbae5d5 100755
+--- a/modules.d/70overlayfs/mount-overlayfs.sh
++++ b/modules.d/70overlayfs/mount-overlayfs.sh
+@@ -7,7 +7,7 @@ getargbool 0 rd.overlay -d rd.live.overlay.overlayfs && overlayfs="yes"
+ getargbool 0 rd.overlay.readonly -d rd.live.overlayfs.readonly && readonly_overlay="--readonly" || readonly_overlay=""
+ overlay=$(get_rd_overlay)
+ 
+-[ -n "$overlayfs" ] || [ -n "$overlay" ] || return 0
++[ -n "$overlayfs" ] || [ -n "$overlay" ] || [ -e /run/overlayfs-crypt-ready ] || return 0
+ 
+ # Only proceed if prepare-overlayfs.sh has run and set up rootfsbase.
+ # This handles the case where root isn't available yet (e.g., network root like NFS).
+diff --git a/modules.d/71overlayfs-crypt/module-setup.sh b/modules.d/71overlayfs-crypt/module-setup.sh
+new file mode 100755
+index 0000000..a4d839e
+--- /dev/null
++++ b/modules.d/71overlayfs-crypt/module-setup.sh
+@@ -0,0 +1,24 @@
++#!/bin/bash
++
++check() {
++    require_any_binary cryptsetup || return 1
++    return 255
++}
++
++depends() {
++    echo overlayfs
++}
++
++installkernel() {
++    hostonly="" instmods dm_mod dm_crypt
++}
++
++install() {
++    inst_hook pre-mount 02 "$moddir/prepare-overlayfs-crypt.sh"
++    inst_hook pre-pivot 01 "$moddir/prepare-overlayfs-crypt.sh"
++
++    inst_simple "$moddir/overlayfs-crypt-lib.sh" "/lib/overlayfs-crypt-lib.sh"
++    inst_simple "${moddir%/*}/70crypt/crypt-lib.sh" "/lib/dracut-crypt-lib.sh"
++    inst_multiple cryptsetup wipefs mkfs.ext4 mkfs.ext3 mkfs.ext2 sha512sum mktemp chmod readlink
++    inst_multiple -o stty
++}
+diff --git a/modules.d/71overlayfs-crypt/overlayfs-crypt-lib.sh b/modules.d/71overlayfs-crypt/overlayfs-crypt-lib.sh
+new file mode 100755
+index 0000000..d23ac8d
+--- /dev/null
++++ b/modules.d/71overlayfs-crypt/overlayfs-crypt-lib.sh
+@@ -0,0 +1,220 @@
++#!/bin/sh
++
++command -v getarg > /dev/null || . /lib/dracut-lib.sh
++
++parse_overlay_opts() {
++    local input="$1" ns="${2:-_RET_}"
++    local _oldifs="$IFS" tok key val
++
++    _RET=""
++    set -f
++    IFS=","
++    # shellcheck disable=SC2086
++    set -- $input
++    IFS="$_oldifs"
++    set +f
++
++    for tok in "$@"; do
++        key="${tok%%=*}"
++        val="${tok#*=}"
++        [ "$key" = "$tok" ] && val=""
++        case "$key" in
++            mapname | fstype | mkfs | timeout)
++                eval "${ns}${key}='${val}'"
++                _RET="${_RET:+$_RET }${ns}${key}"
++                ;;
++            *)
++                warn "Unknown option '$key'"
++                ;;
++        esac
++    done
++    return 0
++}
++
++generate_random_password() {
++    local tmpf entropy_sources pass
++    local persist_dir="/run/initramfs"
++
++    [ -d "$persist_dir" ] || mkdir -p "$persist_dir"
++
++    tmpf=$(mktemp "${persist_dir}/overlayfs-crypt.XXXXXX") || {
++        warn "Failed to create temp file for password"
++        return 1
++    }
++
++    entropy_sources="/proc/sys/kernel/random/boot_id /proc/sys/kernel/random/uuid /dev/urandom"
++
++    stat -L /dev/* /proc/* /sys/* > "$tmpf" 2>&1 || true
++
++    for src in $entropy_sources; do
++        [ -e "$src" ] && head -c 4096 "$src" >> "$tmpf" 2> /dev/null
++    done
++
++    pass=$(sha512sum "$tmpf" 2> /dev/null) || {
++        rm -f "$tmpf"
++        warn "Failed to generate password"
++        return 1
++    }
++    pass="${pass%% *}"
++
++    printf "%s" "$pass" > "${persist_dir}/overlayfs.passwd"
++    chmod 400 "${persist_dir}/overlayfs.passwd"
++
++    rm -f "$tmpf"
++    _RET="$pass"
++    return 0
++}
++
++_overlayfs_crypt_fallback_tmpfs() {
++    [ -d /run/overlayfs ] || {
++        mkdir -m 0755 -p /run/initramfs/overlay/overlayfs
++        mkdir -m 0755 -p /run/initramfs/overlay/ovlwork
++        ln -sf /run/initramfs/overlay/overlayfs /run/overlayfs
++        ln -sf /run/initramfs/overlay/ovlwork /run/ovlwork
++    }
++    # Signal mount-overlayfs.sh to proceed with the overlay mount
++    : > /run/overlayfs-crypt-ready
++}
++
++overlayfs_crypt_setup() {
++    local options="$1"
++    local dev="" mapname="overlay-crypt" fstype="ext4" mkfs="1" timeout=""
++    local crypt_dev
++
++    # Device is the first positional argument
++    local device="${options%%,*}"
++    case "$device" in
++        LABEL=* | UUID=* | PARTLABEL=* | PARTUUID=* | /dev/*)
++            dev="$device"
++            options="${options#"$device"}"
++            options="${options#,}"
++            ;;
++    esac
++
++    parse_overlay_opts "$options" "_ovl_" || return 1
++
++    mapname="${_ovl_mapname:-$mapname}"
++    fstype="${_ovl_fstype:-$fstype}"
++    mkfs="${_ovl_mkfs:-$mkfs}"
++    timeout="${_ovl_timeout:-$timeout}"
++
++    [ -n "$dev" ] || {
++        warn "Device parameter is required"
++        return 1
++    }
++
++    case "$dev" in
++        LABEL=* | UUID=* | PARTLABEL=* | PARTUUID=*)
++            dev=$(label_uuid_to_dev "$dev")
++            ;;
++        /dev/*) ;;
++        *)
++            dev="/dev/$dev"
++            ;;
++    esac
++
++    if [ "$timeout" = "0" ]; then
++        : # Don't wait for the device
++    elif [ -n "$timeout" ]; then
++        wait_for_dev -n "$dev" "$timeout" || {
++            warn "Device $dev not available after ${timeout}s"
++            return 1
++        }
++    else
++        wait_for_dev -n "$dev" || {
++            warn "Device $dev not available"
++            return 1
++        }
++    fi
++
++    # Resolve symlink to actual block device
++    local real_dev="$dev"
++    if [ -L "$dev" ]; then
++        real_dev=$(readlink -f "$dev" 2> /dev/null) || real_dev="$dev"
++    fi
++
++    [ -b "$real_dev" ] || {
++        warn "Device $real_dev not found"
++        return 1
++    }
++
++    dev="$real_dev"
++
++    info "Setting up encrypted overlay on $dev"
++
++    modprobe -q dm_mod 2> /dev/null || true
++    modprobe -q dm_crypt 2> /dev/null || true
++
++    crypt_dev="/dev/mapper/$mapname"
++
++    if cryptsetup isLuks "$dev" 2> /dev/null; then
++        info "Existing LUKS device found at $dev, prompting for password"
++        command -v luks_open_interactive > /dev/null || . /lib/dracut-crypt-lib.sh
++        luks_open_interactive "$dev" "$mapname" "Overlay password ($dev)" || {
++            warn "Failed to open LUKS device at $dev"
++            return 1
++        }
++        wait_for_dev -n "$crypt_dev" || {
++            warn "Device $crypt_dev did not appear"
++            return 1
++        }
++        _RET_DEVICE="$crypt_dev"
++        return 0
++    fi
++
++    if [ "$mkfs" = "0" ]; then
++        warn "No LUKS found at $dev and mkfs=0"
++        return 1
++    fi
++
++    generate_random_password || return 1
++    local pass="$_RET"
++    info "No existing LUKS found; creating new encrypted overlay"
++
++    info "Wiping $dev"
++    wipefs -a "$dev" || {
++        warn "Failed to wipe $dev"
++        return 1
++    }
++
++    info "Formatting $dev with LUKS"
++    # DM_DISABLE_UDEV=1 prevents cryptsetup from waiting for udev to process the device
++    if ! printf "%s" "$pass" | DM_DISABLE_UDEV=1 cryptsetup luksFormat --pbkdf pbkdf2 -q "$dev" --key-file -; then
++        warn "luksFormat failed on $dev"
++        return 1
++    fi
++
++    info "Opening LUKS device"
++    if ! printf "%s" "$pass" | DM_DISABLE_UDEV=1 cryptsetup luksOpen "$dev" "$mapname" --key-file -; then
++        warn "luksOpen failed on $dev"
++        return 1
++    fi
++    udevadm settle 2> /dev/null || true
++
++    info "LUKS device opened, waiting for $crypt_dev"
++
++    wait_for_dev -n "$crypt_dev" || {
++        warn "Device $crypt_dev did not appear after luksOpen"
++        return 1
++    }
++
++    info "Creating $fstype filesystem on $crypt_dev"
++    case "$fstype" in
++        ext2 | ext3 | ext4)
++            mkfs."$fstype" -q "$crypt_dev" || {
++                warn "mkfs.$fstype failed on $crypt_dev"
++                cryptsetup luksClose "$mapname"
++                return 1
++            }
++            ;;
++        *)
++            warn "Unsupported filesystem type '$fstype'"
++            cryptsetup luksClose "$mapname"
++            return 1
++            ;;
++    esac
++
++    info "Successfully set up encrypted overlay at $crypt_dev"
++    _RET_DEVICE="$crypt_dev"
++    return 0
++}
+diff --git a/modules.d/71overlayfs-crypt/prepare-overlayfs-crypt.sh b/modules.d/71overlayfs-crypt/prepare-overlayfs-crypt.sh
+new file mode 100755
+index 0000000..738aa76
+--- /dev/null
++++ b/modules.d/71overlayfs-crypt/prepare-overlayfs-crypt.sh
+@@ -0,0 +1,50 @@
++#!/bin/sh
++
++command -v getarg > /dev/null || . /lib/dracut-lib.sh
++
++overlay_crypt=$(getarg rd.overlay.crypt)
++
++[ -n "$overlay_crypt" ] || return 0
++
++[ -e /run/overlayfs-crypt-ready ] && return 0
++
++# Skip if root not mounted and rootfsbase not set up by another module (e.g. dmsquash-live)
++if ! ismounted "$NEWROOT" && ! [ -e /run/rootfsbase ]; then
++    return 0
++fi
++
++if ! [ -e /run/rootfsbase ]; then
++    mkdir -m 0755 -p /run/rootfsbase
++    mount --bind "$NEWROOT" /run/rootfsbase
++fi
++
++info "Attempting to set up encrypted overlay"
++
++# shellcheck disable=SC1091
++. /lib/overlayfs-crypt-lib.sh
++
++if ! overlayfs_crypt_setup "$overlay_crypt"; then
++    warn "Failed to set up encrypted overlay, falling back to tmpfs"
++    _overlayfs_crypt_fallback_tmpfs
++    return 0
++fi
++
++overlay_device="$_RET_DEVICE"
++mkdir -m 0755 -p /run/overlayfs-backing
++
++if ! mount "$overlay_device" /run/overlayfs-backing; then
++    warn "Failed to mount encrypted overlay $overlay_device, falling back to tmpfs"
++    _overlayfs_crypt_fallback_tmpfs
++    return 0
++fi
++
++info "Successfully mounted encrypted overlay on $overlay_device"
++
++mkdir -m 0755 -p /run/overlayfs-backing/overlay
++mkdir -m 0755 -p /run/overlayfs-backing/ovlwork
++
++ln -sf /run/overlayfs-backing/overlay /run/overlayfs
++ln -sf /run/overlayfs-backing/ovlwork /run/ovlwork
++
++# Signal mount-overlayfs.sh to proceed with the overlay mount
++: > /run/overlayfs-crypt-ready
+diff --git a/test/TEST-21-OVERLAYFS/assertion.sh b/test/TEST-21-OVERLAYFS/assertion.sh
+index 4e4d3fa..4606ee8 100755
+--- a/test/TEST-21-OVERLAYFS/assertion.sh
++++ b/test/TEST-21-OVERLAYFS/assertion.sh
+@@ -2,6 +2,29 @@
+ 
+ # required binaries: cat grep
+ 
++check_crypt_mounted() {
++    if ! grep -q "^/dev/mapper/overlay-crypt /run/overlayfs-backing " /proc/mounts; then
++        echo "encrypted overlay not mounted at /run/overlayfs-backing" >> /run/failed
++    fi
++}
++
++check_crypt_device() {
++    local _dm
++    for _dm in /sys/class/block/dm-*; do
++        if [ "$(cat "$_dm/dm/name" 2> /dev/null)" = "overlay-crypt" ]; then
++            grep -q "^CRYPT-" "$_dm/dm/uuid" 2> /dev/null && return 0
++            break
++        fi
++    done
++    echo "overlay-crypt is not a dm-crypt device" >> /run/failed
++}
++
++check_crypt_passphrase() {
++    if [ ! -f /run/initramfs/overlayfs.passwd ]; then
++        echo "password file /run/initramfs/overlayfs.passwd not found" >> /run/failed
++    fi
++}
++
+ if grep -q 'test.expect=none' /proc/cmdline; then
+     if grep -q " overlay " /proc/mounts; then
+         echo "overlay filesystem found in /proc/mounts" >> /run/failed
+@@ -20,6 +43,10 @@ if grep -q 'test.expect=device' /proc/cmdline; then
+     if ! grep -q "/run/overlayfs-backing" /proc/mounts; then
+         echo "persistent overlay device not mounted at /run/overlayfs-backing" >> /run/failed
+     fi
++elif grep -q 'test.expect=crypt' /proc/cmdline; then
++    check_crypt_mounted
++    check_crypt_device
++    check_crypt_passphrase
+ else
+     if grep -q "/run/overlayfs-backing" /proc/mounts; then
+         echo "persistent overlay device is mounted at /run/overlayfs-backing" >> /run/failed
+diff --git a/test/TEST-21-OVERLAYFS/test.sh b/test/TEST-21-OVERLAYFS/test.sh
+index b907858..6d3f9ac 100755
+--- a/test/TEST-21-OVERLAYFS/test.sh
++++ b/test/TEST-21-OVERLAYFS/test.sh
+@@ -16,6 +16,7 @@ client_run() {
+     declare -a disk_args=()
+     qemu_add_drive disk_args "$TESTDIR"/root.img root
+     qemu_add_drive disk_args "$TESTDIR"/overlay.img overlay
++    qemu_add_drive disk_args "$TESTDIR"/crypt.img crypt
+ 
+     "$testdir"/run-qemu -nic none \
+         "${disk_args[@]}" \
+@@ -26,6 +27,12 @@ client_run() {
+     client_test_end
+ }
+ 
++setup_crypt_disk() {
++    rm -f "$TESTDIR"/crypt.img
++    truncate -s 100M "$TESTDIR"/crypt.img
++    mkfs.ext4 -q -L CRYPT "$TESTDIR"/crypt.img
++}
++
+ test_run() {
+     local overlay_uuid
+     overlay_uuid=$(blkid -s UUID -o value "$TESTDIR"/overlay.img)
+@@ -40,6 +47,10 @@ test_run() {
+     client_run "fallback to tmpfs (non-existent LABEL)" "rd.overlay=LABEL=NONEXISTENT test.expect=tmpfs"
+     client_run "tmpfs overlay with size (rd.overlay=tmpfs:size=32M,nr_inodes=100000)" \
+         "rd.overlay=tmpfs:size=32M,nr_inodes=100000 test.expect=tmpfs-sized"
++
++    setup_crypt_disk
++    client_run "encrypted overlay (new device, random password)" \
++        "rd.overlay.crypt=LABEL=CRYPT test.expect=crypt"
+ }
+ 
+ test_setup() {
+@@ -50,7 +61,9 @@ test_setup() {
+     truncate -s 32M "$TESTDIR"/overlay.img
+     mkfs.ext4 -q -L OVERLAY "$TESTDIR"/overlay.img
+ 
+-    test_dracut --add overlayfs
++    setup_crypt_disk
++
++    test_dracut --add "overlayfs overlayfs-crypt"
+ }
+ 
+ # shellcheck disable=SC1090

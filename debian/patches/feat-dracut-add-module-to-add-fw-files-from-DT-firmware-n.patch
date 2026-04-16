@@ -1,0 +1,162 @@
+From: Hans de Goede <johannes.goede@oss.qualcomm.com>
+Date: Sun, 1 Mar 2026 19:28:41 +0100
+Subject: feat(dracut): add module to add fw files from DT firmware-name
+ properties
+
+Devicetree based platforms may need board / model specific firmwares in
+the initrd.
+
+E.g. on Qualcomm Snapdragon X1e Windows (WoA) laptops the qcom_q6v5_pas
+ADSP driver gets added to the initrd because dracut includes all pinctrl
+drivers in the initrd and the 6e80000.pinctrl lpass-lpi-pinctrl device
+has a supplier:platform:6800000.remoteproc symlink, dragging the ADSP
+driver into the initrd.
+
+The ADSP driver tries to load model-specific firmware files with the
+filenames to use specified in a devicetree firmware-name properties.
+
+This module adds support for retrieving the firmware-names from these
+devicetree properties and adding the firmware files to the initrd.
+
+The ADSP driver, being a remoteproc driver does bind even without the
+firmware files, operating in a degraded mode. This means e.g. no battery
+readings and no working audio, since both depend on the ADSP. These
+firmware files need to be in the initrd to avoid this degraded mode.
+
+The ADSP driver getting brought into the initrd is actually a good thing,
+since the ADSP also controls the Type-C PD-controller(s) and when the
+firmware is present and loaded this results in a reset of all Type-C USB
+ports, so this needs to happen early on, to e.g. avoid USB-storage devices
+getting disconnected and filesystems on top getting in a broken state.
+
+Resolves: #722
+Resolves: https://bugzilla.redhat.com/show_bug.cgi?id=2275920
+Resolves: https://bugzilla.redhat.com/show_bug.cgi?id=2455055
+Signed-off-by: Hans de Goede <johannes.goede@oss.qualcomm.com>
+Origin: upstream, https://github.com/dracut-ng/dracut-ng/pull/2266
+---
+Changes in v3:
+- Move the `"$DRACUT_ARCH" = "aarch64"` check to the generic/non-hostonly path in `check()`
+- Drop the `/lib/firmware/qcom` check from the generic/non-hostonly path in `check()`
+- Make _fw_names and _fw_files arrays and drop the shellcheck disable=SC2086
+- Refererence issue #722 and 2 Red Hat bugzillas in commit message
+
+Changes in v2:
+- Iterate over $fw_dir dirs to pickup firmwares from /lib/firmware/updates
+- Directly use $DRACUT_ARCH instead of defining _arch local var
+- Add the new module to labeler.yml and core.adoc
+- Rename module from devicetree-fw to devicetree-firmware
+---
+ .github/labeler.yml                             |  4 ++
+ doc_site/modules/ROOT/pages/modules/core.adoc   |  4 ++
+ modules.d/70devicetree-firmware/module-setup.sh | 71 +++++++++++++++++++++++++
+ 3 files changed, 79 insertions(+)
+ create mode 100755 modules.d/70devicetree-firmware/module-setup.sh
+
+diff --git a/.github/labeler.yml b/.github/labeler.yml
+index be4561c..f96df06 100644
+--- a/.github/labeler.yml
++++ b/.github/labeler.yml
+@@ -251,6 +251,10 @@ connman:
+     - changed-files:
+           - any-glob-to-any-file: 'modules.d/[0-9][0-9]connman/*'
+ 
++devicetree-firmware:
++    - changed-files:
++          - any-glob-to-any-file: 'modules.d/[0-9][0-9]devicetree-firmware/*'
++
+ network-legacy:
+     - changed-files:
+           - any-glob-to-any-file: 'modules.d/[0-9][0-9]network-legacy/*'
+diff --git a/doc_site/modules/ROOT/pages/modules/core.adoc b/doc_site/modules/ROOT/pages/modules/core.adoc
+index bd6e729..149325d 100644
+--- a/doc_site/modules/ROOT/pages/modules/core.adoc
++++ b/doc_site/modules/ROOT/pages/modules/core.adoc
+@@ -65,6 +65,10 @@ code, there are no specific types or categories for dracut modules.
+ | debug features
+ |
+ 
++| devicetree-firmware
++| add firmware files from DT firmware-name properties
++|
++
+ | dm
+ | device-mapper
+ | library
+diff --git a/modules.d/70devicetree-firmware/module-setup.sh b/modules.d/70devicetree-firmware/module-setup.sh
+new file mode 100755
+index 0000000..df33791
+--- /dev/null
++++ b/modules.d/70devicetree-firmware/module-setup.sh
+@@ -0,0 +1,71 @@
++#!/bin/bash
++# -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
++# ex: ts=8 sw=4 sts=4 et filetype=sh
++
++# Devicetree based platforms may need board / model specific firmwares in
++# the initrd. E.g. Qualcomm Snapdragon Windows-on-Arm (WoA) laptops need model
++# specific firmware files in the initrd for the ADSP/Type-C controller.
++# The filenames for these firmware files are specified in "firmware-name"
++# devicetree properties, this module copies any such files to the initrd.
++
++# called by dracut
++check() {
++    if [[ $hostonly ]]; then
++        [ -d /sys/firmware/devicetree/base ] || return 1
++    else
++        # ATM install_generic only copies aarch64 qcom model specific firmwares
++        [ "${DRACUT_ARCH:-$(uname -m)}" = "aarch64" ] || return 1
++    fi
++    return 0
++}
++
++# hostonly install (hostonly / generic use completely different approaches)
++install_hostonly() {
++    local _fw_names=()
++    # contents of firmware-name file is 0 delimited
++    while read -r -d $'\0' _fw; do
++        _fw_names+=("$_fw")
++    done < <(find /sys/firmware/devicetree/base -name firmware-name -exec cat {} \;)
++
++    local _fw_files=()
++    for _fw_name in "${_fw_names[@]}"; do
++        # shellcheck disable=SC2154 # fw_dir is set by dracut.sh
++        for _fwdir in $fw_dir; do
++            # add '*' after firmware-name for .gz, etc. compression
++            for _fw in "$_fwdir/$_fw_name"*; do
++                [ -f "$_fw" ] || continue
++                _fw=${_fw#"${dracutsysrootdir-}"}
++                _fw_files+=("$_fw")
++                break 2
++            done
++        done
++    done
++    inst_multiple -o "${_fw_files[@]}"
++}
++
++# generic install (hostonly / generic use completely different approaches)
++install_generic() {
++    local _fw_files=()
++    # ATM only qcom WoA laptops need this
++    for _soc in qcom/sc8280xp qcom/x1e80100; do
++        # shellcheck disable=SC2154 # fw_dir is set by dracut.sh
++        for _fwdir in $fw_dir; do
++            # add '*' after mbn, elf for .gz, etc. compression
++            for _fw in "$_fwdir/$_soc"/*/*/*.mbn* "$_fwdir/$_soc"/*/*/*.elf*; do
++                [ -f "$_fw" ] || continue
++                _fw=${_fw#"${dracutsysrootdir-}"}
++                _fw_files+=("$_fw")
++            done
++        done
++    done
++    inst_multiple -o "${_fw_files[@]}"
++}
++
++# called by dracut
++install() {
++    if [[ $hostonly ]]; then
++        install_hostonly
++    else
++        install_generic
++    fi
++}

@@ -1,0 +1,28 @@
+From: Benjamin Drung <benjamin.drung@canonical.com>
+Date: Mon, 13 Apr 2026 13:10:20 +0200
+Subject: refactor(overlayfs): exit early in case LiveOS_rootfs is mounted
+
+Increase the code readability by exiting early in case LiveOS_rootfs is
+already mounted.
+
+Forwarded: https://github.com/dracut-ng/dracut-ng/pull/2383
+---
+ modules.d/70overlayfs/mount-overlayfs.sh | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/modules.d/70overlayfs/mount-overlayfs.sh b/modules.d/70overlayfs/mount-overlayfs.sh
+index dbae5d5..6adc2d7 100755
+--- a/modules.d/70overlayfs/mount-overlayfs.sh
++++ b/modules.d/70overlayfs/mount-overlayfs.sh
+@@ -20,6 +20,9 @@ else
+     ovlfs=lowerdir=/run/rootfsbase
+ fi
+ 
+-if ! strstr "$(cat /proc/mounts)" LiveOS_rootfs; then
+-    mount -t overlay LiveOS_rootfs -o "$ovlfs",upperdir=/run/overlayfs,workdir=/run/ovlwork "$NEWROOT"
++if strstr "$(cat /proc/mounts)" LiveOS_rootfs; then
++    # LiveOS_rootfs already mounted
++    return 0
+ fi
++
++mount -t overlay LiveOS_rootfs -o "$ovlfs",upperdir=/run/overlayfs,workdir=/run/ovlwork "$NEWROOT"

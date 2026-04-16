@@ -1,0 +1,77 @@
+From: Nadzeya Hutsko <nadzeya.hutsko@canonical.com>
+Date: Fri, 10 Apr 2026 20:50:46 +0200
+Subject: refactor(70crypt): extract luks_open_interactive into crypt-lib
+
+Move the interactive LUKS open logic into a shared
+luks_open_interactive function, allowing overlayfs-crypt to reuse it.
+
+Forwarded: https://github.com/dracut-ng/dracut-ng/pull/2161
+---
+ modules.d/70crypt/crypt-lib.sh     | 22 ++++++++++++++++++++++
+ modules.d/70crypt/cryptroot-ask.sh | 13 ++-----------
+ 2 files changed, 24 insertions(+), 11 deletions(-)
+
+diff --git a/modules.d/70crypt/crypt-lib.sh b/modules.d/70crypt/crypt-lib.sh
+index 7669828..82a672f 100755
+--- a/modules.d/70crypt/crypt-lib.sh
++++ b/modules.d/70crypt/crypt-lib.sh
+@@ -135,6 +135,28 @@ ask_for_password() {
+     return $ret
+ }
+ 
++# luks_open_interactive dev mapname [prompt] [cryptsetupopts]
++#
++# Prompt for a LUKS passphrase and open the device.  Uses Plymouth if
++# available, otherwise falls back to TTY.  Reads rd.luks.timeout for
++# the passphrase input timeout.
++luks_open_interactive() {
++    local dev="$1" mapname="$2"
++    local prompt="${3:-Password ($dev)}"
++    local cryptsetupopts="${4:-}"
++    local luks_open _timeout
++
++    _timeout=$(getarg rd.luks.timeout)
++    _timeout="${_timeout:-0}"
++    luks_open="$(command -v cryptsetup) $cryptsetupopts luksOpen"
++    ask_for_password \
++        --ply-tries 5 \
++        --ply-cmd "$luks_open -T1 $dev $mapname" \
++        --ply-prompt "$prompt" \
++        --tty-tries 1 \
++        --tty-cmd "$luks_open -T5 -t $_timeout $dev $mapname"
++}
++
+ # Try to mount specified device (by path, by UUID or by label) and check
+ # the path with 'test'.
+ #
+diff --git a/modules.d/70crypt/cryptroot-ask.sh b/modules.d/70crypt/cryptroot-ask.sh
+index edae9cd..952a5e7 100755
+--- a/modules.d/70crypt/cryptroot-ask.sh
++++ b/modules.d/70crypt/cryptroot-ask.sh
+@@ -78,7 +78,7 @@ asked_file=/tmp/cryptroot-asked-$luksname
+ # load dm_crypt if it is not already loaded
+ [ -d /sys/module/dm_crypt ] || modprobe dm_crypt
+ 
+-command -v ask_for_password > /dev/null || . /lib/dracut-crypt-lib.sh
++command -v luks_open_interactive > /dev/null || . /lib/dracut-crypt-lib.sh
+ 
+ #
+ # Open LUKS device
+@@ -175,16 +175,7 @@ else
+ fi
+ 
+ if [ $ask_passphrase -ne 0 ]; then
+-    luks_open="$(command -v cryptsetup) $cryptsetupopts luksOpen"
+-    _timeout=$(getarg "rd.luks.timeout")
+-    _timeout=${_timeout:-0}
+-    ask_for_password --ply-tries 5 \
+-        --ply-cmd "$luks_open -T1 $device $luksname" \
+-        --ply-prompt "Password ($device)" \
+-        --tty-tries 1 \
+-        --tty-cmd "$luks_open -T5 -t $_timeout $device $luksname"
+-    unset luks_open
+-    unset _timeout
++    luks_open_interactive "$device" "$luksname" "Password ($device)" "$cryptsetupopts"
+ fi
+ 
+ if [ "$is_keysource" -ne 0 ] && [ "${luksname##luks-}" != "$luksname" ]; then
