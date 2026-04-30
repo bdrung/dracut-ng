@@ -91,6 +91,16 @@ Depends: dracut-network,
          squashfs-tools,
          systemd-container
 
+Tests: 46-systemd-sysext
+Architecture: !armel !i386
+Restrictions: allow-stderr, needs-root
+Depends: dmsetup,
+         dracut-test,
+         erofs-utils,
+         openssl,
+         systemd-cryptsetup,
+         systemd-repart
+
 # systemd-networkd-wait-online.service times out on riscv64: https://github.com/dracut-ng/dracut-ng/issues/2309
 Tests: 50-network
 Architecture: !armel !i386 !riscv64
