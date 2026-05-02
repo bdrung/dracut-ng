@@ -1,0 +1,7 @@
+dracut.conf.d/test usr/lib/dracut/dracut.conf.d
+dracut.conf.d/test-makeroot usr/lib/dracut/dracut.conf.d
+dracut.conf.d/test-root usr/lib/dracut/dracut.conf.d
+test/modules.d/70test-makeroot usr/lib/dracut/modules.d
+test/modules.d/70test-root usr/lib/dracut/modules.d
+test/run-qemu usr/lib/dracut/test
+test/test-functions usr/lib/dracut/test

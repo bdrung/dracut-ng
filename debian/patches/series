@@ -1,0 +1,2 @@
+fix-multipath-include-Debian-specific-priority-of-udev-ru.patch
+fix-iscsi-handle-empty-URI-in-firmware-boot-mode.patch
